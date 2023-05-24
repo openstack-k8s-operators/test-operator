@@ -6,4 +6,14 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: test-operator
 repo: github.com/openstack-k8s-operators/test-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openstack.org
+  group: test
+  kind: Tempest
+  path: github.com/openstack-k8s-operators/test-operator/api/v1beta1
+  version: v1beta1
 version: "3"

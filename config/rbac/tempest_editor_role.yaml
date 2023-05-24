@@ -1,0 +1,31 @@
+# permissions for end users to edit tempests.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: tempest-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: test-operator
+    app.kubernetes.io/part-of: test-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: tempest-editor-role
+rules:
+- apiGroups:
+  - test.openstack.org
+  resources:
+  - tempests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - test.openstack.org
+  resources:
+  - tempests/status
+  verbs:
+  - get
