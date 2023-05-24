@@ -5,9 +5,8 @@
 *.dll
 *.so
 *.dylib
-bin
+bin/*
 testbin/*
-Dockerfile.cross
 
 # Test binary, build with `go test -c`
 *.test
@@ -19,8 +18,19 @@ Dockerfile.cross
 
 !vendor/**/zz_generated.*
 
+#Operator SDK generated files
+/bundle/
+bundle.Dockerfile
+config/manager/kustomization.yaml
+
 # editor and IDE paraphernalia
 .idea
 *.swp
 *.swo
+
+# Common CI tools repository
+CI_TOOLS_REPO
 *~
+.vscode/
+go.work
+go.work.sum
