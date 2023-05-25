@@ -1,0 +1,10 @@
+{
+    "config_files": [
+        {
+            "source": "/var/lib/config-data/tempest.conf",
+            "dest": "/etc/tempest/tempest.conf",
+            "owner": "root:tempest",
+            "perm": "0640"
+        }
+    ]
+}
