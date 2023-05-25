@@ -16,7 +16,6 @@ func Job(
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
-	runAsNonRoot := true
 
 	args := []string{
 		"/var/lib/tempest/run_tempest.sh",
@@ -35,7 +34,8 @@ func Job(
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					RestartPolicy: "OnFailure",
+					RestartPolicy:      "OnFailure",
+					ServiceAccountName: instance.RbacResourceName(),
 					Containers: []corev1.Container{
 						{
 							Name:  instance.Name + "-tests-runner",
@@ -49,7 +49,6 @@ func Job(
 									Add:  []corev1.Capability{},
 									Drop: []corev1.Capability{"ALL"},
 								},
-								RunAsNonRoot: &runAsNonRoot,
 								SeccompProfile: &corev1.SeccompProfile{
 									Type: "RuntimeDefault",
 								},
