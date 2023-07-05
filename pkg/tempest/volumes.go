@@ -8,7 +8,6 @@ import (
 func GetVolumes(name string) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
-	var config0640AccessMode int32 = 0640
 
 	//source_type := corev1.HostPathDirectoryOrCreate
 	return []corev1.Volume{
@@ -43,7 +42,7 @@ func GetVolumes(name string) []corev1.Volume {
 			Name: "config-data",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &config0640AccessMode,
+					DefaultMode: &scriptsVolumeDefaultMode,
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: name + "-config-data",
 					},

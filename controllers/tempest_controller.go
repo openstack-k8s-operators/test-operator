@@ -241,7 +241,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	//
 	// check for required OpenStack secret holding passwords for service/admin user and add hash to the vars map,
 	//
-	ospSecret, hash, err := secret.GetSecret(ctx, helper, instance.Spec.Secret, instance.Namespace)
+	tempestSecret, hash, err := secret.GetSecret(ctx, helper, instance.Spec.Secret, instance.Namespace)
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			instance.Status.Conditions.Set(condition.FalseCondition(
@@ -259,7 +259,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 			err.Error()))
 		return ctrl.Result{}, err
 	}
-	configMapVars[ospSecret.Name] = env.SetValue(hash)
+	configMapVars[tempestSecret.Name] = env.SetValue(hash)
 
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 	// run check OpenStack secret - end
@@ -274,7 +274,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	// - %-config configmap holding minimal neutron config required to get the service up, user can add additional files to be added to the service
 	// - parameters which has passwords gets added from the OpenStack secret via the init container
 	//
-	err = r.generateServiceConfigMaps(ctx, helper, instance, &configMapVars)
+	err = r.generateServiceConfigMaps(ctx, helper, instance, &configMapVars, *tempestSecret)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.ServiceConfigReadyCondition,
@@ -409,21 +409,15 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	h *helper.Helper,
 	instance *testv1beta1.Tempest,
 	envVars *map[string]env.Setter,
+	tempestSecret corev1.Secret,
 ) error {
 	// Create/update configmaps from templates
 	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
 
 	templateParameters := make(map[string]interface{})
 
-	//TODO(slaweq): all those parameters needs to be set properly
-	templateParameters["DefaultNetwork"] = "192.168.0.0/24"
-	templateParameters["PublicRouterId"] = ""
-	templateParameters["PublicNetworkId"] = "some_network_uuid"
-	templateParameters["ProjectNetworkCidr"] = "192.168.0.0/24"
-	templateParameters["ImageRef"] = "image_uuid"
-	templateParameters["ImageRefAlt"] = "image_alt_uuid"
-	templateParameters["IdentityUriV3"] = "http://keystone-public-openstack.apps-crc.testing"
-	templateParameters["AdminPassword"] = "adminpass"
+	templateParameters["KeystoneApiEndpoint"] = string(tempestSecret.Data["KeystoneApiEndpoint"])
+	templateParameters["OpenStackAdminPassword"] = string(tempestSecret.Data["OpenStackAdminPassword"])
 
 	cms := []util.Template{
 		// ScriptsConfigMap
