@@ -16,6 +16,9 @@ func Job(
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
+	envVars["KOLLA_CONFIG_FILE"] = env.SetValue("/var/lib/config-data/tempest-config.json")
+	envVars["KOLLA_CONFIG_STRATEGY"] = env.SetValue("COPY_ALWAYS")
+	runAsUser := int64(0)
 
 	args := []string{
 		"/var/lib/tempest/run_tempest.sh",
@@ -32,6 +35,7 @@ func Job(
 			Labels:    labels,
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: instance.Spec.BackoffLimit,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy:      corev1.RestartPolicyNever,
@@ -41,17 +45,11 @@ func Job(
 							Name:  instance.Name + "-tests-runner",
 							Image: instance.Spec.ContainerImage,
 							Command: []string{
-								"/var/lib/tempest/run_tempest.sh",
+								"/usr/local/bin/kolla_start",
 							},
 							Args: []string{},
 							SecurityContext: &corev1.SecurityContext{
-								Capabilities: &corev1.Capabilities{
-									Add:  []corev1.Capability{},
-									Drop: []corev1.Capability{"ALL"},
-								},
-								SeccompProfile: &corev1.SeccompProfile{
-									Type: "RuntimeDefault",
-								},
+								RunAsUser: &runAsUser,
 							},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(),

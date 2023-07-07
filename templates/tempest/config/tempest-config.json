@@ -1,9 +1,22 @@
 {
+    "command": "/var/lib/tempest/run_tempest.sh",
     "config_files": [
         {
-            "source": "/var/lib/config-data/tempest.conf",
-            "dest": "/etc/tempest/tempest.conf",
+            "source": "/var/lib/config-data/clouds.yaml",
+            "dest": "/var/lib/tempest/external_files/clouds.yaml",
             "owner": "root:tempest",
+            "perm": "0640"
+        },
+        {
+            "source": "/var/lib/config-data/include.txt",
+            "dest": "/var/lib/tempest/external_files/include.txt",
+            "owner": "tempest:tempest",
+            "perm": "0640"
+        },
+        {
+            "source": "/var/lib/config-data/exclude.txt",
+            "dest": "/var/lib/tempest/external_files/exclude.txt",
+            "owner": "tempest:tempest",
             "perm": "0640"
         }
     ]
