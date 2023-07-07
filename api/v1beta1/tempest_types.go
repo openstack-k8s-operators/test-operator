@@ -61,6 +61,19 @@ type TempestSpec struct {
 	// TempestRegex
 	TempestRegex string `json:"tempestRegex,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	// AllowedTests
+	AllowedTests []string `json:"allowedTests,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// SkippedTests
+	SkippedTests []string `json:"skippedTests,omitempty"`
+
+	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
+	// +kubebuilder:default:=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+
 	// TODO(slaweq): add more tempest run parameters here
 }
 

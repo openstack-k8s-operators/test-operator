@@ -35,6 +35,17 @@ spec:
           spec:
             description: TempestSpec defines the desired state of Tempest
             properties:
+              allowedTests:
+                description: AllowedTests
+                items:
+                  type: string
+                type: array
+              backoffLimit:
+                default: 0
+                description: BackoffLimimt allows to define the maximum number of
+                  retried executions (defaults to 6).
+                format: int32
+                type: integer
               containerImage:
                 description: Tempest Container Image URL (will be set to environmental
                   default if empty)
@@ -97,6 +108,11 @@ spec:
                 description: Secret containing OpenStack password information for
                   Admin user
                 type: string
+              skippedTests:
+                description: SkippedTests
+                items:
+                  type: string
+                type: array
               tempestRegex:
                 description: TempestRegex
                 type: string

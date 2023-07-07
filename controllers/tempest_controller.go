@@ -373,7 +373,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	tempestJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,
-		true,
+		false,
 		time.Duration(5)*time.Second,
 		"",
 	)
@@ -418,6 +418,8 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 
 	templateParameters["KeystoneApiEndpoint"] = string(tempestSecret.Data["KeystoneApiEndpoint"])
 	templateParameters["OpenStackAdminPassword"] = string(tempestSecret.Data["OpenStackAdminPassword"])
+	templateParameters["AllowedTests"] = instance.Spec.AllowedTests
+	templateParameters["SkippedTests"] = instance.Spec.SkippedTests
 
 	cms := []util.Template{
 		// ScriptsConfigMap
