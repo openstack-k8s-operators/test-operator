@@ -63,11 +63,11 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// AllowedTests
-    AllowedTests []string `json:"allowedTests,omitempty"`
+	AllowedTests []string `json:"allowedTests,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// SkippedTests
-    SkippedTests []string `json:"skippedTests,omitempty"`
+	SkippedTests []string `json:"skippedTests,omitempty"`
 
 	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
 	// +kubebuilder:default:=0
