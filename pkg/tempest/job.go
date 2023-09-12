@@ -16,7 +16,6 @@ func Job(
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
-	envVars["KOLLA_CONFIG_FILE"] = env.SetValue("/var/lib/config-data/tempest-config.json")
 	envVars["KOLLA_CONFIG_STRATEGY"] = env.SetValue("COPY_ALWAYS")
 	runAsUser := int64(0)
 

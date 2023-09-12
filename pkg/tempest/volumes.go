@@ -73,7 +73,7 @@ func GetVolumeMounts() []corev1.VolumeMount {
 		},
 		{
 			Name:      "config-data",
-			MountPath: "/var/lib/config-data/",
+			MountPath: "/var/lib/kolla/config_files",
 			ReadOnly:  false,
 		},
 	}
