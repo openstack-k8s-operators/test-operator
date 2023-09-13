@@ -104,9 +104,15 @@ spec:
                 description: NodeSelector to target subset of worker nodes running
                   this service
                 type: object
-              secret:
-                description: Secret containing OpenStack password information for
-                  Admin user
+              openStackConfigMap:
+                default: openstack-config
+                description: OpenStackConfigMap is the name of the ConfigMap containing
+                  the clouds.yaml
+                type: string
+              openStackConfigSecret:
+                default: openstack-config-secret
+                description: OpenStackConfigSecret is the name of the Secret containing
+                  the secure.yaml
                 type: string
               skippedTests:
                 description: SkippedTests
@@ -118,6 +124,8 @@ spec:
                 type: string
             required:
             - containerImage
+            - openStackConfigMap
+            - openStackConfigSecret
             type: object
           status:
             description: TempestStatus defines the observed state of Tempest

@@ -45,9 +45,15 @@ type TempestSpec struct {
 	// NodeSelector to target subset of worker nodes running this service
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	// Secret containing OpenStack password information for Admin user
-	Secret string `json:"secret,omitempty"`
+        // +kubebuilder:validation:Required
+	// +kubebuilder:default=openstack-config
+        // OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
+        OpenStackConfigMap string `json:"openStackConfigMap"`
+
+        // +kubebuilder:validation:Required
+	// +kubebuilder:default=openstack-config-secret
+        // OpenStackConfigSecret is the name of the Secret containing the secure.yaml
+        OpenStackConfigSecret string `json:"openStackConfigSecret"`
 
 	// +kubebuilder:validation:Optional
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose the services to the given network

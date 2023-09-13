@@ -54,7 +54,7 @@ func Job(
 							VolumeMounts: GetVolumeMounts(),
 						},
 					},
-					Volumes: GetVolumes(instance.Name),
+					Volumes: GetVolumes(instance),
 				},
 			},
 		},
