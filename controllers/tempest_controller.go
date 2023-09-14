@@ -31,13 +31,11 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/secret"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/tempest"
@@ -235,32 +233,6 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		return rbacResult, nil
 	}
 
-	// ConfigMap
-	configMapVars := make(map[string]env.Setter)
-
-	//
-	// check for required OpenStack secret holding passwords for service/admin user and add hash to the vars map,
-	//
-	tempestSecret, hash, err := secret.GetSecret(ctx, helper, instance.Spec.Secret, instance.Namespace)
-	if err != nil {
-		if k8s_errors.IsNotFound(err) {
-			instance.Status.Conditions.Set(condition.FalseCondition(
-				condition.InputReadyCondition,
-				condition.RequestedReason,
-				condition.SeverityInfo,
-				condition.InputReadyWaitingMessage))
-			return ctrl.Result{RequeueAfter: time.Duration(10) * time.Second}, fmt.Errorf("OpenStack secret %s not found", instance.Spec.Secret)
-		}
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{}, err
-	}
-	configMapVars[tempestSecret.Name] = env.SetValue(hash)
-
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 	// run check OpenStack secret - end
 
@@ -274,7 +246,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	// - %-config configmap holding minimal neutron config required to get the service up, user can add additional files to be added to the service
 	// - parameters which has passwords gets added from the OpenStack secret via the init container
 	//
-	err = r.generateServiceConfigMaps(ctx, helper, instance, &configMapVars, *tempestSecret)
+	err = r.generateServiceConfigMaps(ctx, helper, instance)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.ServiceConfigReadyCondition,
@@ -408,16 +380,12 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	ctx context.Context,
 	h *helper.Helper,
 	instance *testv1beta1.Tempest,
-	envVars *map[string]env.Setter,
-	tempestSecret corev1.Secret,
 ) error {
 	// Create/update configmaps from templates
 	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
 
 	templateParameters := make(map[string]interface{})
 
-	templateParameters["KeystoneApiEndpoint"] = string(tempestSecret.Data["KeystoneApiEndpoint"])
-	templateParameters["OpenStackAdminPassword"] = string(tempestSecret.Data["OpenStackAdminPassword"])
 	templateParameters["AllowedTests"] = instance.Spec.AllowedTests
 	templateParameters["SkippedTests"] = instance.Spec.SkippedTests
 
@@ -440,5 +408,5 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 			ConfigOptions: templateParameters,
 		},
 	}
-	return configmap.EnsureConfigMaps(ctx, h, instance, cms, envVars)
+	return configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
 }
