@@ -16,8 +16,8 @@ func Job(
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
-	envVars["KOLLA_CONFIG_STRATEGY"] = env.SetValue("COPY_ALWAYS")
-	runAsUser := int64(0)
+	runAsUser := int64(42480)
+	runAsGroup := int64(42480)
 
 	args := []string{
 		"/var/lib/tempest/run_tempest.sh",
@@ -39,17 +39,19 @@ func Job(
 				Spec: corev1.PodSpec{
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: instance.RbacResourceName(),
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser: &runAsUser,
+						RunAsGroup: &runAsGroup,
+						FSGroup: &runAsGroup,
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  instance.Name + "-tests-runner",
 							Image: instance.Spec.ContainerImage,
 							Command: []string{
-								"/usr/local/bin/kolla_start",
+								"/usr/local/bin/container-scripts/invoke_tempest",
 							},
 							Args: []string{},
-							SecurityContext: &corev1.SecurityContext{
-								RunAsUser: &runAsUser,
-							},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(),
 						},
