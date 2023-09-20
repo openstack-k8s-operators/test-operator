@@ -5,4 +5,7 @@ metadata:
   namespace: openstack
 spec:
   containerImage: quay.io/podified-antelope-centos9/openstack-tempest:current-podified
-  secret: tempest-secret
+  tempestRun:
+    allowedTests:
+      - tempest.api.identity.v3.*
+    concurrency: 8

@@ -7,6 +7,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 )
 
 // Job - prepare job to run Tempest tests
@@ -18,6 +19,11 @@ func Job(
 	envVars := map[string]env.Setter{}
 	runAsUser := int64(42480)
 	runAsGroup := int64(42480)
+	if instance.Spec.TempestRun.Concurrency != nil {
+		envVars["TEMPEST_CONCURRENCY"] = env.SetValue(strconv.FormatInt(*instance.Spec.TempestRun.Concurrency, 10))
+	} else {
+		envVars["TEMPEST_CONCURRENCY"] = env.SetValue("0")
+	}
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{

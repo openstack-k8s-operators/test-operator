@@ -35,13 +35,6 @@ spec:
           spec:
             description: TempestSpec defines the desired state of Tempest
             properties:
-              allowedTests:
-                default:
-                - tempest.api.identity.v3
-                description: AllowedTests
-                items:
-                  type: string
-                type: array
               backoffLimit:
                 default: 0
                 description: BackoffLimimt allows to define the maximum number of
@@ -116,11 +109,30 @@ spec:
                 description: OpenStackConfigSecret is the name of the Secret containing
                   the secure.yaml
                 type: string
-              skippedTests:
-                description: SkippedTests
-                items:
-                  type: string
-                type: array
+              tempestRun:
+                description: TempestSpec TempestRun parts
+                properties:
+                  allowedTests:
+                    default:
+                    - tempest.api.identity.v3
+                    description: AllowedTests
+                    items:
+                      type: string
+                    type: array
+                  concurrency:
+                    default: 0
+                    description: Concurrency is the Default concurrency
+                    format: int64
+                    type: integer
+                  skippedTests:
+                    description: SkippedTests
+                    items:
+                      type: string
+                    type: array
+                  workerFile:
+                    description: WorkerFile is the detailed concurry spec file
+                    type: string
+                type: object
             required:
             - containerImage
             - openStackConfigMap

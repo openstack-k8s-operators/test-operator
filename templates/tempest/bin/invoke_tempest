@@ -18,9 +18,14 @@ cd "$TEMPEST_DIR"
 # TODO: consider profile support, deployer-input and other args passing
 discover-tempest-config --os-cloud "$OS_CLOUD" --debug --create identity.v3_endpoint_type public
 
+if [ -e $OPERATOR_ETC/worker_file.yaml ]; then
+    WORKER_FILE="--worker-file $OPERATOR_ETC/worker_file.yaml"
+fi
+
 tempest run \
-    --include-list ${OPERATOR_ETC}/include.txt \
-    --exclude-list ${OPERATOR_ETC}/exclude.txt
+    --concurrency "${TEMPEST_CONCURRENCY}" $WORKER_FILE \
+    --include-list "${OPERATOR_ETC}/include.txt" \
+    --exclude-list "${OPERATOR_ETC}/exclude.txt"
 
 # NOTE: We might not want to fail when tests are executed
 RETURN_VALUE=$?
