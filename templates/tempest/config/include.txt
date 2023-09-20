@@ -1,5 +1,3 @@
 {{range $val := .AllowedTests }}
 {{$val}}
-{{ else }}
-tempest.api.identity.v3
 {{end}}

@@ -64,10 +64,7 @@ type TempestSpec struct {
 	ExternalEndpoints []MetalLBConfig `json:"externalEndpoints,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// TempestRegex
-	TempestRegex string `json:"tempestRegex,omitempty"`
-
-	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={"tempest.api.identity.v3"}
 	// AllowedTests
 	AllowedTests []string `json:"allowedTests,omitempty"`
 

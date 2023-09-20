@@ -36,6 +36,8 @@ spec:
             description: TempestSpec defines the desired state of Tempest
             properties:
               allowedTests:
+                default:
+                - tempest.api.identity.v3
                 description: AllowedTests
                 items:
                   type: string
@@ -119,9 +121,6 @@ spec:
                 items:
                   type: string
                 type: array
-              tempestRegex:
-                description: TempestRegex
-                type: string
             required:
             - containerImage
             - openStackConfigMap

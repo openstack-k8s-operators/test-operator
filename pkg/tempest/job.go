@@ -19,14 +19,6 @@ func Job(
 	runAsUser := int64(42480)
 	runAsGroup := int64(42480)
 
-	args := []string{
-		"/var/lib/tempest/run_tempest.sh",
-	}
-	if instance.Spec.TempestRegex != "" {
-		args = append(args, "--regex")
-		args = append(args, instance.Spec.TempestRegex)
-	}
-
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name,
@@ -40,9 +32,9 @@ func Job(
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: instance.RbacResourceName(),
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: &runAsUser,
+						RunAsUser:  &runAsUser,
 						RunAsGroup: &runAsGroup,
-						FSGroup: &runAsGroup,
+						FSGroup:    &runAsGroup,
 					},
 					Containers: []corev1.Container{
 						{
@@ -51,7 +43,7 @@ func Job(
 							Command: []string{
 								"/usr/local/bin/container-scripts/invoke_tempest",
 							},
-							Args: []string{},
+							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(),
 						},
