@@ -35,6 +35,27 @@ type Hash struct {
 	Hash string `json:"hash,omitempty"`
 }
 
+// TempestSpec TempestRun parts
+type TempestRunSpec struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={"tempest.api.identity.v3"}
+	// AllowedTests
+	AllowedTests []string `json:"allowedTests,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// SkippedTests
+	SkippedTests []string `json:"skippedTests,omitempty"`
+
+        // +kubebuilder:validation:Optional
+	// +kubebuilder:default:=0
+        // Concurrency is the Default concurrency
+        Concurrency *int64 `json:"concurrency,omitempty"`
+
+        // +kubebuilder:validation:Optional
+        // WorkerFile is the detailed concurry spec file
+        WorkerFile string `json:"workerFile,omitempty"`
+}
+
 // TempestSpec defines the desired state of Tempest
 type TempestSpec struct {
 	// +kubebuilder:validation:Required
@@ -63,25 +84,17 @@ type TempestSpec struct {
 	// ExternalEndpoints, expose a VIP using a pre-created IPAddressPool
 	ExternalEndpoints []MetalLBConfig `json:"externalEndpoints,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	// TempestRegex
-	TempestRegex string `json:"tempestRegex,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// AllowedTests
-	AllowedTests []string `json:"allowedTests,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// SkippedTests
-	SkippedTests []string `json:"skippedTests,omitempty"`
-
 	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
 	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
+	// +kubebuilder:validation:Optional
+        TempestRun *TempestRunSpec `json:"tempestRun,omitempty"`
+
 	// TODO(slaweq): add more tempest run parameters here
 }
+
 
 // MetalLBConfig to configure the MetalLB loadbalancer service
 type MetalLBConfig struct {

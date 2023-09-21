@@ -385,9 +385,14 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
 
 	templateParameters := make(map[string]interface{})
+	customData := make(map[string]string)
 
-	templateParameters["AllowedTests"] = instance.Spec.AllowedTests
-	templateParameters["SkippedTests"] = instance.Spec.SkippedTests
+	if len(instance.Spec.TempestRun.WorkerFile) != 0 {
+		customData["worker_file.yaml"] = instance.Spec.TempestRun.WorkerFile
+	}
+
+	templateParameters["AllowedTests"] = instance.Spec.TempestRun.AllowedTests
+	templateParameters["SkippedTests"] = instance.Spec.TempestRun.SkippedTests
 
 	cms := []util.Template{
 		// ScriptsConfigMap
@@ -406,6 +411,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
 			ConfigOptions: templateParameters,
+			CustomData:    customData,
 		},
 	}
 	return configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)

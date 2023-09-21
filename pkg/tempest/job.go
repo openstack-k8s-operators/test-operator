@@ -7,6 +7,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 )
 
 // Job - prepare job to run Tempest tests
@@ -18,13 +19,10 @@ func Job(
 	envVars := map[string]env.Setter{}
 	runAsUser := int64(42480)
 	runAsGroup := int64(42480)
-
-	args := []string{
-		"/var/lib/tempest/run_tempest.sh",
-	}
-	if instance.Spec.TempestRegex != "" {
-		args = append(args, "--regex")
-		args = append(args, instance.Spec.TempestRegex)
+	if instance.Spec.TempestRun.Concurrency != nil {
+		envVars["TEMPEST_CONCURRENCY"] = env.SetValue(strconv.FormatInt(*instance.Spec.TempestRun.Concurrency, 10))
+	} else {
+		envVars["TEMPEST_CONCURRENCY"] = env.SetValue("0")
 	}
 
 	job := &batchv1.Job{
@@ -40,9 +38,9 @@ func Job(
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: instance.RbacResourceName(),
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: &runAsUser,
+						RunAsUser:  &runAsUser,
 						RunAsGroup: &runAsGroup,
-						FSGroup: &runAsGroup,
+						FSGroup:    &runAsGroup,
 					},
 					Containers: []corev1.Container{
 						{
@@ -51,7 +49,7 @@ func Job(
 							Command: []string{
 								"/usr/local/bin/container-scripts/invoke_tempest",
 							},
-							Args: []string{},
+							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(),
 						},
