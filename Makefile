@@ -316,3 +316,8 @@ gowork: ## Generate go.work file to support our multi module repository
 operator-lint: gowork ## Runs operator-lint
 	GOBIN=$(LOCALBIN) go install github.com/gibizer/operator-lint@v0.3.0
 	go vet -vettool=$(LOCALBIN)/operator-lint ./... ./api/...
+
+##@ Generate documentation
+.PHONY: docs
+docs: ## Create documentation under docs/build/html
+	docs/build-docs.sh
