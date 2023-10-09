@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-tempest-data
+data:
+  include.txt: |
+    tempest.api.identity.v3

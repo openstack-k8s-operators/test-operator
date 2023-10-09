@@ -86,6 +86,11 @@ todo_include_todos = True
 # html_logo = "images/logo_cifmw_200.png"
 html_theme = "sphinx_material"
 
+html_show_sourcelink = True
+html_sidebars = {
+    "**": ["globaltoc.html", "localtoc.html"]
+}
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
