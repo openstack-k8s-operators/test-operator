@@ -83,14 +83,32 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-# html_theme = "sphinx_rtd_theme"
 # html_logo = "images/logo_cifmw_200.png"
+html_theme = "sphinx_material"
+
+html_show_sourcelink = True
+html_sidebars = {
+    "**": ["globaltoc.html", "localtoc.html"]
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "base_url": "https://github.com/openstack-k8s-operators/test-operator/",
+    "repo_url": "https://github.com/openstack-k8s-operators/test-operator/",
+    "nav_title": "test-operator",
+    "repo_name": "test-operator",
+    "repo_type": "github",
+    "globaltoc_depth": 2,
+    "color_primary": "blue-grey",
+    "color_accent": "cyan",
+    "touch_icon": "images/openstack-logo.png",
+    "theme_color": "#2196f3",
+    "master_doc": False,
+    "table_classes": ["plain"],
+}
 
 # -- Options for HTMLHelp output ------------------------------------------
 
