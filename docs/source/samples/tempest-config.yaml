@@ -5,3 +5,37 @@ metadata:
 data:
   include.txt: |
     tempest.api.identity.v3
+
+  # NOTE: All parameters have default values (use only when you want to override
+  #       the default behaviour)
+  # TEMPESTCONF_CREATE: "true"
+  # TEMPESTCONF_INSECURE: "false"
+  # TEMPESTCONF_COLLECT_TIMING: "false"
+  # TEMPESTCONF_NO_DEFAULT_DEPLOYER: "false"
+  # TEMPESTCONF_DEBUG: "false"
+  # TEMPESTCONF_VERBOSE: "false"
+  # TEMPESTCONF_NO_RNG: "false"
+  # TEMPESTCONF_NON_ADMIN: "false"
+  # TEMPESTCONF_RETRY_IMAGE: "false"
+  # TEMPESTCONF_CONVERT_TO_RAW: "false"
+  # TEMPESTCONF_TIMEOUT: "600"
+  # TEMPESTCONF_OUT: "./etc/tempest.conf"
+  # TEMPESTCONF_DEPLOYER_INPUT: "/etc/test_operator/deployer_input.yaml"
+  # TEMPESTCONF_TEST_ACCOUNTS: "/etc/test_operator/accounts.yaml"
+  # TEMPESTCONF_CREATE_ACCOUNTS_FILE: "/etc/test_operator/accounts.yaml"
+  # TEMPESTCONF_PROFILE: "/etc/test_operator/profile.yaml"
+  # TEMPESTCONF_GENERATE_PROFILE: "/etc/test_operator/profile.yaml"
+  # TEMPESTCONF_IMAGE_DISK_FORMAT: "qcow2"
+  # TEMPESTCONF_IMAGE: "https://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img"
+  # TEMPESTCONF_FLAVOR_MIN_MEM: "128"
+  # TEMPESTCONF_FLAVOR_MIN_DISK: "1"
+  # TEMPESTCONF_NETWORK_ID: ""
+  # TEMPESTCONF_APPEND: |
+  #   section.value1 value1
+  #   section.value1 value2
+  # TEMPESTCONF_REMOVE: |
+  #   section.value1 value1
+  #   section.value1 value2
+  # TEMPESTCONF_OVERRIDES: |
+  #  section.value1 value1
+  #  section.value1 value2

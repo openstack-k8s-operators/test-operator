@@ -41,6 +41,9 @@ spec:
       # configuration and run tempest yourself.
       # command: ["/usr/bin/dumb-init", "sleep", "infinity"]
       restartPolicy: Never
+      envFrom:
+        - configMapRef:
+            name: my-tempest-data
       volumeMounts:
         - mountPath: "/var/lib/tempest/external_files/"
           name: tempest-workdir

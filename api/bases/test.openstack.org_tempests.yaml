@@ -120,7 +120,7 @@ spec:
                       type: string
                     type: array
                   concurrency:
-                    default: 0
+                    default: -1
                     description: Concurrency is the Default concurrency
                     format: int64
                     type: integer
@@ -132,6 +132,113 @@ spec:
                   workerFile:
                     description: WorkerFile is the detailed concurry spec file
                     type: string
+                type: object
+              tempestconfRun:
+                description: TempestSpec PythonTempestconf parts
+                properties:
+                  append:
+                    default: ""
+                    description: Append values to tempest.conf
+                    type: string
+                  collectTiming:
+                    default: false
+                    description: Collect per-API call timing information.
+                    type: boolean
+                  convertToRaw:
+                    default: false
+                    description: Convert images to raw format before uploading.
+                    type: boolean
+                  create:
+                    default: true
+                    description: Create Tempest resources
+                    type: boolean
+                  createAccountsFile:
+                    default: ""
+                    description: Generate Tempest accounts file.
+                    type: string
+                  debug:
+                    default: false
+                    description: Print debugging information.
+                    type: boolean
+                  deployerInput:
+                    default: ""
+                    description: Path to deployer file
+                    type: string
+                  flavorMinDisk:
+                    default: -1
+                    description: Specify minimum disk size for new flavors
+                    format: int64
+                    type: integer
+                  flavorMinMem:
+                    default: -1
+                    description: Specify minimum memory for new flavors
+                    format: int64
+                    type: integer
+                  generateProfile:
+                    default: ""
+                    description: Generate a sample profile.yaml file.
+                    type: string
+                  image:
+                    default: ""
+                    description: An image name/path/url to be uploaded to glance if
+                      it’s not already there.
+                    type: string
+                  imageDiskFormat:
+                    default: ""
+                    description: A format of an image to be uploaded to glance.
+                    type: string
+                  insecure:
+                    default: false
+                    description: Explicitly allow client to perform “insecure” TLS
+                      (https) requests.
+                    type: boolean
+                  networkID:
+                    default: ""
+                    description: Specify which network with external connectivity
+                      should be used by the test.
+                    type: string
+                  noDefaultDeployer:
+                    default: false
+                    description: Do not check for the default deployer input in
+                    type: boolean
+                  nonAdmin:
+                    default: false
+                    description: Simulate non-admin credentials.
+                    type: boolean
+                  out:
+                    default: ""
+                    description: Output file
+                    type: string
+                  overrides:
+                    default: ""
+                    description: Override options
+                    type: string
+                  profile:
+                    default: ""
+                    description: python-tempestconf’s profile.yaml file
+                    type: string
+                  remove:
+                    default: ""
+                    description: Append values to tempest.conf
+                    type: string
+                  retryImage:
+                    default: false
+                    description: Allow tempestconf to retry download an image, in
+                      case of failure.
+                    type: boolean
+                  testAccounts:
+                    default: ""
+                    description: Tempest accounts.yaml file
+                    type: string
+                  timeout:
+                    default: -1
+                    description: Set request timeout (in seconds).
+                    format: int64
+                    type: integer
+                  verbose:
+                    default: false
+                    description: Print more information about the execution.
+                    type: boolean
                 type: object
             required:
             - containerImage

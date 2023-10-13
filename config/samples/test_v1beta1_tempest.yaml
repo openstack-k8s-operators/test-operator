@@ -1,3 +1,4 @@
+---
 apiVersion: test.openstack.org/v1beta1
 kind: Tempest
 metadata:
@@ -9,3 +10,54 @@ spec:
     allowedTests:
       - tempest.api.identity.v3.*
     concurrency: 8
+  pythonTempestconfRun:
+    # NOTE: All parameters have default values (use only when you want to override
+    #       the default behaviour)
+    # create: true
+    # collectTiming: false
+    # insecure: false
+    # noDefaultDeployer: false
+    # debug: false
+    # verbose: false
+    # nonAdmin: false
+    # retryImage: false
+    # convertToRaw: false
+    # out: ./etc/tempest.conf
+    # flavorMinMem: 128
+    # flavorMinDisk: 1
+    # timeout: 600
+    # imageDiskFormat: qcow2
+    # image: https://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
+    # The following text will be mounted to the tempest pod
+    # as deployer_input.yaml
+    # deployerInput: |
+    #  value1: exmaple_value2
+    #  value2: example_value2
+
+    # The following text will be mounted to the tempest pod
+    # as /etc/test_operator/deployer_input.yaml
+    # testAccounts: |
+    #  - username: 'multi_role_user'
+    #    tenant_name: 'test_tenant_42'
+    #    password: 'test_password'
+    #     roles:
+    #       - 'fun_role'
+    #       - 'not_an_admin'
+    #       - 'an_admin'
+
+    # The following text will be mounted to the tempest pod
+    # as /etc/test_operator/profile.yaml
+    # testAccounts: |
+
+    # createAccountsFile: /path/to/accounts.yaml
+    # generateProfile: /path/to/profile.yaml
+    # networkID:
+    # append: |  # <-- Use | to preserve \n
+    #   section1.name1 value1
+    #   section1.name1 value2
+    # remove: |  # <-- Use | to preserve \n
+    #   section1.name1 value1
+    #   section1.name1 value2
+    # overrides: | # <-- Use | to preserve \n
+    #  overrides_section1.name1 value1
+    #  overrides_section1.name1 value2
