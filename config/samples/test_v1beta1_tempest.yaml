@@ -7,10 +7,23 @@ metadata:
 spec:
   containerImage: quay.io/podified-antelope-centos9/openstack-tempest:current-podified
   tempestRun:
-    allowedTests:
-      - tempest.api.identity.v3.*
+    # NOTE: All parameters have default values (use only when you want to override
+    #       the default behaviour)
+    includeList: | # <-- Use | to preserve \n
+      tempest.api.identity.v3.*
     concurrency: 8
-  pythonTempestconfRun:
+    # excludeList:
+    # - tempest.api.identity.v3.*
+    # workerFile: | # <-- use | to preserver \n
+    #   - worker:
+    #     - tempest.api.*
+    #     - neutron_tempest_tests
+    #   - worker:
+    #     - tempest.scenario.*
+    # smoke: false
+    # serial: false
+    # parallel: true
+  tempestconfRun:
     # NOTE: All parameters have default values (use only when you want to override
     #       the default behaviour)
     # create: true

@@ -47,14 +47,14 @@ spec:
       volumeMounts:
         - mountPath: "/var/lib/tempest/external_files/"
           name: tempest-workdir
+        - mountPath: "/var/lib/tempest/include.txt"
+          name: tempest-config
+          subPath: include.txt
         - mountPath: "/etc/openstack"
           name: pre-install
         - mountPath: "/etc/openstack/clouds.yaml"
           name: clouds-config
           subPath: clouds.yaml
-        - mountPath: "/var/lib/tempest/external_files/include.txt"
-          name: tempest-config
-          subPath: include.txt
         - mountPath: "/etc/openstack/secure.yaml"
           name: cloud-passwd
           subPath: secure.yaml

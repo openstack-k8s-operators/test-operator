@@ -38,13 +38,14 @@ type Hash struct {
 // TempestSpec TempestRun parts
 type TempestRunSpec struct {
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={"tempest.api.identity.v3"}
-	// AllowedTests
-	AllowedTests []string `json:"allowedTests,omitempty"`
+	// +kubebuilder:default="tempest.api.identity.v3"
+	// IncludeList
+	IncludeList string `json:"includeList,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// SkippedTests
-	SkippedTests []string `json:"skippedTests,omitempty"`
+	// +kubebuilder:default=""
+	// ExcludeList
+	ExcludeList string `json:"excludeList,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=-1
@@ -52,7 +53,23 @@ type TempestRunSpec struct {
 	Concurrency int64 `json:"concurrency,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// WorkerFile is the detailed concurry spec file
+	// +kubebuilder:default:=false
+	// Smoke tests
+	Smoke bool `json:"smoke,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=true
+	// Run tests in parallel
+	Parallel bool `json:"parallel,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	// Serial run
+	Serial bool `json:"serial,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=""
+	// WorkerFile is the detailed concurrency spec file
 	WorkerFile string `json:"workerFile,omitempty"`
 }
 
@@ -169,7 +186,7 @@ type TempestconfRunSpec struct {
 	Remove string `json:"remove"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=""
+	// +kubebuilder:default="identity.v3_endpoint_type public"
 	// Override options
 	Overrides string `json:"overrides"`
 

@@ -5,7 +5,29 @@ metadata:
 data:
   include.txt: |
     tempest.api.identity.v3
+  # exclude.txt: |
+  #  tempest.api.identity.v3
+  # worker_file.yaml: |
+  #   - worker:
+  #     - tempest.api.*
+  #     - neutron_tempest_tests
+  #   - worker:
+  #    - tempest.scenario.*
 
+  # TEMPEST env variables:
+  # ----------------------
+  # NOTE: All parameters have default values (use only when you want to override
+  #       the default behaviour)
+  TEMPEST_INCLUDE_LIST: "/var/lib/tempest/include.txt"
+  # TEMPEST_EXCLUDE_LIST: "/var/lib/tempest/exclude.txt"
+  # TEMPEST_WORKER_FILE: "/var/lib/tempest/worker_file.yaml"
+  # TEMPEST_CONCURRENCY: 8
+  # TEMPEST_SMOKE: true
+  # TEMPEST_PARALLEL: true
+  # TEMPEST_SERIAL: true
+
+  # TEMPESTCONF env variables:
+  # --------------------------
   # NOTE: All parameters have default values (use only when you want to override
   #       the default behaviour)
   # TEMPESTCONF_CREATE: "true"

@@ -22,12 +22,6 @@ import (
 	"strconv"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
@@ -44,6 +38,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // TempestReconciler reconciles a Tempest object
@@ -391,61 +390,96 @@ func getDefaultInt(variable int64) string {
 	}
 }
 
-// generateServiceConfigMaps - create create configmaps which hold scripts and service configuration
-// TODO add DefaultConfigOverwrite
-func (r *TempestReconciler) generateServiceConfigMaps(
-	ctx context.Context,
-	h *helper.Helper,
-	instance *testv1beta1.Tempest,
-) error {
-	// Create/update configmaps from templates
-	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
+func setTempestConfigVars(envVars map[string]string,
+	customData map[string]string,
+	tempestRun *testv1beta1.TempestRunSpec) {
 
-	templateParameters := make(map[string]interface{})
-	customData := make(map[string]string)
-	envVars := make(map[string]string)
-
-	/* Tempest */
-	if len(instance.Spec.TempestRun.WorkerFile) != 0 {
-		customData["worker_file.yaml"] = instance.Spec.TempestRun.WorkerFile
+	testOperatorDir := "/etc/test_operator/"
+	if tempestRun == nil {
+		includeListFile := "include.txt"
+		customData[includeListFile] = "tempest.api.identity.v3"
+		envVars["TEMPEST_INCLUDE_LIST"] = testOperatorDir + includeListFile
+		envVars["TEMPEST_PARALLEL"] = "true"
+		return
 	}
 
-	templateParameters["AllowedTests"] = instance.Spec.TempestRun.AllowedTests
-	templateParameters["SkippedTests"] = instance.Spec.TempestRun.SkippedTests
-
-	/* tempestconf - start */
 	// Files
-	testOperatorDir := "./etc/test_operator/"
-	if len(instance.Spec.TempestconfRun.DeployerInput) != 0 {
+	if len(tempestRun.WorkerFile) != 0 {
+		workerFile := "worker_file.yaml"
+		customData[workerFile] = tempestRun.WorkerFile
+		envVars["TEMPEST_WORKER_FILE"] = testOperatorDir + workerFile
+	}
+
+	if len(tempestRun.IncludeList) != 0 {
+		includeListFile := "include.txt"
+		customData[includeListFile] = tempestRun.IncludeList
+		envVars["TEMPEST_INCLUDE_LIST"] = testOperatorDir + includeListFile
+	}
+
+	if len(tempestRun.ExcludeList) != 0 {
+		excludeListFile := "exclude.txt"
+		customData[excludeListFile] = tempestRun.ExcludeList
+		envVars["TEMPEST_EXCLUDE_LIST"] = testOperatorDir + excludeListFile
+	}
+
+	// Bool
+	tempestBoolEnvVars := make(map[string]bool)
+	tempestBoolEnvVars = map[string]bool{
+		"TEMPEST_SERIAL":   tempestRun.Serial,
+		"TEMPEST_PARALLEL": tempestRun.Parallel,
+		"TEMPEST_SMOKE":    tempestRun.Smoke,
+	}
+
+	for key, value := range tempestBoolEnvVars {
+		envVars[key] = getDefaultBool(value)
+	}
+
+	// Int
+	envVars["TEMPEST_CONCURRENCY"] = getDefaultInt(tempestRun.Concurrency)
+}
+
+func setTempestconfConfigVars(envVars map[string]string,
+	customData map[string]string,
+	tempestconfRun *testv1beta1.TempestconfRunSpec) {
+
+	if tempestconfRun == nil {
+		envVars["TEMPESTCONF_CREATE"] = "true"
+		envVars["TEMPESTCONF_OVERRIDES"] = "identity.v3_endpoint_type public"
+		return
+	}
+
+	// Files
+	testOperatorDir := "/etc/test_operator/"
+	if len(tempestconfRun.DeployerInput) != 0 {
 		deployerInputFile := "deployer_input.yaml"
-		customData[deployerInputFile] = instance.Spec.TempestconfRun.DeployerInput
+		customData[deployerInputFile] = tempestconfRun.DeployerInput
 		envVars["TEMPESTCONF_DEPLOYER_INPUT"] = testOperatorDir + deployerInputFile
 	}
 
-	if len(instance.Spec.TempestconfRun.TestAccounts) != 0 {
+	if len(tempestconfRun.TestAccounts) != 0 {
 		accountsFile := "accounts.yaml"
-		customData[accountsFile] = instance.Spec.TempestconfRun.TestAccounts
+		customData[accountsFile] = tempestconfRun.TestAccounts
 		envVars["TEMPESTCONF_TEST_ACCOUNTS"] = testOperatorDir + accountsFile
 	}
 
-	if len(instance.Spec.TempestconfRun.Profile) != 0 {
+	if len(tempestconfRun.Profile) != 0 {
 		profileFile := "profile.yaml"
-		customData[profileFile] = instance.Spec.TempestconfRun.Profile
+		customData[profileFile] = tempestconfRun.Profile
 		envVars["TEMPESTCONF_PROFILE"] = testOperatorDir + profileFile
 	}
 
 	// Bool
 	tempestconfBoolEnvVars := make(map[string]bool)
 	tempestconfBoolEnvVars = map[string]bool{
-		"TEMPESTCONF_CREATE":              instance.Spec.TempestconfRun.Create,
-		"TEMPESTCONF_COLLECT_TIMING":      instance.Spec.TempestconfRun.CollectTiming,
-		"TEMPESTCONF_INSECURE":            instance.Spec.TempestconfRun.Insecure,
-		"TEMPESTCONF_NO_DEFAULT_DEPLOYER": instance.Spec.TempestconfRun.NoDefaultDeployer,
-		"TEMPESTCONF_DEBUG":               instance.Spec.TempestconfRun.Debug,
-		"TEMPESTCONF_VERBOSE":             instance.Spec.TempestconfRun.Verbose,
-		"TEMPESTCONF_NON_ADMIN":           instance.Spec.TempestconfRun.NonAdmin,
-		"TEMPESTCONF_RETRY_IMAGE":         instance.Spec.TempestconfRun.RetryImage,
-		"TEMPESTCONF_CONVERT_TO_RAW":      instance.Spec.TempestconfRun.ConvertToRaw,
+		"TEMPESTCONF_CREATE":              tempestconfRun.Create,
+		"TEMPESTCONF_COLLECT_TIMING":      tempestconfRun.CollectTiming,
+		"TEMPESTCONF_INSECURE":            tempestconfRun.Insecure,
+		"TEMPESTCONF_NO_DEFAULT_DEPLOYER": tempestconfRun.NoDefaultDeployer,
+		"TEMPESTCONF_DEBUG":               tempestconfRun.Debug,
+		"TEMPESTCONF_VERBOSE":             tempestconfRun.Verbose,
+		"TEMPESTCONF_NON_ADMIN":           tempestconfRun.NonAdmin,
+		"TEMPESTCONF_RETRY_IMAGE":         tempestconfRun.RetryImage,
+		"TEMPESTCONF_CONVERT_TO_RAW":      tempestconfRun.ConvertToRaw,
 	}
 
 	for key, value := range tempestconfBoolEnvVars {
@@ -455,9 +489,9 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	// Int
 	tempestconfIntEnvVars := make(map[string]int64)
 	tempestconfIntEnvVars = map[string]int64{
-		"TEMPESTCONF_TIMEOUT":         instance.Spec.TempestconfRun.Timeout,
-		"TEMPESTCONF_FLAVOR_MIN_MEM":  instance.Spec.TempestconfRun.FlavorMinMem,
-		"TEMPESTCONF_FLAVOR_MIN_DISK": instance.Spec.TempestconfRun.FlavorMinDisk,
+		"TEMPESTCONF_TIMEOUT":         tempestconfRun.Timeout,
+		"TEMPESTCONF_FLAVOR_MIN_MEM":  tempestconfRun.FlavorMinMem,
+		"TEMPESTCONF_FLAVOR_MIN_DISK": tempestconfRun.FlavorMinDisk,
 	}
 
 	for key, value := range tempestconfIntEnvVars {
@@ -465,15 +499,33 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	}
 
 	// String
-	envVars["TEMPESTCONF_OUT"] = instance.Spec.TempestconfRun.Out
-	envVars["TEMPESTCONF_CREATE_ACCOUNTS_FILE"] = instance.Spec.TempestconfRun.CreateAccountsFile
-	envVars["TEMPESTCONF_GENERATE_PROFILE"] = instance.Spec.TempestconfRun.GenerateProfile
-	envVars["TEMPESTCONF_IMAGE_DISK_FORMAT"] = instance.Spec.TempestconfRun.ImageDiskFormat
-	envVars["TEMPESTCONF_IMAGE"] = instance.Spec.TempestconfRun.Image
-	envVars["TEMPESTCONF_NETWORK_ID"] = instance.Spec.TempestconfRun.NetworkID
-	envVars["TEMPESTCONF_APPEND"] = instance.Spec.TempestconfRun.Append
-	envVars["TEMPESTCONF_REMOVE"] = instance.Spec.TempestconfRun.Remove
-	envVars["TEMPESTCONF_OVERRIDES"] = instance.Spec.TempestconfRun.Overrides
+	envVars["TEMPESTCONF_OUT"] = tempestconfRun.Out
+	envVars["TEMPESTCONF_CREATE_ACCOUNTS_FILE"] = tempestconfRun.CreateAccountsFile
+	envVars["TEMPESTCONF_GENERATE_PROFILE"] = tempestconfRun.GenerateProfile
+	envVars["TEMPESTCONF_IMAGE_DISK_FORMAT"] = tempestconfRun.ImageDiskFormat
+	envVars["TEMPESTCONF_IMAGE"] = tempestconfRun.Image
+	envVars["TEMPESTCONF_NETWORK_ID"] = tempestconfRun.NetworkID
+	envVars["TEMPESTCONF_APPEND"] = tempestconfRun.Append
+	envVars["TEMPESTCONF_REMOVE"] = tempestconfRun.Remove
+	envVars["TEMPESTCONF_OVERRIDES"] = tempestconfRun.Overrides
+}
+
+// generateServiceConfigMaps - create create configmaps which hold scripts and service configuration
+// TODO add DefaultConfigOverwrite
+func (r *TempestReconciler) generateServiceConfigMaps(
+	ctx context.Context,
+	h *helper.Helper,
+	instance *testv1beta1.Tempest,
+) error {
+	// Create/update configmaps from template
+	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
+
+	templateParameters := make(map[string]interface{})
+	customData := make(map[string]string)
+	envVars := make(map[string]string)
+
+	setTempestConfigVars(envVars, customData, instance.Spec.TempestRun)
+	setTempestconfConfigVars(envVars, customData, instance.Spec.TempestconfRun)
 
 	/* Tempestconf - end */
 	cms := []util.Template{
@@ -489,7 +541,6 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 		{
 			Name:          fmt.Sprintf("%s-config-data", instance.Name),
 			Namespace:     instance.Namespace,
-			Type:          util.TemplateTypeConfig,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
 			ConfigOptions: templateParameters,
@@ -499,7 +550,6 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 		{
 			Name:          fmt.Sprintf("%s-env-vars", instance.Name),
 			Namespace:     instance.Namespace,
-			Type:          util.TemplateTypeConfig,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
 			ConfigOptions: templateParameters,

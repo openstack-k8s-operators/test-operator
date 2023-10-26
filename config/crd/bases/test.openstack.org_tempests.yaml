@@ -112,25 +112,34 @@ spec:
               tempestRun:
                 description: TempestSpec TempestRun parts
                 properties:
-                  allowedTests:
-                    default:
-                    - tempest.api.identity.v3
-                    description: AllowedTests
-                    items:
-                      type: string
-                    type: array
                   concurrency:
                     default: -1
                     description: Concurrency is the Default concurrency
                     format: int64
                     type: integer
-                  skippedTests:
-                    description: SkippedTests
-                    items:
-                      type: string
-                    type: array
+                  excludeList:
+                    default: ""
+                    description: ExcludeList
+                    type: string
+                  includeList:
+                    default: tempest.api.identity.v3
+                    description: IncludeList
+                    type: string
+                  parallel:
+                    default: true
+                    description: Run tests in parallel
+                    type: boolean
+                  serial:
+                    default: false
+                    description: Serial run
+                    type: boolean
+                  smoke:
+                    default: false
+                    description: Smoke tests
+                    type: boolean
                   workerFile:
-                    description: WorkerFile is the detailed concurry spec file
+                    default: ""
+                    description: WorkerFile is the detailed concurrency spec file
                     type: string
                 type: object
               tempestconfRun:
@@ -210,7 +219,7 @@ spec:
                     description: Output file
                     type: string
                   overrides:
-                    default: ""
+                    default: identity.v3_endpoint_type public
                     description: Override options
                     type: string
                   profile:
