@@ -4,7 +4,7 @@ set -x
 TEMPEST_DIR=$HOME/openshift
 OPERATOR_ETC=/etc/test_operator
 # NOTE: might be backed with a PV
-OUTPUT_PATH=$HOME/output
+OUTPUT_PATH=${TEMPEST_OUTPUTDIR:-$HOME/output}
 
 cd "$HOME"
 

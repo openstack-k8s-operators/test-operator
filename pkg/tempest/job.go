@@ -25,6 +25,11 @@ func Job(
 		envVars["TEMPEST_CONCURRENCY"] = env.SetValue("0")
 	}
 
+	// NOTE: validate also having pv ?
+	// When having PV the path also should work when the home dir is different
+	if instance.Spec.PersistentVolumePath != "" {
+		envVars["TEMPEST_OUTPUTDIR"] = env.SetValue("/var/lib/tempest/output" + instance.Spec.PersistentVolumePath)
+	}
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name,
@@ -51,7 +56,7 @@ func Job(
 							},
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts: GetVolumeMounts(),
+							VolumeMounts: GetVolumeMounts(instance),
 						},
 					},
 					Volumes: GetVolumes(instance),

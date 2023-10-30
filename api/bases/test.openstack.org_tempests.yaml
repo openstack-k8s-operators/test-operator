@@ -35,6 +35,9 @@ spec:
           spec:
             description: TempestSpec defines the desired state of Tempest
             properties:
+              PersistentVolumePath:
+                description: subdirectory on the volume to use
+                type: string
               backoffLimit:
                 default: 0
                 description: BackoffLimimt allows to define the maximum number of
@@ -109,6 +112,23 @@ spec:
                 description: OpenStackConfigSecret is the name of the Secret containing
                   the secure.yaml
                 type: string
+              persistentVolumeClaim:
+                description: persistentVolumeClaimVolumeSource represents a reference
+                  to a PersistentVolumeClaim in the same namespace. Usable for storing
+                  test results.
+                properties:
+                  claimName:
+                    description: 'claimName is the name of a PersistentVolumeClaim
+                      in the same namespace as the pod using this volume. More info:
+                      https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                    type: string
+                  readOnly:
+                    description: readOnly Will force the ReadOnly setting in VolumeMounts.
+                      Default false.
+                    type: boolean
+                required:
+                - claimName
+                type: object
               tempestRun:
                 description: TempestSpec TempestRun parts
                 properties:

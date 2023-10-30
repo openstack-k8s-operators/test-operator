@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/endpoint"
+        corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -61,6 +62,15 @@ type TempestSpec struct {
 	// +kubebuilder:validation:Required
 	// Tempest Container Image URL (will be set to environmental default if empty)
 	ContainerImage string `json:"containerImage"`
+
+	// +kubebuilder:validation:Optional
+	// persistentVolumeClaimVolumeSource represents a reference to a
+	// PersistentVolumeClaim in the same namespace. Usable for storing test results.
+        PersistentVolumeClaim *corev1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim,omitempty"`
+
+	// +kubebuilder:validation:Optional
+        // subdirectory on the volume to use
+        PersistentVolumePath string `json:"PersistentVolumePath"`
 
 	// +kubebuilder:validation:Optional
 	// NodeSelector to target subset of worker nodes running this service

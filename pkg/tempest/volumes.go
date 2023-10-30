@@ -12,7 +12,13 @@ func GetVolumes(instance *testv1beta1.Tempest) []corev1.Volume {
 	var scriptsVolumeConfidentialMode int32 = 0420
 
 	//source_type := corev1.HostPathDirectoryOrCreate
-	return []corev1.Volume{
+	volumes := []corev1.Volume{
+		corev1.Volume{
+			Name: "results",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: instance.Spec.PersistentVolumeClaim,
+			},
+		},
 		{
 			Name: "etc-machine-id",
 			VolumeSource: corev1.VolumeSource{
@@ -72,12 +78,22 @@ func GetVolumes(instance *testv1beta1.Tempest) []corev1.Volume {
 			},
 		},
 	}
+	if instance.Spec.PersistentVolumeClaim != nil {
+		return volumes
+	} else {
+		return volumes[1:]
+	}
 
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+func GetVolumeMounts(instance *testv1beta1.Tempest) []corev1.VolumeMount {
+	volumes := []corev1.VolumeMount{
+		{
+			Name:      "results",
+			MountPath: "/var/lib/tempest/output",
+			ReadOnly:  false,
+		},
 		{
 			Name:      "etc-machine-id",
 			MountPath: "/etc/machine-id",
@@ -110,5 +126,10 @@ func GetVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  false,
 			SubPath:   "secure.yaml",
 		},
+	}
+	if instance.Spec.PersistentVolumeClaim != nil {
+		return volumes
+	} else {
+		return volumes[1:]
 	}
 }
