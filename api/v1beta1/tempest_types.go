@@ -35,6 +35,29 @@ type Hash struct {
 	Hash string `json:"hash,omitempty"`
 }
 
+
+type ExternalPluginType struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// URL that points to a git repository containing
+	// the external plugin.
+	Repository string `json:"repository,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// URL that points to a repository that contains a change
+	// that should be applied to the repository defined by Repository
+	// (ChangeRefspec must be defined as well).
+	ChangeRepository string `json:"changeRepository,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// ChangeRefspec specifies which change the remote repository
+	// should be checked out to (ChangeRepository must be defined
+	// as well).
+	ChangeRefspec string `json:"changeRefspec,omitempty"`
+}
+
 // TempestSpec TempestRun parts
 type TempestRunSpec struct {
 	// +kubebuilder:validation:Optional
@@ -71,6 +94,13 @@ type TempestRunSpec struct {
 	// +kubebuilder:default:=""
 	// WorkerFile is the detailed concurrency spec file
 	WorkerFile string `json:"workerFile,omitempty"`
+
+        // +kubebuilder:validation:Optional
+        // ExternalPlugin contains information about plugin
+        // that should be installed within the tempest container.
+        // If this option is specified then only tests that are part of
+        // the external plugin can be executed.
+        ExternalPlugin []ExternalPluginType `json:"externalPlugin,omitempty"`
 }
 
 // TempestSpec PythonTempestconf parts
