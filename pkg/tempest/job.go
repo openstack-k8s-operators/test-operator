@@ -7,7 +7,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
 )
 
 // Job - prepare job to run Tempest tests
@@ -19,11 +18,6 @@ func Job(
 	envVars := map[string]env.Setter{}
 	runAsUser := int64(42480)
 	runAsGroup := int64(42480)
-	if instance.Spec.TempestRun.Concurrency != nil {
-		envVars["TEMPEST_CONCURRENCY"] = env.SetValue(strconv.FormatInt(*instance.Spec.TempestRun.Concurrency, 10))
-	} else {
-		envVars["TEMPEST_CONCURRENCY"] = env.SetValue("0")
-	}
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,14 +38,27 @@ func Job(
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  instance.Name + "-tests-runner",
-							Image: instance.Spec.ContainerImage,
-							Command: []string{
-								"/usr/local/bin/container-scripts/invoke_tempest",
-							},
+							Name:         instance.Name + "-tests-runner",
+							Image:        instance.Spec.ContainerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(),
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: instance.Name + "-config-data",
+										},
+									},
+								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: instance.Name + "-env-vars",
+										},
+									},
+								},
+							},
 						},
 					},
 					Volumes: GetVolumes(instance),

@@ -38,22 +38,162 @@ type Hash struct {
 // TempestSpec TempestRun parts
 type TempestRunSpec struct {
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={"tempest.api.identity.v3"}
-	// AllowedTests
-	AllowedTests []string `json:"allowedTests,omitempty"`
+	// +kubebuilder:default="tempest.api.identity.v3"
+	// IncludeList
+	IncludeList string `json:"includeList,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// SkippedTests
-	SkippedTests []string `json:"skippedTests,omitempty"`
+	// +kubebuilder:default=""
+	// ExcludeList
+	ExcludeList string `json:"excludeList,omitempty"`
 
-        // +kubebuilder:validation:Optional
-	// +kubebuilder:default:=0
-        // Concurrency is the Default concurrency
-        Concurrency *int64 `json:"concurrency,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=-1
+	// Concurrency is the Default concurrency
+	Concurrency int64 `json:"concurrency,omitempty"`
 
-        // +kubebuilder:validation:Optional
-        // WorkerFile is the detailed concurry spec file
-        WorkerFile string `json:"workerFile,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	// Smoke tests
+	Smoke bool `json:"smoke,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=true
+	// Run tests in parallel
+	Parallel bool `json:"parallel,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	// Serial run
+	Serial bool `json:"serial,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=""
+	// WorkerFile is the detailed concurrency spec file
+	WorkerFile string `json:"workerFile,omitempty"`
+}
+
+// TempestSpec PythonTempestconf parts
+type TempestconfRunSpec struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=true
+	// Create Tempest resources
+	Create bool `json:"create"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Collect per-API call timing information.
+	CollectTiming bool `json:"collectTiming"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Explicitly allow client to perform “insecure” TLS (https) requests.
+	Insecure bool `json:"insecure"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Do not check for the default deployer input in
+	NoDefaultDeployer bool `json:"noDefaultDeployer"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Print debugging information.
+	Debug bool `json:"debug"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Print more information about the execution.
+	Verbose bool `json:"verbose"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Simulate non-admin credentials.
+	NonAdmin bool `json:"nonAdmin"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Allow tempestconf to retry download an image, in case of failure.
+	RetryImage bool `json:"retryImage"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Convert images to raw format before uploading.
+	ConvertToRaw bool `json:"convertToRaw"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Output file
+	Out string `json:"out"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Path to deployer file
+	DeployerInput string `json:"deployerInput"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Tempest accounts.yaml file
+	TestAccounts string `json:"testAccounts"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Generate Tempest accounts file.
+	CreateAccountsFile string `json:"createAccountsFile"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// python-tempestconf’s profile.yaml file
+	Profile string `json:"profile"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Generate a sample profile.yaml file.
+	GenerateProfile string `json:"generateProfile"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// A format of an image to be uploaded to glance.
+	ImageDiskFormat string `json:"imageDiskFormat"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// An image name/path/url to be uploaded to glance if it’s not already there.
+	Image string `json:"image"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=-1
+	// Specify minimum memory for new flavors
+	FlavorMinMem int64 `json:"flavorMinMem"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=-1
+	// Specify minimum disk size for new flavors
+	FlavorMinDisk int64 `json:"flavorMinDisk"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Specify which network with external connectivity should be used by the test.
+	NetworkID string `json:"networkID"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Append values to tempest.conf
+	Append string `json:"append"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=""
+	// Append values to tempest.conf
+	Remove string `json:"remove"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="identity.v3_endpoint_type public"
+	// Override options
+	Overrides string `json:"overrides"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=-1
+	// Set request timeout (in seconds).
+	Timeout int64 `json:"timeout"`
 }
 
 // TempestSpec defines the desired state of Tempest
@@ -66,15 +206,15 @@ type TempestSpec struct {
 	// NodeSelector to target subset of worker nodes running this service
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-        // +kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default=openstack-config
-        // OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
-        OpenStackConfigMap string `json:"openStackConfigMap"`
+	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
+	OpenStackConfigMap string `json:"openStackConfigMap"`
 
-        // +kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default=openstack-config-secret
-        // OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-        OpenStackConfigSecret string `json:"openStackConfigSecret"`
+	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
+	OpenStackConfigSecret string `json:"openStackConfigSecret"`
 
 	// +kubebuilder:validation:Optional
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose the services to the given network
@@ -90,11 +230,13 @@ type TempestSpec struct {
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
 	// +kubebuilder:validation:Optional
-        TempestRun *TempestRunSpec `json:"tempestRun,omitempty"`
+	TempestRun *TempestRunSpec `json:"tempestRun,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	TempestconfRun *TempestconfRunSpec `json:"tempestconfRun,omitempty"`
 
 	// TODO(slaweq): add more tempest run parameters here
 }
-
 
 // MetalLBConfig to configure the MetalLB loadbalancer service
 type MetalLBConfig struct {
