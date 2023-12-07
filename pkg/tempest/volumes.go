@@ -6,13 +6,14 @@ import (
 )
 
 // GetVolumes -
-func GetVolumes(instance *testv1beta1.Tempest) []corev1.Volume {
+func GetVolumes(mountCerts bool, instance *testv1beta1.Tempest) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
+	var tlsCertificateMode int32 = 0444
 
 	//source_type := corev1.HostPathDirectoryOrCreate
-	return []corev1.Volume{
+	volumes := []corev1.Volume{
 		{
 			Name: "etc-machine-id",
 			VolumeSource: corev1.VolumeSource{
@@ -66,18 +67,33 @@ func GetVolumes(instance *testv1beta1.Tempest) []corev1.Volume {
 			Name: "openstack-config-secret",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: &scriptsVolumeConfidentialMode,
+					DefaultMode: &tlsCertificateMode,
 					SecretName:  "openstack-config-secret",
 				},
 			},
 		},
 	}
 
+	if mountCerts {
+		caCertsVolume := corev1.Volume{
+			Name: "ca-certs",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &scriptsVolumeConfidentialMode,
+					SecretName:  "combined-ca-bundle",
+				},
+			},
+		}
+
+		volumes = append(volumes, caCertsVolume)
+	}
+
+	return volumes
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
+	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "etc-machine-id",
 			MountPath: "/etc/machine-id",
@@ -111,4 +127,17 @@ func GetVolumeMounts() []corev1.VolumeMount {
 			SubPath:   "secure.yaml",
 		},
 	}
+
+	if mountCerts {
+		caCertVolumeMount := corev1.VolumeMount{
+			Name:      "ca-certs",
+			MountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+			ReadOnly:  true,
+			SubPath:   "tls-ca-bundle.pem",
+		}
+
+		volumeMounts = append(volumeMounts, caCertVolumeMount)
+	}
+
+	return volumeMounts
 }

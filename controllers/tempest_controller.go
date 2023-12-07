@@ -68,6 +68,16 @@ func (r *TempestReconciler) GetScheme() *runtime.Scheme {
 	return r.Scheme
 }
 
+func SecretExists(r *TempestReconciler, ctx context.Context, instance *testv1beta1.Tempest, SecretName string) bool {
+	secret := &corev1.Secret{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: instance.Namespace, Name: SecretName}, secret)
+	if err != nil && k8s_errors.IsNotFound(err) {
+		return false
+	} else {
+		return true
+	}
+}
+
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests/finalizers,verbs=update
@@ -340,8 +350,9 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		return ctrl.Result{}, err
 	}
 
+	mountCerts := SecretExists(r, ctx, instance, "combined-ca-bundle")
 	// Define a new Job object
-	jobDef := tempest.Job(instance, serviceLabels)
+	jobDef := tempest.Job(instance, serviceLabels, mountCerts)
 	tempestJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,
