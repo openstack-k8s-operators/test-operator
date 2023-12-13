@@ -14,18 +14,18 @@ Overview
    :maxdepth: 1
 
    readme.md
-   images.rst
 
-Running Test Operator
-=====================
+Configuration Guide
+===================
 .. toctree::
    :maxdepth: 1
 
    prerequisites.rst
+   images.rst
    guide.rst
 
-Alternative Ways of Running Tempest Container
-=============================================
+Debugging
+=========
 .. toctree::
    :maxdepth: 1
 
