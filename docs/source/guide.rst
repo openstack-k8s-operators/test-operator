@@ -1,10 +1,32 @@
-User Guide
-==========
+Run Tempest via test-operator
+=============================
 
-This guide is a starting point for configuring and running the `test-operator`.
+.. note::
+   Before you proceed with this section of the documentation please make sure
+   that you read the :ref:`prerequisites <prerequisites>`.
 
+This guide describes:
 
-Running Operator Locally Outside The Cluster
+* How to **install/uninstall** the operator?
+
+  * Running Operator Locally Outside The Cluster
+
+  * Running Operator Using the Operator Lifecycle Manager (OLM)
+
+  * Uninstalling Operator
+
+* How to **run tests** via the the operator?
+
+  * Executing Tempest Tests
+
+  * Custom Tempest Configuration
+
+  * Getting Logs
+
+If you want to get your hands on the test-operator quickly then follow these two
+sections: :ref:`running-operator-olm` and :ref:`executing-tempest-tests`.
+
+Running Operator Locally Outside the Cluster
 --------------------------------------------
 This is **quick and easy way** how to experiment with the operator during development of a
 new feature.
@@ -16,7 +38,9 @@ new feature.
 Note, that after running the following command you will need to switch to
 another terminal unless you run it in the background.
 
-Running Operator Using The Operator Lifecycle Manager (OLM)
+.. _running-operator-olm:
+
+Running Operator Using the Operator Lifecycle Manager (OLM)
 -----------------------------------------------------------
 
 Another option is to start the operator by running the pre-build operator image
@@ -104,9 +128,91 @@ Follow these steps to install the operator in the openstack project.
    ...
 
 
+Uninstalling Operator
+---------------------
+
+If you installed the operator by following the steps in the
+:ref:`running-operator-olm` section then this section might come handy. You
+might need to uninstall the operator when:
+
+* you encountered issues during the installation process or when
+
+* you want to be sure that you are ussing the latest version of the operator
+
+Please, make sure that you follow the order of the steps:
+
+1. Remove all instances of the **Tempest** CRD
+
+.. code-block:: bash
+
+   oc get tempest
+
+   NAME            AGE
+   tempest-tests   3s
+
+
+.. code-block:: bash
+
+   oc delete tempest/tempest-tests
+
+2. Remove the CRD
+
+.. code-block:: bash
+
+   oc delete crd/tempests.test.openstack.org
+
+3. Remove the subscription you created during
+   :ref:`the installation <running-operator-olm>`.
+
+.. code-block:: bash
+
+   oc delete subscription/test-operator
+
+4. Remove the catalog source you created during
+   :ref:`the installation <running-operator-olm>`.
+
+.. code-block:: bash
+
+   oc delete catalogsource/test-operator-catalog
+
+6. Remove the operator group you created during
+   :ref:`the installation <running-operator-olm>`.
+
+.. code-block:: bash
+
+   oc delete operatorgroup/openstack-operatorgroup
+
+7. Remove the csv
+
+.. code-block:: bash
+
+   oc delete csv/test-operator.v0.0.1
+
+8. Remove the operator. It is possible that if you executed the previous commands
+   too quickly then you might need to execute this command twice.
+
+.. code-block:: bash
+
+   oc delete operator/test-operator.openstack
+
+9. Check that there are no test-operator related resources hanging. This step
+   is not required.
+
+.. code-block:: bash
+
+   oc get olm
+
+.. note::
+   It might happend that by changing the order of the uninstallation steps
+   you encounter a situation when you will not be able to delete the
+   CRD. In such a case it might help to delete the :code:`finalizers:`
+   section in the output of the :code:`oc edit tempest/tempest-tests`
+
+
+.. _executing-tempest-tests:
+
 Executing Tempest Tests
 -----------------------
-.. _Executing Tempest Tests:
 
 Once you have an operator running, then you can apply a tempest resource
 definition, e.g. the default one:
