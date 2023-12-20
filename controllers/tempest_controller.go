@@ -403,7 +403,8 @@ func getDefaultInt(variable int64) string {
 
 func setTempestConfigVars(envVars map[string]string,
 	customData map[string]string,
-	tempestRun *testv1beta1.TempestRunSpec) {
+	tempestRun *testv1beta1.TempestRunSpec,
+	ctx context.Context) {
 
 	testOperatorDir := "/etc/test_operator/"
 	if tempestRun == nil {
@@ -447,6 +448,20 @@ func setTempestConfigVars(envVars map[string]string,
 
 	// Int
 	envVars["TEMPEST_CONCURRENCY"] = getDefaultInt(tempestRun.Concurrency)
+
+	// Dictionary
+	for _, externalPluginDictionary := range tempestRun.ExternalPlugin {
+		envVars["TEMPEST_EXTERNAL_PLUGIN_GIT_URL"] += externalPluginDictionary.Repository + ","
+
+		if len(externalPluginDictionary.ChangeRepository) == 0 || len(externalPluginDictionary.ChangeRefspec) == 0 {
+			envVars["TEMPEST_EXTERNAL_PLUGIN_CHANGE_URL"] += "-,"
+			envVars["TEMPEST_EXTERNAL_PLUGIN_REFSPEC"] += "-,"
+			continue
+		}
+
+		envVars["TEMPEST_EXTERNAL_PLUGIN_CHANGE_URL"] += externalPluginDictionary.ChangeRepository + ","
+		envVars["TEMPEST_EXTERNAL_PLUGIN_REFSPEC"] += externalPluginDictionary.ChangeRefspec + ","
+	}
 }
 
 func setTempestconfConfigVars(envVars map[string]string,
@@ -535,7 +550,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	customData := make(map[string]string)
 	envVars := make(map[string]string)
 
-	setTempestConfigVars(envVars, customData, instance.Spec.TempestRun)
+	setTempestConfigVars(envVars, customData, instance.Spec.TempestRun, ctx)
 	setTempestconfConfigVars(envVars, customData, instance.Spec.TempestconfRun)
 
 	/* Tempestconf - end */

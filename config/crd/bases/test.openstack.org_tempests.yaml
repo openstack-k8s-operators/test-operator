@@ -121,6 +121,32 @@ spec:
                     default: ""
                     description: ExcludeList
                     type: string
+                  externalPlugin:
+                    description: ExternalPlugin contains information about plugin
+                      that should be installed within the tempest container. If this
+                      option is specified then only tests that are part of the external
+                      plugin can be executed.
+                    items:
+                      properties:
+                        changeRefspec:
+                          default: ""
+                          description: ChangeRefspec specifies which change the remote
+                            repository should be checked out to (ChangeRepository
+                            must be defined as well).
+                          type: string
+                        changeRepository:
+                          default: ""
+                          description: URL that points to a repository that contains
+                            a change that should be applied to the repository defined
+                            by Repository (ChangeRefspec must be defined as well).
+                          type: string
+                        repository:
+                          default: ""
+                          description: URL that points to a git repository containing
+                            the external plugin.
+                          type: string
+                      type: object
+                    type: array
                   includeList:
                     default: tempest.api.identity.v3
                     description: IncludeList

@@ -25,6 +25,9 @@ data:
   # TEMPEST_SMOKE: true
   # TEMPEST_PARALLEL: true
   # TEMPEST_SERIAL: true
+  # TEMPEST_EXTERNAL_PLUGIN_GIT_URL: "https://opendev.org/openstack/barbican-tempest-plugin.git,https://opendev.org/openstack/neutron-tempest-plugin.git"
+  # TEMPEST_EXTERNAL_PLUGIN_CHANGE_URL: "-,https://review.opendev.org/openstack/neutron-tempest-plugin"
+  # TEMPEST_EXTERNAL_PLUGIN_REFSPEC: "-,refs/changes/97/896397/2"
 
   # TEMPESTCONF env variables:
   # --------------------------
