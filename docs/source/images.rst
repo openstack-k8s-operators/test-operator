@@ -1,5 +1,5 @@
-Test Images
-===========
+Images Used by test-operator
+============================
 
 The `test-operator` uses images that are built and defined in
 `TCIB (The Container Image Build) <https://github.com/openstack-k8s-operators/tcib>`_.
@@ -20,7 +20,7 @@ Currently, there are the following tempest images:
 
   An image that contains only tempest and no other plugins. The user can install any external
   plugin during the container execution using the `tempestRun.externalPlugin*` parameters
-  (see :ref:`Executing Tempest Tests<Executing Tempest Tests>`)
+  (see :ref:`executing-tempest-tests`)
 
 * `openstack-tempest-all <https://quay.io/podified-antelope-centos9/openstack-tempest-all>`_
 
