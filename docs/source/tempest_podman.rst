@@ -15,7 +15,8 @@ tempest will save the logs from the test run:
     mkdir -p /tmp/tempest/logs
 
 Find/generate clouds.yaml file. `ci-framework` has a Jinja template for
-generating the file, `see <https://github.com/openstack-k8s-operators/ci-framework/blob/a30b3d7d958f9d3bf9091178929352993573a4b0/ci_framework/roles/tempest/tasks/configure-tempest.yml#L28-L31>`_.
+generating the file, `see
+<https://github.com/openstack-k8s-operators/ci-framework/blob/8bc39f8b18693a9396012a5effc187cef79e7540/roles/tempest/tasks/configure-tempest.yml#L35-L38>`_.
 Once you have ``clouds.yaml`` copy it to ``/tmp/tempest/logs``:
 
 .. code-block:: bash
