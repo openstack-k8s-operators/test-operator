@@ -72,6 +72,15 @@ func GetVolumes(mountCerts bool, instance *testv1beta1.Tempest) []corev1.Volume 
 				},
 			},
 		},
+		{
+			Name: "test-operator-logs",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "test-operator-logs",
+					ReadOnly:  false,
+				},
+			},
+		},
 	}
 
 	if mountCerts {
@@ -112,6 +121,11 @@ func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
 		{
 			Name:      "config-data",
 			MountPath: "/etc/test_operator",
+			ReadOnly:  false,
+		},
+		{
+			Name:      "test-operator-logs",
+			MountPath: "/var/lib/tempest/external_files",
 			ReadOnly:  false,
 		},
 		{

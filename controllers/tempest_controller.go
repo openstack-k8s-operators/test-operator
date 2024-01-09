@@ -30,6 +30,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
@@ -38,6 +39,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -350,8 +353,36 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		return ctrl.Result{}, err
 	}
 
-	mountCerts := SecretExists(r, ctx, instance, "combined-ca-bundle")
+	// Create pvc
+	testOperatorPvcDef := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-operator-logs",
+			Namespace: instance.Namespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteOnce,
+				corev1.ReadWriteMany,
+			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: k8sresource.MustParse("1Gi"),
+				},
+			},
+		},
+	}
+
+	timeDuration, _ := time.ParseDuration("2m")
+	testOperatorPvc := pvc.NewPvc(testOperatorPvcDef, timeDuration)
+	ctrlResult, err = testOperatorPvc.CreateOrPatch(ctx, helper)
+	if err != nil {
+		return ctrlResult, err
+	} else if (ctrlResult != ctrl.Result{}) {
+		return ctrlResult, nil
+	}
+
 	// Define a new Job object
+	mountCerts := SecretExists(r, ctx, instance, "combined-ca-bundle")
 	jobDef := tempest.Job(instance, serviceLabels, mountCerts)
 	tempestJob := job.NewJob(
 		jobDef,
@@ -380,7 +411,6 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	}
 
 	// create Job - end
-
 	r.Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil
 }
@@ -437,9 +467,10 @@ func setTempestConfigVars(envVars map[string]string,
 	// Bool
 	tempestBoolEnvVars := make(map[string]bool)
 	tempestBoolEnvVars = map[string]bool{
-		"TEMPEST_SERIAL":   tempestRun.Serial,
-		"TEMPEST_PARALLEL": tempestRun.Parallel,
-		"TEMPEST_SMOKE":    tempestRun.Smoke,
+		"TEMPEST_SERIAL":     tempestRun.Serial,
+		"TEMPEST_PARALLEL":   tempestRun.Parallel,
+		"TEMPEST_SMOKE":      tempestRun.Smoke,
+		"USE_EXTERNAL_FILES": true,
 	}
 
 	for key, value := range tempestBoolEnvVars {
