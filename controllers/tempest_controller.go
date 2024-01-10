@@ -97,6 +97,7 @@ func SecretExists(r *TempestReconciler, ctx context.Context, instance *testv1bet
 // service account permissions that are needed to grant permission to the above
 // +kubebuilder:rbac:groups="security.openshift.io",resourceNames=anyuid;privileged,resources=securitycontextconstraints,verbs=use
 // +kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;create;update;watch;patch
 
 // Reconcile - Tempest
 func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
