@@ -141,3 +141,5 @@ rules:
   - get
   - list
   - watch
+  - update
+  - patch
