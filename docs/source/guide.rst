@@ -74,7 +74,7 @@ Follow these steps to install the operator in the openstack project.
    apiVersion: operators.coreos.com/v1alpha1
    kind: CatalogSource
    metadata:
-     name: test-operator-index
+     name: test-operator-catalog
      namespace: openstack
    spec:
      sourceType: grpc
