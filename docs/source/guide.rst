@@ -288,6 +288,51 @@ will ensure that tempest will be executed with tempest.conf that looks like this
 
 .. _getting-logs:
 
-Getting Logs (TBA)
-------------------
-This is TBA.
+Getting Logs
+------------
+The test-operator creates a persistent volume (:code:`test-operator-logs`) that
+is attached to a pod which executes the tempest tests. Once the pod completes
+test execution, the pv contains all the artifacts associated with the tempest
+run.
+
+If you want to retrieve the logs from the pv, you can follow these steps:
+
+1. Spawn a pod with the pv attached to it.
+
+.. code-block:: yaml
+
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+    name: test-operator-logs-pod
+    namespace: "openstack"
+    spec:
+    containers:
+      - name: test-operator-logs-container
+        image: "openstack"
+        command: ["/bin/sh", "-c", "--"]
+        args: ["while true; do sleep 30; done;"]
+        volumeMounts:
+          - name: logs-volume
+            mountPath: /mnt
+    volumes:
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: test-operator-logs
+
+2 (a). Get an access to the logs by connecting to the pod created in the fist
+step:
+
+.. code-block:: bash
+
+   oc rsh pod/test-operator-logs-pod
+   cd /mnt
+
+2 (b). Or get an access to the logs by copying the artifacts out of the pod created
+in the first step:
+
+.. code-block:: bash
+
+   mkdir test-operator-artifacts
+   oc cp test-operator-logs-pod:/mnt ./test-operator-artifacts
