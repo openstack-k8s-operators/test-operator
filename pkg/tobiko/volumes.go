@@ -1,4 +1,4 @@
-package tempest
+package tobiko
 
 import (
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
@@ -6,9 +6,8 @@ import (
 )
 
 // GetVolumes -
-func GetVolumes(mountCerts bool, instance *testv1beta1.Tempest) []corev1.Volume {
+func GetVolumes(mountCerts bool, instance *testv1beta1.Tobiko) []corev1.Volume {
 
-	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
 	var tlsCertificateMode int32 = 0444
 
@@ -31,23 +30,12 @@ func GetVolumes(mountCerts bool, instance *testv1beta1.Tempest) []corev1.Volume 
 			},
 		},
 		{
-			Name: "config-data",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &scriptsVolumeDefaultMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "-config-data",
-					},
-				},
-			},
-		},
-		{
-			Name: "openstack-config",
+			Name: "tobiko-clouds-config",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					DefaultMode: &scriptsVolumeConfidentialMode,
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "openstack-config",
+						Name: "tobiko-clouds-config",
 					},
 				},
 			},
@@ -103,17 +91,18 @@ func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      "config-data",
-			MountPath: "/etc/test_operator",
-			ReadOnly:  false,
-		},
-		{
 			Name:      "test-operator-logs",
-			MountPath: "/var/lib/tempest/external_files",
+			MountPath: "/var/lib/tobiko/external_files",
 			ReadOnly:  false,
 		},
 		{
-			Name:      "openstack-config",
+			Name:      "tobiko-clouds-config",
+			MountPath: "/var/lib/tobiko/.config/openstack/clouds.yaml",
+			SubPath:   "clouds.yaml",
+			ReadOnly:  true,
+		},
+		{
+			Name:      "tobiko-clouds-config",
 			MountPath: "/etc/openstack/clouds.yaml",
 			SubPath:   "clouds.yaml",
 			ReadOnly:  true,
@@ -130,6 +119,15 @@ func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
 		caCertVolumeMount := corev1.VolumeMount{
 			Name:      "ca-certs",
 			MountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+			ReadOnly:  true,
+			SubPath:   "tls-ca-bundle.pem",
+		}
+
+		volumeMounts = append(volumeMounts, caCertVolumeMount)
+
+		caCertVolumeMount = corev1.VolumeMount{
+			Name:      "ca-certs",
+			MountPath: "/etc/pki/tls/certs/ca-bundle.trust.crt",
 			ReadOnly:  true,
 			SubPath:   "tls-ca-bundle.pem",
 		}

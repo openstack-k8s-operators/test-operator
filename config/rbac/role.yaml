@@ -133,3 +133,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - test.openstack.org
+  resources:
+  - tobikoes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - test.openstack.org
+  resources:
+  - tobikoes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - test.openstack.org
+  resources:
+  - tobikoes/status
+  verbs:
+  - get
+  - patch
+  - update

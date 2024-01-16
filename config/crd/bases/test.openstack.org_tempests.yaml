@@ -109,6 +109,10 @@ spec:
                 description: OpenStackConfigSecret is the name of the Secret containing
                   the secure.yaml
                 type: string
+              parallel:
+                default: false
+                description: Execute tests parallely
+                type: boolean
               tempestRun:
                 description: TempestSpec TempestRun parts
                 properties:

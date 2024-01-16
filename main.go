@@ -97,6 +97,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	tobikoReconciler := &controllers.TobikoReconciler{}
+	tobikoReconciler.Client = mgr.GetClient()
+	tobikoReconciler.Scheme = mgr.GetScheme()
+	if err = tobikoReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Tobiko")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

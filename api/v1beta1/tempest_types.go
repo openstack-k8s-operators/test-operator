@@ -233,6 +233,11 @@ type TempestSpec struct {
 	ContainerImage string `json:"containerImage"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+        // Execute tests parallely
+	Parallel bool `json:"parallel,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	// NodeSelector to target subset of worker nodes running this service
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
