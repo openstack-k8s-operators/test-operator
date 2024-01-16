@@ -18,25 +18,23 @@ Currently, there are the following tempest images:
 
 * `openstack-tempest <https://quay.io/podified-antelope-centos9/openstack-tempest>`_
 
-  An image that contains only tempest and no other plugins. The user can install any external
-  plugin during the container execution using the `tempestRun.externalPlugin*` parameters
-  (see :ref:`executing-tempest-tests`)
+  An image that installs `openstack-tempest` RPM package that contains only tempest and no other
+  plugins. The user can install any external plugin during the container execution using
+  the `tempestRun.externalPlugin*` parameters (see :ref:`executing-tempest-tests`)
 
 * `openstack-tempest-all <https://quay.io/podified-antelope-centos9/openstack-tempest-all>`_
 
-  An image that contains tempest and all plugins that have an rpm:
-
-  `neutron-tests-tempest, networking-l2gw, trove-tempest-plugin, ironic-tempest-plugin,
-  cinder-tempest-plugin, manila-tempest-plugin, designate-tempest-plugin, octavia-tempest-plugin,
-  barbican-tempest-plugin, keystone-tempest-plugin, novajoin-tempest-plugin,
-  kuryr-tempest-plugin, magnum-tempest-plugin, mistral-tempest-plugin, murano-tempest-plugin,
-  patrole, watcher-tempest-plugin, zaqar-tempest-plugin, heat-tempest-plugin,
-  telemetry-tempest-plugin, sahara-tempest-plugin, sahara-tests, vitrage-tempest-plugin.`
+  An image that installs `openstack-tempest-all` RPM package. Most of the tempest plugins are
+  included in the RPM too, see `the spec file <https://github.com/rdo-packages/tempest-distgit/blob/rpm-master/openstack-tempest.spec>`_
+  for the exact list.
 
 * `openstack-tempest-extras <https://quay.io/podified-antelope-centos9/openstack-tempest-extras>`_
 
-  An image that contains `tempest-stress` and `whitebox-tempest-plugin` on top of the all plugins
-  that are part of the `openstack-tempest-all` image.
+  An image that installs `openstack-tempest-all` RPM package. On top of the all the plugins that are part of the RPM,
+  this image contains a few extras. The list of the extra projects (mainly tempest pluginsg) that are installed there has
+  a tendency to change. Therefore for the up to date list check the
+  `TCIB definition <https://github.com/openstack-k8s-operators/tcib/blob/main/container-images/tcib/base/os/tempest/tempest-extras/tempest-extras.yaml>`_
+  of the image.
 
 
 `test-operator` runs, for now, only the following test images:
