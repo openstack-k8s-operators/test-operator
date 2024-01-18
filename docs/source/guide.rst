@@ -97,7 +97,7 @@ Follow these steps to install the operator in the openstack project.
      namespace: openstack
    spec:
      name: test-operator
-     source: test-operator-index
+     source: test-operator-catalog
      sourceNamespace: openstack
 
 .. code-block:: bash
