@@ -1,3 +1,0 @@
-{{range $val := .SkippedTests}}
-{{$val}}
-{{end}}
