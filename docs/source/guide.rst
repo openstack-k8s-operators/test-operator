@@ -277,14 +277,13 @@ For example this definition of Tempest object:
 will ensure that tempest will be executed with tempest.conf that looks like this:
 
 
-.. code-block:: toml
+.. code-block::
 
    ...
    [auth]
    admin_username = admin
    admin_password = 1234
    ...
-
 
 .. _getting-logs:
 
@@ -310,7 +309,7 @@ If you want to retrieve the logs from the pv, you can follow these steps:
     spec:
     containers:
       - name: test-operator-logs-container
-        image: "openstack"
+        image: quay.io/quay/busybox
         command: ["/bin/sh", "-c", "--"]
         args: ["while true; do sleep 30; done;"]
         volumeMounts:
