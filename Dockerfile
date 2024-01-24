@@ -26,7 +26,10 @@ RUN if [ ! -f $CACHITO_ENV_FILE ]; then go mod download ; fi
 # Build manager
 RUN if [ -f $CACHITO_ENV_FILE ] ; then source $CACHITO_ENV_FILE ; fi ; CGO_ENABLED=0  GO111MODULE=on go build ${GO_BUILD_EXTRA_ARGS} -a -o ${DEST_ROOT}/manager main.go
 
-RUN cp -r templates ${DEST_ROOT}/templates
+# (lpiwowar): Let's comment this out as we do use the templates folder now
+#             It causes a failure of a job that is responsible for building
+#             the operator.
+# RUN cp -r templates ${DEST_ROOT}/templates
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
