@@ -1,0 +1,13 @@
+---
+apiVersion: test.openstack.org/v1beta1
+kind: Tobiko
+metadata:
+  labels:
+    app.kubernetes.io/name: tobiko
+    app.kubernetes.io/instance: tobiko-sample
+    app.kubernetes.io/part-of: test-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: test-operator
+  name: tobiko-sample
+spec:
+  # TODO(user): Add fields here

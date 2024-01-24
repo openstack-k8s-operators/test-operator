@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
@@ -38,6 +37,7 @@ import (
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type TempestReconciler struct {
@@ -73,6 +73,14 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
+	}
+
+	logging := log.FromContext(ctx)
+	if r.CompletedJobExists(ctx, instance) {
+		// The job created by the instance was completed. Release the lock
+		// so that other instances can spawn a job.
+		logging.Info("Job completed")
+		r.ReleaseLock(ctx, instance)
 	}
 
 	// Create a helper
@@ -178,7 +186,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	//
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper)
+	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {
@@ -201,8 +209,29 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		"",
 	)
 
+	// If there is a job that is completed do not try to create
+	// another one
+	if r.JobExists(ctx, instance) {
+		return ctrl.Result{}, nil
+	}
+
+	// We are about to start job that spawns the pod with tests.
+	// This lock ensures that there is always only one pod running.
+	logging := log.FromContext(ctx)
+	if !r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel) {
+		logging.Info("Can not acquire lock")
+		requeueAfter := time.Second * 60
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	} else {
+		logging.Info("Lock acquired")
+	}
+
 	ctrlResult, err = tempestJob.DoJob(ctx, helper)
 	if err != nil {
+		// Creation of the tempest job was not successfull.
+		// Release the lock and allow other controllers to spawn
+		// a job.
+		r.ReleaseLock(ctx, instance)
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.DeploymentReadyCondition,
 			condition.ErrorReason,
@@ -224,16 +253,6 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *TempestReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&testv1beta1.Tempest{}).
-		Owns(&batchv1.Job{}).
-		Owns(&corev1.Secret{}).
-		Owns(&corev1.ConfigMap{}).
-		Complete(r)
-}
-
 func (r *TempestReconciler) reconcileDelete(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
 	r.Log.Info("Reconciling Service delete")
 
@@ -245,23 +264,17 @@ func (r *TempestReconciler) reconcileDelete(ctx context.Context, instance *testv
 	return ctrl.Result{}, nil
 }
 
-func getDefaultBool(variable bool) string {
-	if variable {
-		return "true"
-	} else {
-		return "false"
-	}
+// SetupWithManager sets up the controller with the Manager.
+func (r *TempestReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&testv1beta1.Tempest{}).
+		Owns(&batchv1.Job{}).
+		Owns(&corev1.Secret{}).
+		Owns(&corev1.ConfigMap{}).
+		Complete(r)
 }
 
-func getDefaultInt(variable int64) string {
-	if variable != -1 {
-		return strconv.FormatInt(variable, 10)
-	} else {
-		return ""
-	}
-}
-
-func setTempestConfigVars(envVars map[string]string,
+func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	customData map[string]string,
 	tempestRun *testv1beta1.TempestRunSpec,
 	ctx context.Context) {
@@ -304,11 +317,11 @@ func setTempestConfigVars(envVars map[string]string,
 	}
 
 	for key, value := range tempestBoolEnvVars {
-		envVars[key] = getDefaultBool(value)
+		envVars[key] = r.GetDefaultBool(value)
 	}
 
 	// Int
-	envVars["TEMPEST_CONCURRENCY"] = getDefaultInt(tempestRun.Concurrency)
+	envVars["TEMPEST_CONCURRENCY"] = r.GetDefaultInt(tempestRun.Concurrency)
 
 	// Dictionary
 	for _, externalPluginDictionary := range tempestRun.ExternalPlugin {
@@ -325,7 +338,7 @@ func setTempestConfigVars(envVars map[string]string,
 	}
 }
 
-func setTempestconfConfigVars(envVars map[string]string,
+func (r *TempestReconciler) setTempestconfConfigVars(envVars map[string]string,
 	customData map[string]string,
 	tempestconfRun *testv1beta1.TempestconfRunSpec) {
 
@@ -370,7 +383,7 @@ func setTempestconfConfigVars(envVars map[string]string,
 	}
 
 	for key, value := range tempestconfBoolEnvVars {
-		envVars[key] = getDefaultBool(value)
+		envVars[key] = r.GetDefaultBool(value)
 	}
 
 	// Int
@@ -382,7 +395,7 @@ func setTempestconfConfigVars(envVars map[string]string,
 	}
 
 	for key, value := range tempestconfIntEnvVars {
-		envVars[key] = getDefaultInt(value)
+		envVars[key] = r.GetDefaultInt(value)
 	}
 
 	// String
@@ -414,8 +427,8 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	customData := make(map[string]string)
 	envVars := make(map[string]string)
 
-	setTempestConfigVars(envVars, customData, instance.Spec.TempestRun, ctx)
-	setTempestconfConfigVars(envVars, customData, instance.Spec.TempestconfRun)
+	r.setTempestConfigVars(envVars, customData, instance.Spec.TempestRun, ctx)
+	r.setTempestconfConfigVars(envVars, customData, instance.Spec.TempestconfRun)
 
 	cms := []util.Template{
 		// ConfigMap
