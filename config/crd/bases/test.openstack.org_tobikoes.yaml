@@ -41,6 +41,10 @@ spec:
                   retried executions (defaults to 6).
                 format: int32
                 type: integer
+              config:
+                default: ""
+                description: tobiko.conf
+                type: string
               containerImage:
                 default: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
                 description: Container image for tobiko
@@ -49,35 +53,21 @@ spec:
                 default: true
                 description: Run tests in parallel
                 type: boolean
-              keystoneInterfaceName:
-                default: ""
-                description: Keystone interface name
-                type: string
               parallel:
                 default: false
                 description: Container image for tobiko
                 type: boolean
-              testcaseTimeout:
-                default: -1
-                description: Testcase timeout
-                format: int64
-                type: integer
+              privateKey:
+                default: ""
+                description: Private Key
+                type: string
+              publicKey:
+                default: ""
+                description: Public Key
+                type: string
               testenv:
                 default: py3
                 description: Test environment
-                type: string
-              testrunnerTimeout:
-                default: -1
-                description: Testrunner timeout
-                format: int64
-                type: integer
-              ubuntuInterfaceName:
-                default: ""
-                description: Ubuntu interface name
-                type: string
-              ubuntuMinimalImageURL:
-                default: ""
-                description: Ubuntu minimal image url
                 type: string
               version:
                 default: ""

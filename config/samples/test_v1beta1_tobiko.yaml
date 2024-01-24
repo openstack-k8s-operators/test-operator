@@ -10,4 +10,4 @@ metadata:
     app.kubernetes.io/created-by: test-operator
   name: tobiko-sample
 spec:
-  # TODO(user): Add fields here
+
