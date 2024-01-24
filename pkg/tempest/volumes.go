@@ -31,17 +31,6 @@ func GetVolumes(mountCerts bool, instance *testv1beta1.Tempest) []corev1.Volume 
 			},
 		},
 		{
-			Name: "scripts",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &scriptsVolumeDefaultMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "-scripts",
-					},
-				},
-			},
-		},
-		{
 			Name: "config-data",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -111,11 +100,6 @@ func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
 		{
 			Name:      "etc-localtime",
 			MountPath: "/etc/localtime",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "scripts",
-			MountPath: "/usr/local/bin/container-scripts",
 			ReadOnly:  true,
 		},
 		{

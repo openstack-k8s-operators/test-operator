@@ -347,5 +347,5 @@ func (instance Tempest) RbacNamespace() string {
 
 // RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
 func (instance Tempest) RbacResourceName() string {
-	return "neutron-" + instance.Name
+	return instance.Name
 }

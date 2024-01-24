@@ -89,13 +89,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.TempestReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	tempestReconciler := &controllers.TempestReconciler{}
+	tempestReconciler.Client = mgr.GetClient()
+	tempestReconciler.Scheme = mgr.GetScheme()
+	if err = tempestReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Tempest")
 		os.Exit(1)
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

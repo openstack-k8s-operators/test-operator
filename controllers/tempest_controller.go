@@ -22,15 +22,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
-	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
@@ -39,46 +36,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
-	k8sresource "k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// TempestReconciler reconciles a Tempest object
 type TempestReconciler struct {
-	client.Client
-	Kclient kubernetes.Interface
-	Log     logr.Logger
-	Scheme  *runtime.Scheme
-}
-
-// GetClient -
-func (r *TempestReconciler) GetClient() client.Client {
-	return r.Client
-}
-
-// GetLogger -
-func (r *TempestReconciler) GetLogger() logr.Logger {
-	return r.Log
-}
-
-// GetScheme -
-func (r *TempestReconciler) GetScheme() *runtime.Scheme {
-	return r.Scheme
-}
-
-func SecretExists(r *TempestReconciler, ctx context.Context, instance *testv1beta1.Tempest, SecretName string) bool {
-	secret := &corev1.Secret{}
-	err := r.Get(ctx, client.ObjectKey{Namespace: instance.Namespace, Name: SecretName}, secret)
-	if err != nil && k8s_errors.IsNotFound(err) {
-		return false
-	} else {
-		return true
-	}
+	Reconciler
 }
 
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests,verbs=get;list;watch;create;update;patch;delete
@@ -97,7 +60,6 @@ func SecretExists(r *TempestReconciler, ctx context.Context, instance *testv1bet
 // service account permissions that are needed to grant permission to the above
 // +kubebuilder:rbac:groups="security.openshift.io",resourceNames=anyuid;privileged,resources=securitycontextconstraints,verbs=use
 // +kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch
-// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;create;update;watch;patch
 
 // Reconcile - Tempest
 func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
@@ -108,15 +70,12 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected.
-			// For additional cleanup logic use finalizers. Return and don't requeue.
 			return ctrl.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
 		return ctrl.Result{}, err
 	}
 
+	// Create a helper
 	helper, err := helper.NewHelper(
 		instance,
 		r.Client,
@@ -127,7 +86,9 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	// Always patch the instance status when exiting this function so we can persist any changes.
+
+	// Always patch the instance status when exiting this function so we
+	// can persist any changes.
 	defer func() {
 		err := helper.PatchInstance(ctx, instance)
 		if err != nil {
@@ -136,31 +97,26 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 	}()
 
-	// If we're not deleting this and the service object doesn't have our finalizer, add it.
+	// If we're not deleting this and the service object doesn't have our
+	// finalizer, add it.
 	if instance.DeletionTimestamp.IsZero() && controllerutil.AddFinalizer(instance, helper.GetFinalizer()) {
 		return ctrl.Result{}, nil
 	}
 
-	//
-	// initialize status
-	//
+	// Initialize conditions used later as Status=Unknown
 	if instance.Status.Conditions == nil {
 		instance.Status.Conditions = condition.Conditions{}
-		// initialize conditions used later as Status=Unknown
 		cl := condition.CreateList(
 			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
 			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
-			condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
 		)
 
 		instance.Status.Conditions.Init(&cl)
 
-		// Register overall status immediately to have an early feedback e.g. in the cli
+		// Register overall status immediately to have an early feedback
+		// e.g. in the cli
 		return ctrl.Result{}, nil
-	}
-	if instance.Status.NetworkAttachments == nil {
-		instance.Status.NetworkAttachments = map[string][]string{}
 	}
 
 	// Handle service delete
@@ -170,57 +126,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	// Handle non-deleted clusters
 	return r.reconcileNormal(ctx, instance, helper)
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *TempestReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&testv1beta1.Tempest{}).
-		Owns(&batchv1.Job{}).
-		Owns(&corev1.Secret{}).
-		Owns(&corev1.ConfigMap{}).
-		Complete(r)
-}
-
-func (r *TempestReconciler) reconcileDelete(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
-	r.Log.Info("Reconciling Service delete")
-
-	// remove the finalizer
-	controllerutil.RemoveFinalizer(instance, helper.GetFinalizer())
-	r.Log.Info("Reconciled Service delete successfully")
-
-	return ctrl.Result{}, nil
-}
-
-func (r *TempestReconciler) reconcileInit(
-	ctx context.Context,
-	instance *testv1beta1.Tempest,
-	helper *helper.Helper,
-	serviceLabels map[string]string,
-	serviceAnnotations map[string]string,
-) (ctrl.Result, error) {
-	r.Log.Info("Reconciling Service init")
-
-	r.Log.Info("Reconciled Service init successfully")
-	return ctrl.Result{}, nil
-}
-
-func (r *TempestReconciler) reconcileUpdate(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
-	r.Log.Info("Reconciling Service update")
-
-	// TODO(slaweq): is that needed at all?
-
-	r.Log.Info("Reconciled Service update successfully")
-	return ctrl.Result{}, nil
-}
-
-func (r *TempestReconciler) reconcileUpgrade(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
-	r.Log.Info("Reconciling Service upgrade")
-
-	// TODO(slaweq): is that needed at all?
-
-	r.Log.Info("Reconciled Service upgrade successfully")
-	return ctrl.Result{}, nil
 }
 
 func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
@@ -239,6 +144,11 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 			Resources: []string{"pods"},
 			Verbs:     []string{"create", "get", "list", "watch", "update", "patch", "delete"},
 		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"persistentvolumeclaims"},
+			Verbs:     []string{"get", "list", "create", "update", "watch", "patch"},
+		},
 	}
 	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
 	if err != nil {
@@ -246,20 +156,10 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	} else if (rbacResult != ctrl.Result{}) {
 		return rbacResult, nil
 	}
-
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
-	// run check OpenStack secret - end
+	// Service account, role, binding - end
 
-	//
-	// Create ConfigMaps and Secrets required as input for the Service and calculate an overall hash of hashes
-	//
-
-	//
-	// create Configmap required for neutron input
-	// - %-scripts configmap holding scripts to e.g. bootstrap the service
-	// - %-config configmap holding minimal neutron config required to get the service up, user can add additional files to be added to the service
-	// - parameters which has passwords gets added from the OpenStack secret via the init container
-	//
+	// Generate ConfigMaps
 	err = r.generateServiceConfigMaps(ctx, helper, instance)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
@@ -271,119 +171,27 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		return ctrl.Result{}, err
 	}
 	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
+	// Generate ConfigMaps - end
 
 	//
 	// TODO check when/if Init, Update, or Upgrade should/could be skipped
 	//
 
+	// Create PersistentVolumeClaim
+	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper)
+	if err != nil {
+		return ctrlResult, err
+	} else if (ctrlResult != ctrl.Result{}) {
+		return ctrlResult, nil
+	}
+	// Create PersistentVolumeClaim - end
+
+	// Create a new job
 	serviceLabels := map[string]string{
 		common.AppSelector: tempest.ServiceName,
 	}
 
-	// networks to attach to
-	for _, netAtt := range instance.Spec.NetworkAttachments {
-		_, err := nad.GetNADWithName(ctx, helper, netAtt, instance.Namespace)
-		if err != nil {
-			if k8s_errors.IsNotFound(err) {
-				instance.Status.Conditions.Set(condition.FalseCondition(
-					condition.NetworkAttachmentsReadyCondition,
-					condition.RequestedReason,
-					condition.SeverityInfo,
-					condition.NetworkAttachmentsReadyWaitingMessage,
-					netAtt))
-				return ctrl.Result{RequeueAfter: time.Second * 10}, fmt.Errorf("network-attachment-definition %s not found", netAtt)
-			}
-			instance.Status.Conditions.Set(condition.FalseCondition(
-				condition.NetworkAttachmentsReadyCondition,
-				condition.ErrorReason,
-				condition.SeverityWarning,
-				condition.NetworkAttachmentsReadyErrorMessage,
-				err.Error()))
-			return ctrl.Result{}, err
-		}
-	}
-
-	serviceAnnotations, err := nad.CreateNetworksAnnotation(instance.Namespace, instance.Spec.NetworkAttachments)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed create network annotation from %s: %w",
-			instance.Spec.NetworkAttachments, err)
-	}
-
-	// Handle service init
-	ctrlResult, err := r.reconcileInit(ctx, instance, helper, serviceLabels, serviceAnnotations)
-	if err != nil {
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, nil
-	}
-
-	// Handle service update
-	ctrlResult, err = r.reconcileUpdate(ctx, instance, helper)
-	if err != nil {
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, nil
-	}
-
-	// Handle service upgrade
-	ctrlResult, err = r.reconcileUpgrade(ctx, instance, helper)
-	if err != nil {
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, nil
-	}
-
-	// verify if network attachment matches expectations
-	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	instance.Status.NetworkAttachments = networkAttachmentStatus
-	if networkReady {
-		instance.Status.Conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
-	} else {
-		err := fmt.Errorf("not all pods have interfaces with ips as configured in NetworkAttachments: %s", instance.Spec.NetworkAttachments)
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.NetworkAttachmentsReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.NetworkAttachmentsReadyErrorMessage,
-			err.Error()))
-
-		return ctrl.Result{}, err
-	}
-
-	// Create pvc
-	testOperatorPvcDef := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-operator-logs",
-			Namespace: instance.Namespace,
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteOnce,
-				corev1.ReadWriteMany,
-			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: k8sresource.MustParse("1Gi"),
-				},
-			},
-		},
-	}
-
-	timeDuration, _ := time.ParseDuration("2m")
-	testOperatorPvc := pvc.NewPvc(testOperatorPvcDef, timeDuration)
-	ctrlResult, err = testOperatorPvc.CreateOrPatch(ctx, helper)
-	if err != nil {
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, nil
-	}
-
-	// Define a new Job object
-	mountCerts := SecretExists(r, ctx, instance, "combined-ca-bundle")
+	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	jobDef := tempest.Job(instance, serviceLabels, mountCerts)
 	tempestJob := job.NewJob(
 		jobDef,
@@ -410,9 +218,30 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 			condition.DeploymentReadyRunningMessage))
 		return ctrlResult, nil
 	}
+	// Create a new job - end
 
-	// create Job - end
 	r.Log.Info("Reconciled Service successfully")
+	return ctrl.Result{}, nil
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *TempestReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&testv1beta1.Tempest{}).
+		Owns(&batchv1.Job{}).
+		Owns(&corev1.Secret{}).
+		Owns(&corev1.ConfigMap{}).
+		Complete(r)
+}
+
+func (r *TempestReconciler) reconcileDelete(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
+	r.Log.Info("Reconciling Service delete")
+
+	// remove the finalizer
+	controllerutil.RemoveFinalizer(instance, helper.GetFinalizer())
+
+	r.Log.Info("Reconciled Service delete successfully")
+
 	return ctrl.Result{}, nil
 }
 
@@ -568,8 +397,11 @@ func setTempestconfConfigVars(envVars map[string]string,
 	envVars["TEMPESTCONF_OVERRIDES"] = tempestconfRun.Overrides
 }
 
-// generateServiceConfigMaps - create create configmaps which hold scripts and service configuration
-// TODO add DefaultConfigOverwrite
+// Create ConfigMaps:
+//   - %-env-vars contians all the environment variables that are needed for
+//     execution of the tempest container
+//   - %-config contains all the files that are needed for the execution of
+//     the tempest container
 func (r *TempestReconciler) generateServiceConfigMaps(
 	ctx context.Context,
 	h *helper.Helper,
@@ -585,16 +417,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	setTempestConfigVars(envVars, customData, instance.Spec.TempestRun, ctx)
 	setTempestconfConfigVars(envVars, customData, instance.Spec.TempestconfRun)
 
-	/* Tempestconf - end */
 	cms := []util.Template{
-		// ScriptsConfigMap
-		{
-			Name:         fmt.Sprintf("%s-scripts", instance.Name),
-			Namespace:    instance.Namespace,
-			Type:         util.TemplateTypeScripts,
-			InstanceType: instance.Kind,
-			Labels:       cmLabels,
-		},
 		// ConfigMap
 		{
 			Name:          fmt.Sprintf("%s-config-data", instance.Name),

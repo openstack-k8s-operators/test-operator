@@ -1,3 +1,0 @@
-{{range $val := .AllowedTests }}
-{{$val}}
-{{end}}
