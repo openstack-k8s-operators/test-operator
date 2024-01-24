@@ -2,12 +2,22 @@
 apiVersion: test.openstack.org/v1beta1
 kind: Tobiko
 metadata:
-  labels:
-    app.kubernetes.io/name: tobiko
-    app.kubernetes.io/instance: tobiko-sample
-    app.kubernetes.io/part-of: test-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: test-operator
-  name: tobiko-sample
+  name: tobiko-tests
+  namespace: openstack
 spec:
-  # TODO(user): Add fields here
+  containerImage: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
+  testenv: py3
+  version: master
+  config: |
+    [DEFAULT]
+    log_file = value
+
+    [testcase]
+    timeout = value
+    test_runner_timeout = value
+
+    [ubuntu]
+    interface_name = value
+
+    [keystone]
+    interface_name = value
