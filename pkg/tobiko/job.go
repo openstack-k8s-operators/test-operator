@@ -14,6 +14,7 @@ func Job(
 	instance *testv1beta1.Tobiko,
 	labels map[string]string,
 	mountCerts bool,
+	mountKeys bool,
 	envVars map[string]env.Setter,
 ) *batchv1.Job {
 
@@ -43,10 +44,10 @@ func Job(
 							Image:        instance.Spec.ContainerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts: GetVolumeMounts(mountCerts),
+							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys),
 						},
 					},
-					Volumes: GetVolumes(mountCerts, instance),
+					Volumes: GetVolumes(mountCerts, mountKeys, instance),
 				},
 			},
 		},

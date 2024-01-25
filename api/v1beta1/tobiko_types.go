@@ -53,28 +53,18 @@ type TobikoSpec struct {
 
         // +kubebuilder:validation:Optional
         // +kubebuilder:default:=""
-        // Ubuntu interface name
-        UbuntuInterfaceName string `json:"ubuntuInterfaceName,omitempty"`
+        // tobiko.conf
+        Config string `json:"config,omitempty"`
 
         // +kubebuilder:validation:Optional
         // +kubebuilder:default:=""
-        // Ubuntu minimal image url
-        UbuntuMinimalImageURL string `json:"ubuntuMinimalImageURL,omitempty"`
+        // Private Key
+        PrivateKey string `json:"privateKey,omitempty"`
 
         // +kubebuilder:validation:Optional
         // +kubebuilder:default:=""
-        // Keystone interface name
-        KeystoneInterfaceName string `json:"keystoneInterfaceName,omitempty"`
-
-        // +kubebuilder:validation:Optional
-        // +kubebuilder:default:=-1
-        // Testcase timeout
-        TestcaseTimeout int64 `json:"testcaseTimeout,omitempty"`
-
-        // +kubebuilder:validation:Optional
-        // +kubebuilder:default:=-1
-        // Testrunner timeout
-        TestrunnerTimeout int64 `json:"testrunnerTimeout,omitempty"`
+        // Public Key
+        PublicKey string `json:"publicKey,omitempty"`
 
 	// +kubebuilder:validation:Optional
         // +kubebuilder:default:="quay.io/podified-antelope-centos9/openstack-tobiko:current-podified"

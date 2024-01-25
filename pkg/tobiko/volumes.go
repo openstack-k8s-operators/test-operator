@@ -6,13 +6,26 @@ import (
 )
 
 // GetVolumes -
-func GetVolumes(mountCerts bool, instance *testv1beta1.Tobiko) []corev1.Volume {
+func GetVolumes(mountCerts bool, mountKeys bool, instance *testv1beta1.Tobiko) []corev1.Volume {
 
+	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
+	var privateKeyMode int32 = 0600
+	var publicKeyMode int32 = 0655
 	var tlsCertificateMode int32 = 0444
 
-	//source_type := corev1.HostPathDirectoryOrCreate
 	volumes := []corev1.Volume{
+		{
+			Name: "tobiko-config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					DefaultMode: &scriptsVolumeDefaultMode,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: instance.Name + "tobiko-config",
+					},
+				},
+			},
+		},
 		{
 			Name: "etc-machine-id",
 			VolumeSource: corev1.VolumeSource{
@@ -74,11 +87,41 @@ func GetVolumes(mountCerts bool, instance *testv1beta1.Tobiko) []corev1.Volume {
 		volumes = append(volumes, caCertsVolume)
 	}
 
+	if mountKeys {
+		keysVolume := corev1.Volume{
+			Name: "tobiko-private-key",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					DefaultMode: &privateKeyMode,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: instance.Name + "tobiko-private-key",
+					},
+				},
+			},
+		}
+
+		volumes = append(volumes, keysVolume)
+
+		keysVolume = corev1.Volume{
+			Name: "tobiko-public-key",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					DefaultMode: &publicKeyMode,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: instance.Name + "tobiko-public-key",
+					},
+				},
+			},
+		}
+
+		volumes = append(volumes, keysVolume)
+	}
+
 	return volumes
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
+func GetVolumeMounts(mountCerts bool, mountKeys bool) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "etc-machine-id",
@@ -113,6 +156,12 @@ func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
 			ReadOnly:  false,
 			SubPath:   "secure.yaml",
 		},
+		{
+			Name:      "tobiko-config",
+			MountPath: "/etc/tobiko/tobiko.conf",
+			SubPath:   "tobiko.conf",
+			ReadOnly:  false,
+		},
 	}
 
 	if mountCerts {
@@ -133,6 +182,26 @@ func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
 		}
 
 		volumeMounts = append(volumeMounts, caCertVolumeMount)
+	}
+
+	if mountKeys {
+		keysMount := corev1.VolumeMount{
+			Name:      "tobiko-private-key",
+			MountPath: "/var/lib/tobiko/.ssh/id_ecdsa",
+			SubPath:   "id_ecdsa",
+			ReadOnly:  true,
+		}
+
+		volumeMounts = append(volumeMounts, keysMount)
+
+		keysMount = corev1.VolumeMount{
+			Name:      "tobiko-public-key",
+			MountPath: "/var/lib/tobiko/.ssh/id_ecdsa.pub",
+			SubPath:   "id_ecdsa.pub",
+			ReadOnly:  true,
+		}
+
+		volumeMounts = append(volumeMounts, keysMount)
 	}
 
 	return volumeMounts

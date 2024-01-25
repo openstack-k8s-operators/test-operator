@@ -71,7 +71,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// so that other instances can spawn a job.
 		logging.Info("Job completed")
 		r.ReleaseLock(ctx, instance)
-        }
+	}
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tobiko.ServiceName,
@@ -112,12 +112,54 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
 	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
-	envVars["TOBIKO_UBUNTU_INTERFACE_NAME"] = env.SetValue(instance.Spec.UbuntuInterfaceName)
-	envVars["TOBIKO_UBUNTU_MINIMAL_IMAGE_URL"] = env.SetValue(instance.Spec.UbuntuMinimalImageURL)
-	envVars["TOBIKO_KEYSTONE_INTERFACE_NAME"] = env.SetValue(instance.Spec.KeystoneInterfaceName)
-	envVars["TOBIKO_TESTCASE_TIMEOUT"] = env.SetValue(r.GetDefaultInt(instance.Spec.TestcaseTimeout))
-	envVars["TOBIKO_TESTRUNNER_TIMEOUT"] = env.SetValue(r.GetDefaultInt(instance.Spec.TestrunnerTimeout))
 	// Prepare env vars - end
+
+	// Prepare custom data
+	customData := make(map[string]string)
+	if len(instance.Spec.Config) != 0 {
+		customData["tobiko.conf"] = instance.Spec.Config
+	}
+
+	privateKeyData := make(map[string]string)
+	if len(instance.Spec.PrivateKey) != 0 {
+		privateKeyData["id_ecdsa"] = instance.Spec.PrivateKey
+	}
+
+	publicKeyData := make(map[string]string)
+	if len(instance.Spec.PublicKey) != 0 {
+		publicKeyData["id_ecdsa.pub"] = instance.Spec.PublicKey
+	}
+
+	mountKeys := false
+	if (len(publicKeyData) == 0) || (len(privateKeyData) == 0) {
+		logging.Info("Both values privateKey and publicKey need to be specified. Keys not mounted.")
+	} else {
+		mountKeys = true
+	}
+
+	cms := []util.Template{
+		{
+			Name:         instance.Name + "tobiko-config",
+			Namespace:    instance.Namespace,
+			InstanceType: instance.Kind,
+			CustomData:   customData,
+		},
+		{
+			Name:         instance.Name + "tobiko-private-key",
+			Namespace:    instance.Namespace,
+			InstanceType: instance.Kind,
+			CustomData:   privateKeyData,
+		},
+		{
+			Name:         instance.Name + "tobiko-public-key",
+			Namespace:    instance.Namespace,
+			InstanceType: instance.Kind,
+			CustomData:   publicKeyData,
+		},
+	}
+
+	configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	// Prepare custom data - end
 
 	result, err := r.EnsureTobikoCloudsYAML(ctx, instance, helper)
 	if err != nil {
@@ -135,7 +177,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Create Job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	jobDef := tobiko.Job(instance, serviceLabels, mountCerts, envVars)
+	jobDef := tobiko.Job(instance, serviceLabels, mountCerts, mountKeys, envVars)
 	tobikoJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,
