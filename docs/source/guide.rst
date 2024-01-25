@@ -1,5 +1,5 @@
-Run Tempest via test-operator
-=============================
+Run Tests via test-operator
+===========================
 
 .. note::
    Before you proceed with this section of the documentation please make sure
@@ -17,14 +17,12 @@ This guide describes:
 
 * How to **run tests** via the the operator?
 
-  * :ref:`executing-tempest-tests`
-
-  * :ref:`custom-tempest-configuration`
+  * :ref:`executing-tests`
 
   * :ref:`getting-logs`
 
 If you want to get your hands on the test-operator quickly then follow these two
-sections: :ref:`running-operator-olm` and :ref:`executing-tempest-tests`.
+sections: :ref:`running-operator-olm` and :ref:`executing-tests`.
 
 .. _running-operator-olm:
 
@@ -107,7 +105,7 @@ Follow these steps to install the operator in the openstack project.
 4. Wait for the :code:`test-operator-controller-manager` pod to successfully
    spawn. Once you see  the pod running you can start to communicate with the
    operator using the :code:`Tempest` resource defined in the
-   :ref:`executing-tempest-tests` section.
+   :ref:`executing-tests` section.
 
 .. code-block:: bash
 
@@ -215,22 +213,36 @@ Please, make sure that you follow the order of the steps:
    section in the output of the :code:`oc edit tempest/tempest-tests`.
 
 
-.. _executing-tempest-tests:
+.. _executing-tests:
 
-Executing Tempest Tests
------------------------
+Executing Tests
+---------------
 
-Once you have an operator running, then you can apply a tempest resource
-definition, e.g. the default one:
+Once you have an operator running, then you can apply a custom resource accepted
+by the test-operator to start the testing. Currently, two types of custom
+resources are being accepted by the test-operator (see
+:ref:`custom-resources-used-by-the-test-operator` section):
 
-.. literalinclude:: ../../config/samples/test_v1beta1_tempest.yaml
-   :language: yaml
+* :ref:`tempest-custom-resource`
+
+* :ref:`tobiko-custom-resource`
+
+1. Create a manifest for custom resource accepted by the test-operator
+   (:ref:`custom-resources-used-by-the-test-operator` section).
+
+2. Apply the manifest. Either go with the default one, the command below, or
+   replace the path with a manifest created in the first step.
 
 .. code-block:: bash
 
     oc apply -f config/samples/test_v1beta1_tempest.yaml
 
-After that, verify that a pod was created with:
+3. Verify that the pod executing the tests is running. It might take a couple
+   of seconds for the test pod to spawn. Also, note that by default the test-operator
+   allows only one test pod to be running at the same time (read
+   :ref:`parallel-execution`). If you defined your own custom resource in the first step
+   then your test pod will be named according to the :code:`name` value stored in the
+   metadata section.
 
 .. code-block:: bash
 
@@ -238,61 +250,23 @@ After that, verify that a pod was created with:
 
 You should see a pod with a name like :code:`tempest-tests-xxxxx`.
 
-To see the console output of the execution run the following:
+4. Investigate the stdout of the test-pod:
 
 .. code-block:: bash
 
     oc logs <name of the pod>
 
+Read :ref:`getting-logs` section if you want to see logs and artifacts
+produced during the testing.
 
-.. _custom-tempest-configuration:
-
-Custom Tempest Configuration
-----------------------------
-To configure tempest via tempest.conf use the :code:`tempestconfRun.overrides`
-parameter. This parameter accepts a list of key value pairs that specify values
-that should be written to tempest.conf generated inside the container.
-
-For example this definition of Tempest object:
-
-.. code-block:: yaml
-
-    ---
-    apiVersion: test.openstack.org/v1beta1
-    kind: Tempest
-    metadata:
-      name: tempest-tests
-      namespace: openstack
-    spec:
-      containerImage: quay.io/podified-antelope-centos9/openstack-tempest:current-podified
-      tempestRun:
-        includeList: | # <-- Use | to preserve \n
-          tempest.api.identity.v3.*
-        concurrency: 8
-      tempestconfRun:
-          overrides: |
-            auth.admin_username admin
-            auth.admin_password 1234
-
-will ensure that tempest will be executed with tempest.conf that looks like this:
-
-
-.. code-block::
-
-   ...
-   [auth]
-   admin_username = admin
-   admin_password = 1234
-   ...
 
 .. _getting-logs:
 
 Getting Logs
 ------------
-The test-operator creates a persistent volume (:code:`test-operator-logs`) that
-is attached to a pod which executes the tempest tests. Once the pod completes
-test execution, the pv contains all the artifacts associated with the tempest
-run.
+The test-operator creates a persistent volume that is attached to a pod executing
+the tests. Once the pod completes test execution, the pv contains all the artifacts
+associated with the test run.
 
 If you want to retrieve the logs from the pv, you can follow these steps:
 
@@ -304,8 +278,8 @@ If you want to retrieve the logs from the pv, you can follow these steps:
     apiVersion: v1
     kind: Pod
     metadata:
-    name: test-operator-logs-pod
-    namespace: "openstack"
+        name: test-operator-logs-pod
+        namespace: "openstack"
     spec:
     containers:
       - name: test-operator-logs-container
@@ -318,7 +292,9 @@ If you want to retrieve the logs from the pv, you can follow these steps:
     volumes:
       - name: logs-volume
         persistentVolumeClaim:
-          claimName: test-operator-logs
+          # Note: In case you created your own custom resource then you
+          #       have to put here the value from metadata.name.
+          claimName: tempest-tests
 
 2 (a). Get an access to the logs by connecting to the pod created in the fist
 step:
