@@ -167,7 +167,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name)
+	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, instance.Spec.StorageClass)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {

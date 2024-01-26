@@ -144,7 +144,7 @@ might need to uninstall the operator when:
 
 Please, make sure that you follow the order of the steps:
 
-1. Remove all instances of the :code:`Tempest` CRD
+1. Remove all instances of the :code:`Tempest` and :code:`Tobiko` CRDs
 
 .. code-block:: bash
 
@@ -157,12 +157,14 @@ Please, make sure that you follow the order of the steps:
 .. code-block:: bash
 
    oc delete tempest/tempest-tests
+   oc delete tobiko/tobiko-tests
 
 2. Remove the :code:`crd`
 
 .. code-block:: bash
 
    oc delete crd/tempests.test.openstack.org
+   oc delete crd/tobikoes.test.openstack.org
 
 3. Remove the :code:`subscription` you created during
    :ref:`the installation <running-operator-olm>`.

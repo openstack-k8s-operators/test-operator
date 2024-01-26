@@ -6,6 +6,8 @@ metadata:
   namespace: openstack
 spec:
   containerImage: quay.io/podified-antelope-centos9/openstack-tempest:current-podified
+  # storageClass: local-storage
+  # parallel: false
   tempestRun:
     # NOTE: All parameters have default values (use only when you want to override
     #       the default behaviour)

@@ -113,6 +113,10 @@ spec:
                 default: false
                 description: Execute tests parallely
                 type: boolean
+              storageClass:
+                default: local-storage
+                description: StorageClass used to create PVCs that store the logs
+                type: string
               tempestRun:
                 description: TempestSpec TempestRun parts
                 properties:
@@ -283,6 +287,7 @@ spec:
             - containerImage
             - openStackConfigMap
             - openStackConfigSecret
+            - storageClass
             type: object
           status:
             description: TempestStatus defines the observed state of Tempest
