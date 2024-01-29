@@ -229,6 +229,11 @@ type TempestconfRunSpec struct {
 // TempestSpec defines the desired state of Tempest
 type TempestSpec struct {
 	// +kubebuilder:validation:Required
+	// +kubebuilder:default="local-storage"
+        // StorageClass used to create PVCs that store the logs
+	StorageClass string `json:"storageClass"`
+
+	// +kubebuilder:validation:Required
 	// Tempest Container Image URL (will be set to environmental default if empty)
 	ContainerImage string `json:"containerImage"`
 

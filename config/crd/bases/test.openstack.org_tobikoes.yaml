@@ -65,6 +65,10 @@ spec:
                 default: ""
                 description: Public Key
                 type: string
+              storageClass:
+                default: local-storage
+                description: StorageClass used to create PVCs that store the logs
+                type: string
               testenv:
                 default: py3
                 description: Test environment
@@ -73,6 +77,8 @@ spec:
                 default: ""
                 description: Tobiko version
                 type: string
+            required:
+            - storageClass
             type: object
           status:
             description: TobikoStatus defines the observed state of Tobiko

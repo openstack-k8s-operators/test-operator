@@ -36,6 +36,11 @@ type Hash struct {
 
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default="local-storage"
+        // StorageClass used to create PVCs that store the logs
+	StorageClass string `json:"storageClass"`
+
 	// +kubebuilder:validation:Optional
         // +kubebuilder:default:=true
         // Run tests in parallel

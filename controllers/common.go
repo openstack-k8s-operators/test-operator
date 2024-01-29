@@ -39,7 +39,13 @@ func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Obje
 	}
 }
 
-func (r *Reconciler) EnsureLogsPVCExists(ctx context.Context, instance client.Object, helper *helper.Helper, NamePVC string) (ctrl.Result, error) {
+func (r *Reconciler) EnsureLogsPVCExists(
+	ctx context.Context,
+	instance client.Object,
+	helper *helper.Helper,
+	NamePVC string,
+	StorageClassName string) (ctrl.Result, error) {
+
 	pvvc := &corev1.PersistentVolumeClaim{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: NamePVC}, pvvc)
 	if err == nil {
@@ -61,6 +67,7 @@ func (r *Reconciler) EnsureLogsPVCExists(ctx context.Context, instance client.Ob
 					corev1.ResourceStorage: k8sresource.MustParse("1Gi"),
 				},
 			},
+			StorageClassName: &StorageClassName,
 		},
 	}
 

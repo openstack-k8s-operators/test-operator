@@ -6,6 +6,8 @@ metadata:
   namespace: openstack
 spec:
   containerImage: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
+  # storageClass: local-storage
+  # parallel: false
   testenv: py3
   version: master
   config: |
