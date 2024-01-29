@@ -280,23 +280,23 @@ If you want to retrieve the logs from the pv, you can follow these steps:
     apiVersion: v1
     kind: Pod
     metadata:
-        name: test-operator-logs-pod
-        namespace: "openstack"
+      name: test-operator-logs-pod
+      namespace: "openstack"
     spec:
-    containers:
-      - name: test-operator-logs-container
-        image: quay.io/quay/busybox
-        command: ["/bin/sh", "-c", "--"]
-        args: ["while true; do sleep 30; done;"]
-        volumeMounts:
-          - name: logs-volume
-            mountPath: /mnt
-    volumes:
-      - name: logs-volume
-        persistentVolumeClaim:
-          # Note: In case you created your own custom resource then you
-          #       have to put here the value from metadata.name.
-          claimName: tempest-tests
+      containers:
+        - name: test-operator-logs-container
+          image: quay.io/quay/busybox
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]
+          volumeMounts:
+            - name: logs-volume
+              mountPath: /mnt
+      volumes:
+        - name: logs-volume
+          persistentVolumeClaim:
+            # Note: In case you created your own custom resource then you
+            #       have to put here the value from metadata.name.
+            claimName: tempest-tests
 
 2 (a). Get an access to the logs by connecting to the pod created in the fist
 step:
