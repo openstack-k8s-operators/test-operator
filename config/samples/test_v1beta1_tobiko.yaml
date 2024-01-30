@@ -8,6 +8,10 @@ spec:
   containerImage: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
   # storageClass: local-storage
   # parallel: false
+  # privateKey: |
+  #   <private-key-value>
+  # publicKey: |
+  #   <public-key-value>
   testenv: py3
   version: master
   config: |

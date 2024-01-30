@@ -270,6 +270,11 @@ The test-operator creates a persistent volume that is attached to a pod executin
 the tests. Once the pod completes test execution, the pv contains all the artifacts
 associated with the test run.
 
+.. note::
+   Please keep in mind that all resources created by the test operator are bound
+   to the CR. Once you remove the CR (e.g.::code:`tempest/tempest-tests`), then
+   you also remove the PV containing the logs.
+
 If you want to retrieve the logs from the pv, you can follow these steps:
 
 1. Spawn a pod with the pv attached to it.
@@ -298,7 +303,7 @@ If you want to retrieve the logs from the pv, you can follow these steps:
             #       have to put here the value from metadata.name.
             claimName: tempest-tests
 
-2 (a). Get an access to the logs by connecting to the pod created in the fist
+2. Get an access to the logs by connecting to the pod created in the first
 step:
 
 .. code-block:: bash
@@ -306,7 +311,7 @@ step:
    oc rsh pod/test-operator-logs-pod
    cd /mnt
 
-2 (b). Or get an access to the logs by copying the artifacts out of the pod created
+**OR** get an access to the logs by copying the artifacts out of the pod created
 in the first step:
 
 .. code-block:: bash
