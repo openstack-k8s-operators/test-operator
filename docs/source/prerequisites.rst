@@ -7,8 +7,9 @@ First, you will need an OpenStack Platform running on OpenShift. See, the
 `ci-framework documentation <https://ci-framework.readthedocs.io/en/latest/>`_
 to get you started. It will get you through the installation of such environment.
 
-After the installations is completed, you can source the credentials to the
-environment as follows:
+Depends on the environment you use, you might need to source/eval your
+credentials. In CRC's case, you could source your credentials by running the
+following commands:
 
 .. code-block:: bash
 
