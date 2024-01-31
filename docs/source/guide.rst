@@ -1,9 +1,9 @@
-Run Tests via test-operator
+Run Tests via Test Operator
 ===========================
 
 .. note::
-   Before you proceed with this section of the documentation please make sure
-   that you read the :ref:`prerequisites <prerequisites>`.
+   Before you proceed with this section of the documentation, please make sure
+   that you have read the :ref:`prerequisites <prerequisites>`.
 
 This guide describes:
 
@@ -15,21 +15,21 @@ This guide describes:
 
   * :ref:`uninstalling-operator`
 
-* How to **run tests** via the the operator?
+* How to **run tests** via the operator?
 
   * :ref:`executing-tests`
 
   * :ref:`getting-logs`
 
-If you want to get your hands on the test-operator quickly then follow these two
+If you want to get your hands on the test-operator quickly, then follow these two
 sections: :ref:`running-operator-olm` and :ref:`executing-tests`.
 
 .. _running-operator-olm:
 
-Running Operator Using the Operator Lifecycle Manager (OLM)
------------------------------------------------------------
+Running Test Operator Using the Operator Lifecycle Manager (OLM)
+----------------------------------------------------------------
 
-The first option of how to start the operator is by running the pre-build operator image
+The first option of how to start the operator is by running the pre-built operator image
 stored on
 `quay.io <https://quay.io/repository/openstack-k8s-operators/test-operator>`_
 using the OLM.
@@ -38,11 +38,11 @@ using the OLM.
 
    Currently, the `test-operator <https://quay.io/openstack-k8s-operators/test-operator>`_ is not
    part of the `openstack-operator-index <https://quay.io/openstack-k8s-operators/
-   openstack-operator-index>`_ therefore a new catalog source which uses `test-operator-index
-   <https://quay.io/openstack-k8s-operators /test-operator-index>`_ image needs to be created
+   openstack-operator-index>`_; therefore, a new catalog source which uses `test-operator-index
+   <https://quay.io/openstack-k8s-operators/test-operator-index>`_ image needs to be created
    in advance.
 
-Follow these steps to install the operator in the openstack project.
+Follow these steps to install the operator in the OpenStack project.
 
 1. Create :code:`OperatorGroup`
 
@@ -103,7 +103,7 @@ Follow these steps to install the operator in the openstack project.
    oc apply -f subscription.yaml
 
 4. Wait for the :code:`test-operator-controller-manager` pod to successfully
-   spawn. Once you see  the pod running you can start to communicate with the
+   spawn. Once you see the pod running, you can start communicating with the
    operator using the :code:`Tempest` resource defined in the
    :ref:`executing-tests` section.
 
@@ -114,19 +114,18 @@ Follow these steps to install the operator in the openstack project.
    test-operator-controller-manager-6c9994847c-6jwn5                 2/2     Running     0              20s
    ...
 
-
 .. _running-operator-locally:
 
-Running Operator Locally Outside the Cluster
---------------------------------------------
-This is **quick and easy way** how to experiment with the operator during
+Running Test Operator Locally Outside the Cluster
+-------------------------------------------------
+This is a **quick and easy way** to experiment with the operator during
 development of a new feature.
 
 .. code-block:: bash
 
     make install run
 
-Note, that after running the following command you will need to switch to
+Note that after running the following command, you will need to switch to
 another terminal unless you run it in the background.
 
 .. _uninstalling-operator:
@@ -135,14 +134,14 @@ Uninstalling Operator
 ---------------------
 
 If you installed the operator by following the steps in the
-:ref:`running-operator-olm` section then this section can come handy. You
+:ref:`running-operator-olm` section, then this section can come in handy. You
 might need to uninstall the operator when:
 
 * you encountered issues during the installation process or when
 
-* you want to be sure that you are ussing the latest version of the operator.
+* you want to be sure that you are using the latest version of the operator.
 
-Please, make sure that you follow the order of the steps:
+Please make sure that you follow the order of the steps:
 
 1. Remove all instances of the :code:`Tempest` and :code:`Tobiko` CRDs
 
@@ -152,7 +151,6 @@ Please, make sure that you follow the order of the steps:
 
    NAME            AGE
    tempest-tests   3s
-
 
 .. code-block:: bash
 
@@ -194,7 +192,7 @@ Please, make sure that you follow the order of the steps:
    oc delete csv/test-operator.v0.0.1
 
 8. Remove the :code:`operator`. It is possible that if you executed
-   the previous commands too quickly then you will need to execute this
+   the previous commands too quickly, then you will need to execute this
    command twice.
 
 .. code-block:: bash
@@ -220,7 +218,7 @@ Please, make sure that you follow the order of the steps:
 Executing Tests
 ---------------
 
-Once you have an operator running, then you can apply a custom resource accepted
+Once you have the test operator running, then you can apply a custom resource accepted
 by the test-operator to start the testing. Currently, two types of custom
 resources are being accepted by the test-operator (see
 :ref:`custom-resources-used-by-the-test-operator` section):
@@ -240,9 +238,9 @@ resources are being accepted by the test-operator (see
     oc apply -f config/samples/test_v1beta1_tempest.yaml
 
 3. Verify that the pod executing the tests is running. It might take a couple
-   of seconds for the test pod to spawn. Also, note that by default the test-operator
+   of seconds for the test pod to spawn. Also, note that by default, the test-operator
    allows only one test pod to be running at the same time (read
-   :ref:`parallel-execution`). If you defined your own custom resource in the first step
+   :ref:`parallel-execution`). If you defined your own custom resource in the first step,
    then your test pod will be named according to the :code:`name` value stored in the
    metadata section.
 
