@@ -30,6 +30,9 @@ spec:
     - name: tempest-config
       configMap:
           name: my-tempest-data
+    - name: certificate
+      secret:
+          secretName: combined-ca-bundle
     - name: pre-install
       emptyDir: {}
   containers:
@@ -58,6 +61,9 @@ spec:
         - mountPath: "/etc/openstack/secure.yaml"
           name: cloud-passwd
           subPath: secure.yaml
+        - mountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+          name: certificate
+          subPath: tls-ca-bundle.pem
       env:
         - name: OS_CLOUD
           valueFrom:
