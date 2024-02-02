@@ -14,6 +14,7 @@ func Job(
 	instance *testv1beta1.Tempest,
 	labels map[string]string,
 	mountCerts bool,
+	mountSSHKey bool,
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
@@ -43,7 +44,7 @@ func Job(
 							Image:        instance.Spec.ContainerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts: GetVolumeMounts(mountCerts),
+							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -62,7 +63,7 @@ func Job(
 							},
 						},
 					},
-					Volumes: GetVolumes(mountCerts, instance),
+					Volumes: GetVolumes(mountCerts, mountSSHKey, instance),
 				},
 			},
 		},

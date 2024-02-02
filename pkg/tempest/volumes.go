@@ -6,7 +6,7 @@ import (
 )
 
 // GetVolumes -
-func GetVolumes(mountCerts bool, instance *testv1beta1.Tempest) []corev1.Volume {
+func GetVolumes(mountCerts bool, mountSSHKey bool, instance *testv1beta1.Tempest) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
@@ -86,11 +86,30 @@ func GetVolumes(mountCerts bool, instance *testv1beta1.Tempest) []corev1.Volume 
 		volumes = append(volumes, caCertsVolume)
 	}
 
+	if mountSSHKey {
+		sshKeyVolume := corev1.Volume{
+			Name: "ssh-key",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: instance.Spec.SSHKeySecretName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "ssh-privatekey",
+							Path: "ssh_key",
+						},
+					},
+				},
+			},
+		}
+
+		volumes = append(volumes, sshKeyVolume)
+	}
+
 	return volumes
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
+func GetVolumeMounts(mountCerts bool, mountSSHKey bool) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "etc-machine-id",
@@ -135,6 +154,16 @@ func GetVolumeMounts(mountCerts bool) []corev1.VolumeMount {
 		}
 
 		volumeMounts = append(volumeMounts, caCertVolumeMount)
+	}
+
+	if mountSSHKey {
+		sshKeyMount := corev1.VolumeMount{
+			Name:      "ssh-key",
+			MountPath: "/var/lib/tempest/.ssh/id_ecdsa",
+			SubPath:   "ssh_key",
+		}
+
+		volumeMounts = append(volumeMounts, sshKeyMount)
 	}
 
 	return volumeMounts
