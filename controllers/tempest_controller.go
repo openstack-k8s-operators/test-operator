@@ -227,9 +227,18 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	}
 	// Create PersistentVolumeClaim - end
 
+	serviceLabels := map[string]string{
+		common.AppSelector: tempest.ServiceName,
+	}
+
+	mountSSHKey := false
+	if instance.Spec.SSHKeySecretName != "" {
+		mountSSHKey = r.CheckSecretExists(ctx, instance, instance.Spec.SSHKeySecretName)
+	}
+
 	// Create a new job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	jobDef := tempest.Job(instance, serviceLabels, mountCerts)
+	jobDef := tempest.Job(instance, serviceLabels, mountCerts, mountSSHKey)
 	tempestJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,
@@ -458,6 +467,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 
 	r.setTempestConfigVars(envVars, customData, instance.Spec.TempestRun, ctx)
 	r.setTempestconfConfigVars(envVars, customData, instance.Spec.TempestconfRun)
+	r.setConfigOverwrite(customData, instance.Spec.ConfigOverwrite)
 
 	cms := []util.Template{
 		// ConfigMap
