@@ -27,6 +27,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
+	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
@@ -119,6 +120,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
 			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
+			condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
 		)
 
 		instance.Status.Conditions.Init(&cl)
@@ -126,6 +128,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// Register overall status immediately to have an early feedback
 		// e.g. in the cli
 		return ctrl.Result{}, nil
+	}
+
+	if instance.Status.NetworkAttachments == nil {
+		instance.Status.NetworkAttachments = map[string][]string{}
 	}
 
 	// Handle service delete
@@ -182,6 +188,32 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
 	// Generate ConfigMaps - end
 
+	serviceLabels := map[string]string{
+		common.AppSelector: tempest.ServiceName,
+	}
+
+	// NetworkAttachments
+	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	instance.Status.NetworkAttachments = networkAttachmentStatus
+
+	if networkReady {
+		instance.Status.Conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
+	} else {
+		err := fmt.Errorf("not all pods have interfaces with ips as configured in NetworkAttachments: %s", instance.Spec.NetworkAttachments)
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.NetworkAttachmentsReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.NetworkAttachmentsReadyErrorMessage,
+			err.Error()))
+
+		return ctrl.Result{}, err
+	}
+	// NetworkAttachments - end
+
 	//
 	// TODO check when/if Init, Update, or Upgrade should/could be skipped
 	//
@@ -196,10 +228,6 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	// Create PersistentVolumeClaim - end
 
 	// Create a new job
-	serviceLabels := map[string]string{
-		common.AppSelector: tempest.ServiceName,
-	}
-
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	jobDef := tempest.Job(instance, serviceLabels, mountCerts)
 	tempestJob := job.NewJob(
