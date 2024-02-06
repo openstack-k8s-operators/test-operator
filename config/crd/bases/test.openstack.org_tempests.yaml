@@ -35,12 +35,24 @@ spec:
           spec:
             description: TempestSpec defines the desired state of Tempest
             properties:
+              SSHKeySecretName:
+                description: SSHKeySecretName is the name of the k8s secret that contains
+                  an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest
+                  pod
+                type: string
               backoffLimit:
                 default: 0
                 description: BackoffLimimt allows to define the maximum number of
                   retried executions (defaults to 6).
                 format: int32
                 type: integer
+              configOverwrite:
+                additionalProperties:
+                  type: string
+                description: ConfigOverwrite - interface to overwrite default config
+                  files like e.g. logging.conf But can also be used to add additional
+                  files. Those get added to the service config dir in /etc/test_operator/<file>
+                type: object
               containerImage:
                 description: Tempest Container Image URL (will be set to environmental
                   default if empty)

@@ -179,3 +179,9 @@ func (r *Reconciler) JobExists(ctx context.Context, instance client.Object) bool
 
 	return true
 }
+
+func (r *Reconciler) setConfigOverwrite(customData map[string]string, configOverwrite map[string]string) {
+	for key, data := range configOverwrite {
+		customData[key] = data
+	}
+}

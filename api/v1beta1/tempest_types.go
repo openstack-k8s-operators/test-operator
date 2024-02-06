@@ -275,6 +275,16 @@ type TempestSpec struct {
 	// +kubebuilder:validation:Optional
 	TempestconfRun *TempestconfRunSpec `json:"tempestconfRun,omitempty"`
 
+        // +kubebuilder:validation:Optional
+        // SSHKeySecretName is the name of the k8s secret that contains an ssh key.
+        // The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
+        SSHKeySecretName string `json:"SSHKeySecretName,omitempty"`
+
+        // +kubebuilder:validation:Optional
+        // ConfigOverwrite - interface to overwrite default config files like e.g. logging.conf
+        // But can also be used to add additional files. Those get added to the service config dir in /etc/test_operator/<file>
+        ConfigOverwrite map[string]string `json:"configOverwrite,omitempty"`
+
 	// TODO(slaweq): add more tempest run parameters here
 }
 
