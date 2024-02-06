@@ -227,10 +227,6 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	}
 	// Create PersistentVolumeClaim - end
 
-	serviceLabels := map[string]string{
-		common.AppSelector: tempest.ServiceName,
-	}
-
 	mountSSHKey := false
 	if instance.Spec.SSHKeySecretName != "" {
 		mountSSHKey = r.CheckSecretExists(ctx, instance, instance.Spec.SSHKeySecretName)
