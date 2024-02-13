@@ -1,0 +1,47 @@
+---
+- project:
+    name: openstack-k8s-operators/test-operator
+    periodic:
+      jobs:
+        - podified-multinode-edpm-deployment-crc:
+            vars:
+              test_fw: test_operator
+              cifmw_test_operator_concurrency: 4
+              cifmw_test_operator_timeout: 7200
+              cifmw_test_operator_tempest_include_list: |
+                tempest.
+              cifmw_test_operator_tempest_exclude_list: |
+                tempest.api.compute.admin.test_live_migration.LiveMigrationTest.test_live_migration_with_trunk
+                tempest.api.compute.admin.test_auto_allocate_network.AutoAllocateNetworkTest.test_server_multi_create_auto_allocate
+                tempest.api.compute.servers.test_server_rescue.ServerStableDeviceRescueTestIDE
+                tempest.api.compute.servers.test_device_tagging
+                tempest.api.network.admin.test_dhcp_agent_scheduler.DHCPAgentSchedulersTestJSON
+                tempest.scenario.test_minimum_basic.TestMinimumBasicScenario.test_minimum_basic_scenario
+                tempest.scenario.test_stamp_pattern
+                tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_live_migration
+                tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_mtu_sized_frames
+                test_create_server_invalid_bdm_in_2nd_dict
+              cifmw_tempest_tempestconf_config:
+                overrides: |
+                  identity.v3_endpoint_type public
+                  service_available.swift false
+                  service_available.cinder false
+            required-projects: &rp
+              - name: openstack-k8s-operators/install_yamls
+                override-checkout: main
+              - name: openstack-k8s-operators/openstack-operator
+                override-checkout: main
+              - name: github.com/openstack-k8s-operators/ci-framework
+                override-checkout: main
+              - name: github.com/openstack-k8s-operators/repo-setup
+                override-checkout: main
+              - name: github.com/openstack-k8s-operators/dataplane-operator
+                override-checkout: main
+              - name: github.com/openstack-k8s-operators/infra-operator
+                override-checkout: main
+              - name: github.com/openstack-k8s-operators/openstack-baremetal-operator
+                override-checkout: main
+              - name: github.com/openstack-k8s-operators/edpm-ansible
+                override-checkout: main
+              - name: github.com/openstack-k8s-operators/openstack-must-gather
+                override-checkout: main
