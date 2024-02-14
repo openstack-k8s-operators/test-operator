@@ -18,8 +18,8 @@ func Job(
 	envVars map[string]env.Setter,
 ) *batchv1.Job {
 
-	runAsUser := int64(42495)
-	runAsGroup := int64(42495)
+	runAsUser := int64(0)
+	runAsGroup := int64(0)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -45,6 +45,11 @@ func Job(
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys),
+							SecurityContext: &corev1.SecurityContext{
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{"NET_ADMIN", "NET_RAW"},
+								},
+							},
 						},
 					},
 					Volumes: GetVolumes(mountCerts, mountKeys, instance),
