@@ -31,6 +31,7 @@ func Job(
 			BackoffLimit: instance.Spec.BackoffLimit,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
+					HostNetwork:        true,
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: instance.RbacResourceName(),
 					SecurityContext: &corev1.PodSecurityContext{
