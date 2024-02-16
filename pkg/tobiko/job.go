@@ -47,7 +47,7 @@ func Job(
 							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys),
 							SecurityContext: &corev1.SecurityContext{
 								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"NET_ADMIN", "NET_RAW"},
+									Add: []corev1.Capability{"NET_ADMIN", "NET_RAW", "CAP_AUDIT_WRITE"},
 								},
 							},
 						},
