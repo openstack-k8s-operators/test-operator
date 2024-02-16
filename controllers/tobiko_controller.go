@@ -130,13 +130,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		publicKeyData["id_ecdsa.pub"] = instance.Spec.PublicKey
 	}
 
-	mountKeys := false
-	if (len(publicKeyData) == 0) || (len(privateKeyData) == 0) {
-		logging.Info("Both values privateKey and publicKey need to be specified. Keys not mounted.")
-	} else {
-		mountKeys = true
-	}
-
 	cms := []util.Template{
 		{
 			Name:         instance.Name + "tobiko-config",
@@ -177,7 +170,20 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Create Job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	jobDef := tobiko.Job(instance, serviceLabels, mountCerts, mountKeys, envVars)
+
+	mountKeys := false
+	if (len(publicKeyData) == 0) || (len(privateKeyData) == 0) {
+		logging.Info("Both values privateKey and publicKey need to be specified. Keys not mounted.")
+	} else {
+		mountKeys = true
+	}
+
+	mountKubeconfig := false
+	if len(instance.Spec.KubeconfigSecretName) != 0 {
+		mountKubeconfig = true
+	}
+
+	jobDef := tobiko.Job(instance, serviceLabels, mountCerts, mountKeys, mountKubeconfig, envVars)
 	tobikoJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,

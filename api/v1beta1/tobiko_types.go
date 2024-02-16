@@ -81,11 +81,16 @@ type TobikoSpec struct {
         // Container image for tobiko
         Parallel bool `json:"parallel,omitempty"`
 
-
 	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
         // +kubebuilder:default:=0
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
         BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+
+        // Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
+        // in the test pod.
+        // +kubebuilder:default:=""
+        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+        KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 }
 
 // TobikoStatus defines the observed state of Tobiko

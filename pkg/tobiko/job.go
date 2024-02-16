@@ -15,11 +15,12 @@ func Job(
 	labels map[string]string,
 	mountCerts bool,
 	mountKeys bool,
+	mountKubeconfig bool,
 	envVars map[string]env.Setter,
 ) *batchv1.Job {
 
-	runAsUser := int64(0)
-	runAsGroup := int64(0)
+	runAsUser := int64(42495)
+	runAsGroup := int64(42495)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +45,7 @@ func Job(
 							Image:        instance.Spec.ContainerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys),
+							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig),
 							SecurityContext: &corev1.SecurityContext{
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"NET_ADMIN", "NET_RAW", "CAP_AUDIT_WRITE"},
@@ -52,7 +53,7 @@ func Job(
 							},
 						},
 					},
-					Volumes: GetVolumes(mountCerts, mountKeys, instance),
+					Volumes: GetVolumes(mountCerts, mountKeys, mountKubeconfig, instance),
 				},
 			},
 		},
