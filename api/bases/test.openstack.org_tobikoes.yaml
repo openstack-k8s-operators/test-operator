@@ -53,6 +53,11 @@ spec:
                 default: true
                 description: Run tests in parallel
                 type: boolean
+              kubeconfigSecretName:
+                default: ""
+                description: Name of a secret that contains a kubeconfig. The kubeconfig
+                  is mounted under /var/lib/tobiko/.kube/config in the test pod.
+                type: string
               parallel:
                 default: false
                 description: Container image for tobiko
