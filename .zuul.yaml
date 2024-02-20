@@ -1,7 +1,7 @@
 ---
 - project:
     name: openstack-k8s-operators/test-operator
-    periodic:
+    github-check:
       jobs:
         - podified-multinode-edpm-deployment-crc:
             vars:
