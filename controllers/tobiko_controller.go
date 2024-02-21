@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
@@ -111,7 +112,14 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	envVars := make(map[string]env.Setter)
 	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
+	envVars["TOBIKO_VERSION"] = env.SetValue(instance.Spec.Version)
+	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(instance.Spec.PytestAddopts)
+	if instance.Spec.PreventCreate {
+		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("True")
+	}
+	if instance.Spec.NumProcesses > 0 {
+		envVars["TOX_NUM_PROCESSES"] = env.SetValue(strconv.Itoa(int(instance.Spec.NumProcesses)))
+	}
 	// Prepare env vars - end
 
 	// Prepare custom data
