@@ -29,9 +29,6 @@
                   service_available.cinder false
               cifmw_run_tobiko: true
               cifmw_test_operator_tobiko_testenv: 'functional -- tobiko/tests/functional/podified/test_topology.py'
-              cifmw_test_operator_tobiko_override_conf:
-                rhosp:
-                  ssh_key_filename: '~/tobiko_keys/osp_ssh_key'
             required-projects: &rp
               - name: openstack-k8s-operators/install_yamls
                 override-checkout: main

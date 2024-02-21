@@ -120,6 +120,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if instance.Spec.NumProcesses > 0 {
 		envVars["TOX_NUM_PROCESSES"] = env.SetValue(strconv.Itoa(int(instance.Spec.NumProcesses)))
 	}
+	envVars["TOBIKO_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
 	// Prepare env vars - end
 
 	// Prepare custom data
