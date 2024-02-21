@@ -12,6 +12,12 @@ spec:
   #   <private-key-value>
   # publicKey: |
   #   <public-key-value>
+  # numProcesses: <integer>
+  # preventCreate: <true/false>
+  # pytestAddopts: >- # example:
+  #   -m <markers>
+  #   --maxfail <max-failed-tests>
+  #   --skipregex <regex>
   testenv: py3
   version: master
   config: |

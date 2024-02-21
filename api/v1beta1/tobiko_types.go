@@ -53,6 +53,21 @@ type TobikoSpec struct {
 
         // +kubebuilder:validation:Optional
         // +kubebuilder:default:=""
+        // String including any options to pass to pytest when it runs tobiko tests
+        PytestAddopts string `json:"pytestAddopts,omitempty"`
+
+        // +kubebuilder:validation:Optional
+        // +kubebuilder:default:=false
+        // Boolean specifying whether tobiko tests create new resources or re-use those previously created
+        PreventCreate bool `json:"preventCreate,omitempty"`
+
+        // +kubebuilder:validation:Optional
+        // +kubebuilder:default:=0
+        // Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
+        NumProcesses uint8 `json:"numProcesses,omitempty"`
+
+        // +kubebuilder:validation:Optional
+        // +kubebuilder:default:=""
         // Tobiko version
         Version string `json:"version,omitempty"`
 
