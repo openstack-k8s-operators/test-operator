@@ -3,9 +3,10 @@
     name: openstack-k8s-operators/test-operator
     periodic:
       jobs:
-        - podified-multinode-edpm-deployment-crc:
+        - podified-multinode-edpm-deployment-crc: &podified_multinode_edpm_deployment_crc
             vars:
-              test_fw: test_operator
+              cifmw_run_test_role: test_operator
+              cifmw_run_tempest: true
               cifmw_test_operator_concurrency: 4
               cifmw_test_operator_timeout: 7200
               cifmw_test_operator_tempest_include_list: |
@@ -26,6 +27,11 @@
                   identity.v3_endpoint_type public
                   service_available.swift false
                   service_available.cinder false
+              cifmw_run_tobiko: true
+              cifmw_test_operator_tobiko_testenv: 'functional -- tobiko/tests/functional/podified/test_topology.py'
+              cifmw_test_operator_tobiko_override_conf:
+                rhosp:
+                  ssh_key_filename: '~/tobiko_keys/osp_ssh_key'
             required-projects: &rp
               - name: openstack-k8s-operators/install_yamls
                 override-checkout: main
@@ -45,3 +51,6 @@
                 override-checkout: main
               - name: github.com/openstack-k8s-operators/openstack-must-gather
                 override-checkout: main
+    github-check:
+      jobs:
+        - podified-multinode-edpm-deployment-crc: *podified_multinode_edpm_deployment_crc
