@@ -51,6 +51,3 @@
                 override-checkout: main
               - name: github.com/openstack-k8s-operators/openstack-must-gather
                 override-checkout: main
-    github-check:
-      jobs:
-        - podified-multinode-edpm-deployment-crc: *podified_multinode_edpm_deployment_crc
