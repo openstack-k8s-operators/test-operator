@@ -385,7 +385,7 @@ func (r *TempestReconciler) setTempestconfConfigVars(envVars map[string]string,
 	// Files
 	testOperatorDir := "/etc/test_operator/"
 	if len(tempestconfRun.DeployerInput) != 0 {
-		deployerInputFile := "deployer_input.yaml"
+		deployerInputFile := "deployer_input.ini"
 		customData[deployerInputFile] = tempestconfRun.DeployerInput
 		envVars["TEMPESTCONF_DEPLOYER_INPUT"] = testOperatorDir + deployerInputFile
 	}

@@ -66,14 +66,16 @@ spec:
     # timeout: 600
     # imageDiskFormat: qcow2
     # image: https://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
-    # The following text will be mounted to the tempest pod
-    # as deployer_input.yaml
-    # deployerInput: |
-    #  value1: exmaple_value2
-    #  value2: example_value2
 
     # The following text will be mounted to the tempest pod
     # as /etc/test_operator/deployer_input.yaml
+    # deployerInput: |
+    #   [section]
+    #   value1 = exmaple_value2
+    #   value2 = example_value2
+
+    # The following text will be mounted to the tempest pod
+    # as /etc/test_operator/accounts.yaml
     # testAccounts: |
     #  - username: 'multi_role_user'
     #    tenant_name: 'test_tenant_42'
@@ -85,7 +87,10 @@ spec:
 
     # The following text will be mounted to the tempest pod
     # as /etc/test_operator/profile.yaml
-    # testAccounts: |
+    # profile: |
+    #   collect_timing: false
+    #   create: false
+    #   create_accounts_file: null
 
     # createAccountsFile: /path/to/accounts.yaml
     # generateProfile: /path/to/profile.yaml
