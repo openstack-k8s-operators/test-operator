@@ -11,7 +11,7 @@ func GetVolumes(mountCerts bool, mountKeys bool, mountKubeconfig bool, instance 
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
 	var privateKeyMode int32 = 0600
-	var publicKeyMode int32 = 0655
+	var publicKeyMode int32 = 0644
 	var tlsCertificateMode int32 = 0444
 
 	volumes := []corev1.Volume{
@@ -206,7 +206,7 @@ func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool) []co
 	if mountKeys {
 		keysMount := corev1.VolumeMount{
 			Name:      "tobiko-private-key",
-			MountPath: "/var/lib/tobiko/.ssh/id_ecdsa",
+			MountPath: "/etc/test_operator/id_ecdsa",
 			SubPath:   "id_ecdsa",
 			ReadOnly:  true,
 		}
@@ -215,7 +215,7 @@ func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool) []co
 
 		keysMount = corev1.VolumeMount{
 			Name:      "tobiko-public-key",
-			MountPath: "/var/lib/tobiko/.ssh/id_ecdsa.pub",
+			MountPath: "/etc/test_operator/id_ecdsa.pub",
 			SubPath:   "id_ecdsa.pub",
 			ReadOnly:  true,
 		}
