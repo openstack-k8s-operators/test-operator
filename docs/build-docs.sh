@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-TEMP_VENV_ENV="$(mktemp -d)"
+TEMP_VENV_ENV="$(mkdir)"
 DOCS_DIR="./docs"
 
 python -m venv ${TEMP_VENV_ENV} && source ${TEMP_VENV_ENV}/bin/activate
