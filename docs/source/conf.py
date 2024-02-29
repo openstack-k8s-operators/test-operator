@@ -97,8 +97,8 @@ html_sidebars = {
 # documentation.
 #
 html_theme_options = {
-    "base_url": "https://github.com/openstack-k8s-operators/test-operator/",
-    "repo_url": "https://github.com/openstack-k8s-operators/test-operator/",
+    "base_url": "https://github.com/jakubskunda/test-operator/",
+    "repo_url": "https://github.com/jakubskunda/test-operator/",
     "nav_title": "test-operator",
     "repo_name": "test-operator",
     "repo_type": "github",
