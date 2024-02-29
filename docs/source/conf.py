@@ -49,7 +49,7 @@ source_suffix = {
 master_doc = "index"
 
 # General information about the project.
-project = "test-operator"
+project = "test-operator-mytest"
 copyright = "2023, Red Hat"
 
 # Versions
