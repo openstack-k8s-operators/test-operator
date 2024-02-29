@@ -78,7 +78,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 
 	logging := log.FromContext(ctx)
-	if r.CompletedJobExists(ctx, instance) {
+	if r.CompletedJobExists(ctx, instance, 0) {
 		// The job created by the instance was completed. Release the lock
 		// so that other instances can spawn a job.
 		logging.Info("Job completed")
@@ -234,7 +234,8 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 
 	// Create a new job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	jobDef := tempest.Job(instance, serviceLabels, mountCerts, mountSSHKey)
+	jobName := r.GetJobName(instance, 0)
+	jobDef := tempest.Job(instance, serviceLabels, jobName, mountCerts, mountSSHKey)
 	tempestJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,
@@ -245,7 +246,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 
 	// If there is a job that is completed do not try to create
 	// another one
-	if r.JobExists(ctx, instance) {
+	if r.JobExists(ctx, instance, 0) {
 		return ctrl.Result{}, nil
 	}
 

@@ -13,6 +13,7 @@ import (
 func Job(
 	instance *testv1beta1.Tempest,
 	labels map[string]string,
+	jobName string,
 	mountCerts bool,
 	mountSSHKey bool,
 ) *batchv1.Job {
@@ -23,7 +24,7 @@ func Job(
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name,
+			Name:      jobName,
 			Namespace: instance.Namespace,
 			Labels:    labels,
 		},

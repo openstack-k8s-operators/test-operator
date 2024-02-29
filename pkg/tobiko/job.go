@@ -13,6 +13,7 @@ import (
 func Job(
 	instance *testv1beta1.Tobiko,
 	labels map[string]string,
+	jobName string,
 	mountCerts bool,
 	mountKeys bool,
 	mountKubeconfig bool,
@@ -21,14 +22,18 @@ func Job(
 
 	runAsUser := int64(42495)
 	runAsGroup := int64(42495)
+	parallelism := int32(1)
+	completions := int32(1)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name,
+			Name:      jobName,
 			Namespace: instance.Namespace,
 			Labels:    labels,
 		},
 		Spec: batchv1.JobSpec{
+			Parallelism:  &parallelism,
+			Completions:  &completions,
 			BackoffLimit: instance.Spec.BackoffLimit,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
@@ -41,7 +46,7 @@ func Job(
 					},
 					Containers: []corev1.Container{
 						{
-							Name:         instance.Name + "-tests-runner",
+							Name:         instance.Name,
 							Image:        instance.Spec.ContainerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
