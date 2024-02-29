@@ -4,13 +4,13 @@ on:
     branches:
       - main
     paths:
-      - docs/**
+      - docs/** # Trigger only when changes are made inside docs/
   pull_request:
     paths:
-      - docs/**
+      - docs/** # Trigger only when changes are made inside docs/
   workflow_dispatch:
     paths:
-      - docs/**
+      - docs/** # Trigger manually for docs/
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -43,7 +43,18 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
           cache-dependency-path: ./docs/requirements.txt
+      - name: Check if docs directory is empty
+        id: check_docs
+        run: |
+          if [ "$(ls -A docs)" ]; then
+            echo "Docs directory is not empty"
+            echo "::set-output name=docs_changed::true"
+          else
+            echo "Docs directory is empty"
+            echo "::set-output name=docs_changed::false"
+          fi
       - name: Build documentation
+        if: steps.check_docs.outputs.docs_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           docs/build-docs.sh
       - name: Upload artifacts
