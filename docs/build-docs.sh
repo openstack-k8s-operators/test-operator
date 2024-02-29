@@ -13,7 +13,7 @@ pip install -c ${UPPER_CONSTRAINTS_FILE:-https://releases.openstack.org/constrai
 doc8 --config ${DOCS_DIR}/doc8.ini ${DOCS_DIR}/source
 
 # Specify the output directory for the HTML files
-OUTPUT_DIR="/path/to/your/site"  # Change this to your desired output directory
+OUTPUT_DIR="/documentation"  # Change this to your desired output directory
 sphinx-build -a -E -W -d ${DOCS_DIR}/build/doctrees --keep-going -b html ${DOCS_DIR}/source ${OUTPUT_DIR} -T
 
 deactivate
