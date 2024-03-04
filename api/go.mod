@@ -1,7 +1,7 @@
 module github.com/openstack-k8s-operators/test-operator/api
 
 go 1.19
-
+//hello world
 require (
 	github.com/openstack-k8s-operators/lib-common/modules/common v0.0.0-20230523095909-db05945b0b1e
 	k8s.io/apimachinery v0.27.2
