@@ -32,9 +32,9 @@ spec:
     includeList: | # <-- Use | to preserve \n
       tempest.api.identity.v3.*
     concurrency: 8
-    # excludeList:
-    # - tempest.api.identity.v3.*
-    # workerFile: | # <-- use | to preserver \n
+    # excludeList: | # <-- Use | to preserve \n
+    #   tempest.api.identity.v3.*
+    # workerFile: | # <-- Use | to preserve \n
     #   - worker:
     #     - tempest.api.*
     #     - neutron_tempest_tests
