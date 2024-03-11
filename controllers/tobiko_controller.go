@@ -132,13 +132,21 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
-	result, err := r.EnsureTobikoCloudsYAML(ctx, instance, helper)
+	serviceLabels := map[string]string{
+		common.AppSelector: tobiko.ServiceName,
+		"workflowStep":     strconv.Itoa(externalWorkflowCounter),
+		"instanceName":     instance.Name,
+		"operator":         "test-operator",
+	}
+
+	result, err := r.EnsureTobikoCloudsYAML(ctx, instance, helper, serviceLabels)
+
 	if err != nil {
 		return result, err
 	}
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, instance.Spec.StorageClass)
+	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, serviceLabels, instance.Spec.StorageClass)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {
@@ -161,12 +169,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		mountKubeconfig = true
 	}
 
-	serviceLabels := map[string]string{
-		common.AppSelector: tobiko.ServiceName,
-		"workflowStep":     strconv.Itoa(externalWorkflowCounter),
-		"instanceName":     instance.Name,
-	}
-
 	// If the current job is executing the last workflow step -> do not create another job
 	if workflowActive && externalWorkflowCounter >= len(instance.Spec.Workflow) {
 		return ctrl.Result{}, nil
@@ -187,7 +189,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Prepare Tobiko env vars
-	envVars := r.PrepareTobikoEnvVars(ctx, instance, helper, externalWorkflowCounter)
+	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	jobDef := tobiko.Job(instance, serviceLabels, jobName, mountCerts, mountKeys, mountKubeconfig, envVars)
 	tobikoJob := job.NewJob(
@@ -234,7 +236,7 @@ func (r *TobikoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // Tobiko requires password value to be present in clouds.yaml
 // This code ensures that we set a default value of 12345678 when
 // password value is missing in the clouds.yaml
-func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance client.Object, helper *helper.Helper) (ctrl.Result, error) {
+func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance client.Object, helper *helper.Helper, labels map[string]string) (ctrl.Result, error) {
 	cm, _, _ := configmap.GetConfigMap(ctx, helper, instance, "openstack-config", time.Second*10)
 	result := make(map[interface{}]interface{})
 
@@ -260,6 +262,7 @@ func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance 
 		{
 			Name:      "tobiko-clouds-config",
 			Namespace: instance.GetNamespace(),
+			Labels:    labels,
 			CustomData: map[string]string{
 				"clouds.yaml": string(yamlString),
 			},
@@ -273,6 +276,7 @@ func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance 
 // This function prepares env variables for a single workflow step.
 func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	ctx context.Context,
+	labels map[string]string,
 	instance *testv1beta1.Tobiko,
 	helper *helper.Helper,
 	step int,
@@ -324,18 +328,21 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 			Name:         instance.Name + "tobiko-config",
 			Namespace:    instance.Namespace,
 			InstanceType: instance.Kind,
+			Labels:       labels,
 			CustomData:   customData,
 		},
 		{
 			Name:         instance.Name + "tobiko-private-key",
 			Namespace:    instance.Namespace,
 			InstanceType: instance.Kind,
+			Labels:       labels,
 			CustomData:   privateKeyData,
 		},
 		{
 			Name:         instance.Name + "tobiko-public-key",
 			Namespace:    instance.Namespace,
 			InstanceType: instance.Kind,
+			Labels:       labels,
 			CustomData:   publicKeyData,
 		},
 	}
