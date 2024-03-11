@@ -192,6 +192,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		common.AppSelector: tempest.ServiceName,
 		"workflowStep":     "0",
 		"instanceName":     instance.Name,
+		"operator":         "test-operator",
 	}
 
 	// NetworkAttachments
@@ -221,7 +222,7 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	//
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, instance.Spec.StorageClass)
+	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, serviceLabels, instance.Spec.StorageClass)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {
@@ -459,6 +460,16 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 ) error {
 	// Create/update configmaps from template
 	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
+
+	operatorLabels := map[string]string{
+		"operator":     "test-operator",
+		"instanceName": instance.Name,
+	}
+
+	// Combine labels
+	for key, value := range operatorLabels {
+		cmLabels[key] = value
+	}
 
 	templateParameters := make(map[string]interface{})
 	customData := make(map[string]string)

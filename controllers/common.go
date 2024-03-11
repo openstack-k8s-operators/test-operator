@@ -75,6 +75,7 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	instance client.Object,
 	helper *helper.Helper,
 	NamePVC string,
+	labels map[string]string,
 	StorageClassName string) (ctrl.Result, error) {
 
 	pvvc := &corev1.PersistentVolumeClaim{}
@@ -87,6 +88,7 @@ func (r *Reconciler) EnsureLogsPVCExists(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      NamePVC,
 			Namespace: instance.GetNamespace(),
+			Labels:    labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
