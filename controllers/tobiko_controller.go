@@ -57,6 +57,11 @@ type TobikoReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
+	// How much time should we wait before calling Reconcile loop when there is a failure
+	requeueAfter := time.Second * 60
+
+	logging := log.FromContext(ctx)
 	instance := &testv1beta1.Tobiko{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
@@ -66,16 +71,10 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	logging := log.FromContext(ctx)
-	if r.CompletedJobExists(ctx, instance) {
-		// The job created by the instance was completed. Release the lock
-		// so that other instances can spawn a job.
-		logging.Info("Job completed")
-		r.ReleaseLock(ctx, instance)
-	}
-
-	serviceLabels := map[string]string{
-		common.AppSelector: tobiko.ServiceName,
+	// Check whether the user wants to execute workflow
+	workflowActive := false
+	if len(instance.Spec.Workflow) > 0 {
+		workflowActive = true
 	}
 
 	helper, err := helper.NewHelper(
@@ -85,6 +84,30 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.Scheme,
 		r.Log,
 	)
+
+	// Ensure that there is an external counter and read its value
+	// We use the external counter to keep track of the workflow steps
+	r.WorkflowStepCounterCreate(ctx, instance, helper)
+	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance, helper)
+	if externalWorkflowCounter == -1 {
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	// Each job that is being executed by the test operator has
+	currentWorkflowStep := 0
+	runningTobikoJob := &batchv1.Job{}
+	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
+	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningTobikoJob)
+	if err == nil {
+		currentWorkflowStep, err = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
+	}
+
+	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
+		// The job created by the instance was completed. Release the lock
+		// so that other instances can spawn a job.
+		logging.Info("Job completed")
+		r.ReleaseLock(ctx, instance)
+	}
 
 	rbacRules := []rbacv1.PolicyRule{
 		{
@@ -99,6 +122,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			Verbs:     []string{"create", "get", "list", "watch", "update", "patch", "delete"},
 		},
 	}
+
 	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
 	if err != nil {
 		return rbacResult, err
@@ -107,61 +131,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
-
-	// Prepare env vars
-	envVars := make(map[string]env.Setter)
-	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
-	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["TOBIKO_VERSION"] = env.SetValue(instance.Spec.Version)
-	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(instance.Spec.PytestAddopts)
-	if instance.Spec.PreventCreate {
-		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("True")
-	}
-	if instance.Spec.NumProcesses > 0 {
-		envVars["TOX_NUM_PROCESSES"] = env.SetValue(strconv.Itoa(int(instance.Spec.NumProcesses)))
-	}
-	envVars["TOBIKO_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
-	// Prepare env vars - end
-
-	// Prepare custom data
-	customData := make(map[string]string)
-	if len(instance.Spec.Config) != 0 {
-		customData["tobiko.conf"] = instance.Spec.Config
-	}
-
-	privateKeyData := make(map[string]string)
-	if len(instance.Spec.PrivateKey) != 0 {
-		privateKeyData["id_ecdsa"] = instance.Spec.PrivateKey
-	}
-
-	publicKeyData := make(map[string]string)
-	if len(instance.Spec.PublicKey) != 0 {
-		publicKeyData["id_ecdsa.pub"] = instance.Spec.PublicKey
-	}
-
-	cms := []util.Template{
-		{
-			Name:         instance.Name + "tobiko-config",
-			Namespace:    instance.Namespace,
-			InstanceType: instance.Kind,
-			CustomData:   customData,
-		},
-		{
-			Name:         instance.Name + "tobiko-private-key",
-			Namespace:    instance.Namespace,
-			InstanceType: instance.Kind,
-			CustomData:   privateKeyData,
-		},
-		{
-			Name:         instance.Name + "tobiko-public-key",
-			Namespace:    instance.Namespace,
-			InstanceType: instance.Kind,
-			CustomData:   publicKeyData,
-		},
-	}
-
-	configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
-	// Prepare custom data - end
 
 	result, err := r.EnsureTobikoCloudsYAML(ctx, instance, helper)
 	if err != nil {
@@ -181,7 +150,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 
 	mountKeys := false
-	if (len(publicKeyData) == 0) || (len(privateKeyData) == 0) {
+	if (len(instance.Spec.PublicKey) == 0) || (len(instance.Spec.PrivateKey) == 0) {
 		logging.Info("Both values privateKey and publicKey need to be specified. Keys not mounted.")
 	} else {
 		mountKeys = true
@@ -192,18 +161,16 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		mountKubeconfig = true
 	}
 
-	jobDef := tobiko.Job(instance, serviceLabels, mountCerts, mountKeys, mountKubeconfig, envVars)
-	tobikoJob := job.NewJob(
-		jobDef,
-		testv1beta1.ConfigHash,
-		false,
-		time.Duration(5)*time.Second,
-		"",
-	)
+	serviceLabels := map[string]string{
+		common.AppSelector: tobiko.ServiceName,
+		"workflowStep":     strconv.Itoa(externalWorkflowCounter),
+		"instanceName":     instance.Name,
+	}
 
-	// If there is a job that is completed do not try to create
-	// another one
-	if r.JobExists(ctx, instance) {
+	// If the current job is executing the last workflow step -> do not create another job
+	if workflowActive && externalWorkflowCounter >= len(instance.Spec.Workflow) {
+		return ctrl.Result{}, nil
+	} else if !workflowActive && r.JobExists(ctx, instance, currentWorkflowStep) {
 		return ctrl.Result{}, nil
 	}
 
@@ -211,11 +178,25 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// This lock ensures that there is always only one pod running.
 	if !r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel) {
 		logging.Info("Can not acquire lock")
-		requeueAfter := time.Second * 60
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	} else {
-		logging.Info("Lock acquired")
 	}
+	logging.Info("Lock acquired")
+
+	if workflowActive {
+		r.WorkflowStepCounterIncrease(ctx, instance, helper)
+	}
+
+	// Prepare Tobiko env vars
+	envVars := r.PrepareTobikoEnvVars(ctx, instance, helper, externalWorkflowCounter)
+	jobName := r.GetJobName(instance, externalWorkflowCounter)
+	jobDef := tobiko.Job(instance, serviceLabels, jobName, mountCerts, mountKeys, mountKubeconfig, envVars)
+	tobikoJob := job.NewJob(
+		jobDef,
+		testv1beta1.ConfigHash,
+		false,
+		time.Duration(5)*time.Second,
+		"",
+	)
 
 	ctrlResult, err = tobikoJob.DoJob(ctx, helper)
 	if err != nil {
@@ -287,4 +268,79 @@ func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance 
 	configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
 
 	return ctrl.Result{}, nil
+}
+
+// This function prepares env variables for a single workflow step.
+func (r *TobikoReconciler) PrepareTobikoEnvVars(
+	ctx context.Context,
+	instance *testv1beta1.Tobiko,
+	helper *helper.Helper,
+	step int,
+) map[string]env.Setter {
+	// Prepare env vars
+	envVars := make(map[string]env.Setter)
+	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
+	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetLogDirName("tobiko", instance, step))
+	logging := log.FromContext(ctx)
+	logging.Info("STEP: " + strconv.Itoa(step))
+
+	testenv := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "Testenv", "string", step).(string)
+	envVars["TOBIKO_TESTENV"] = env.SetValue(testenv)
+
+	version := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "Version", "string", step).(string)
+	envVars["TOBIKO_VERSION"] = env.SetValue(version)
+
+	pytestAddopts := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PytestAddopts", "string", step).(string)
+	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(pytestAddopts)
+
+	preventCreate := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PreventCreate", "pbool", step).(bool)
+	if preventCreate {
+		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("True")
+	}
+
+	numProcesses := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "NumProcesses", "puint8", step).(uint8)
+	if numProcesses > 0 {
+		envVars["TOX_NUM_PROCESSES"] = env.SetValue(strconv.Itoa(int(numProcesses)))
+	}
+
+	envVars["TOBIKO_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
+	// Prepare env vars - end
+
+	// Prepare custom data
+	customData := make(map[string]string)
+	tobikoConf := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "Config", "string", step).(string)
+	customData["tobiko.conf"] = tobikoConf
+
+	privateKeyData := make(map[string]string)
+	privateKey := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PrivateKey", "string", step).(string)
+	privateKeyData["id_ecdsa"] = privateKey
+
+	publicKeyData := make(map[string]string)
+	publicKey := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PublicKey", "string", step).(string)
+	publicKeyData["id_ecdsa.pub"] = publicKey
+
+	cms := []util.Template{
+		{
+			Name:         instance.Name + "tobiko-config",
+			Namespace:    instance.Namespace,
+			InstanceType: instance.Kind,
+			CustomData:   customData,
+		},
+		{
+			Name:         instance.Name + "tobiko-private-key",
+			Namespace:    instance.Namespace,
+			InstanceType: instance.Kind,
+			CustomData:   privateKeyData,
+		},
+		{
+			Name:         instance.Name + "tobiko-public-key",
+			Namespace:    instance.Namespace,
+			InstanceType: instance.Kind,
+			CustomData:   publicKeyData,
+		},
+	}
+
+	configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+
+	return envVars
 }
