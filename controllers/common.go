@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"context"
-	"reflect"
+	// "fmt"
 	"strconv"
 	"time"
 
@@ -11,7 +11,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
-	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,41 +22,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	workflowNameSuffix     = "-workflow-counter"
-	jobNameStepInfix       = "-workflow-step-"
-	logDirNameInfix        = "-workflow-step-"
-	workflowStepNumInvalid = -1
-)
-
 type Reconciler struct {
 	Client  client.Client
 	Kclient kubernetes.Interface
 	Log     logr.Logger
 	Scheme  *runtime.Scheme
-}
-
-func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) string {
-	if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
-		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
-			return typedInstance.Name
-		} else {
-			workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
-			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
-		}
-	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		return typedInstance.Name
-	} else {
-		return ""
-	}
-}
-
-func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
-	return instance.GetName() + workflowNameSuffix
-}
-
-func (r *Reconciler) GetLogDirName(frameworkName string, instance client.Object, workflowStepNum int) string {
-	return frameworkName + "-" + instance.GetName() + logDirNameInfix + strconv.Itoa(workflowStepNum)
 }
 
 func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Object, secretName string) bool {
@@ -183,66 +152,9 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) bo
 	return true
 }
 
-func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err == nil {
-		return true
-	}
-
-	counterData := make(map[string]string)
-	counterData["counter"] = "0"
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: counterData,
-		},
-	}
-
-	configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return true
-}
-
-func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return false
-	}
-
-	counterValue, _ := strconv.Atoi(cm.Data["counter"])
-	newCounterValue := strconv.Itoa(counterValue + 1)
-	cm.Data["counter"] = newCounterValue
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: cm.Data,
-		},
-	}
-
-	configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return true
-}
-
-func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object, h *helper.Helper) int {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return workflowStepNumInvalid
-	}
-
-	counter, _ := strconv.Atoi(cm.Data["counter"])
-	return counter
-}
-
-func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
+func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Object) bool {
 	job := &batchv1.Job{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
-
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: instance.GetName()}, job)
 	if err != nil {
 		return false
 	}
@@ -254,9 +166,9 @@ func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Obj
 	return false
 }
 
-func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
+func (r *Reconciler) JobExists(ctx context.Context, instance client.Object) bool {
 	job := &batchv1.Job{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: instance.GetName()}, job)
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			return false
@@ -272,43 +184,4 @@ func (r *Reconciler) setConfigOverwrite(customData map[string]string, configOver
 	for key, data := range configOverwrite {
 		customData[key] = data
 	}
-}
-
-func (r *Reconciler) OverwriteValueWithWorkflow(
-	ctx context.Context,
-	instance v1beta1.TobikoSpec,
-	sectionName string,
-	workflowValueType string,
-	workflowStepNum int,
-) interface{} {
-	if len(instance.Workflow)-1 < workflowStepNum {
-		reflected := reflect.ValueOf(instance)
-		fieldValue := reflected.FieldByName(sectionName)
-		return fieldValue.Interface()
-	}
-
-	reflected := reflect.ValueOf(instance)
-	tobikoSpecValue := reflected.FieldByName(sectionName).Interface()
-
-	reflected = reflect.ValueOf(instance.Workflow[workflowStepNum])
-	tobikoWorkflowValue := reflected.FieldByName(sectionName).Interface()
-
-	if workflowValueType == "pbool" {
-		if val, ok := tobikoWorkflowValue.(*bool); ok && val != nil {
-			return *(tobikoWorkflowValue.(*bool))
-		}
-		return tobikoSpecValue.(bool)
-	} else if workflowValueType == "puint8" {
-		if val, ok := tobikoWorkflowValue.(*uint8); ok && val != nil {
-			return *(tobikoWorkflowValue.(*uint8))
-		}
-		return tobikoSpecValue
-	} else if workflowValueType == "string" {
-		if val, ok := tobikoWorkflowValue.(string); ok && val != "" {
-			return tobikoWorkflowValue
-		}
-		return tobikoSpecValue
-	}
-
-	return nil
 }

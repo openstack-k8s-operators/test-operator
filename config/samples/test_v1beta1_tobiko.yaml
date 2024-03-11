@@ -33,9 +33,3 @@ spec:
 
     [keystone]
     interface_name = value
-  workflow:
-    - stepName: unit-tests
-      testenv: py3
-
-    - stepName: functional-tests
-      testenv: functional
