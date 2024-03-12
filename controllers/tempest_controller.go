@@ -190,6 +190,8 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tempest.ServiceName,
+		"workflowStep":     "0",
+		"instanceName":     instance.Name,
 	}
 
 	// NetworkAttachments
