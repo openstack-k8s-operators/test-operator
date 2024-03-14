@@ -16,6 +16,7 @@ func Job(
 	jobName string,
 	mountCerts bool,
 	mountSSHKey bool,
+	mountKubeconfig bool,
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
@@ -48,7 +49,7 @@ func Job(
 							Image:        instance.Spec.ContainerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey),
+							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey, mountKubeconfig),
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -67,7 +68,7 @@ func Job(
 							},
 						},
 					},
-					Volumes: GetVolumes(mountCerts, mountSSHKey, instance),
+					Volumes: GetVolumes(mountCerts, mountSSHKey, mountKubeconfig, instance),
 				},
 			},
 		},

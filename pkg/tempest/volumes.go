@@ -6,7 +6,7 @@ import (
 )
 
 // GetVolumes -
-func GetVolumes(mountCerts bool, mountSSHKey bool, instance *testv1beta1.Tempest) []corev1.Volume {
+func GetVolumes(mountCerts bool, mountSSHKey bool, mountKubeconfig bool, instance *testv1beta1.Tempest) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
@@ -105,11 +105,30 @@ func GetVolumes(mountCerts bool, mountSSHKey bool, instance *testv1beta1.Tempest
 		volumes = append(volumes, sshKeyVolume)
 	}
 
+	if mountKubeconfig {
+		kubeconfigVolume := corev1.Volume{
+			Name: "kubeconfig",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: instance.Spec.KubeconfigSecretName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "config",
+							Path: "config",
+						},
+					},
+				},
+			},
+		}
+
+		volumes = append(volumes, kubeconfigVolume)
+	}
+
 	return volumes
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts(mountCerts bool, mountSSHKey bool) []corev1.VolumeMount {
+func GetVolumeMounts(mountCerts bool, mountSSHKey bool, mountKubeconfig bool) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "etc-machine-id",
@@ -164,6 +183,17 @@ func GetVolumeMounts(mountCerts bool, mountSSHKey bool) []corev1.VolumeMount {
 		}
 
 		volumeMounts = append(volumeMounts, sshKeyMount)
+	}
+
+	if mountKubeconfig {
+		kubeconfigMount := corev1.VolumeMount{
+			Name:      "kubeconfig",
+			MountPath: "/var/lib/tempest/.kube/config",
+			SubPath:   "config",
+			ReadOnly:  true,
+		}
+
+		volumeMounts = append(volumeMounts, kubeconfigMount)
 	}
 
 	return volumeMounts

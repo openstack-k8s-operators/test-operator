@@ -235,10 +235,15 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		mountSSHKey = r.CheckSecretExists(ctx, instance, instance.Spec.SSHKeySecretName)
 	}
 
+	mountKubeconfig := false
+	if len(instance.Spec.KubeconfigSecretName) != 0 {
+		mountKubeconfig = true
+	}
+
 	// Create a new job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	jobName := r.GetJobName(instance, 0)
-	jobDef := tempest.Job(instance, serviceLabels, jobName, mountCerts, mountSSHKey)
+	jobDef := tempest.Job(instance, serviceLabels, jobName, mountCerts, mountSSHKey, mountKubeconfig)
 	tempestJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,

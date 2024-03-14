@@ -99,6 +99,11 @@ spec:
                   - ipAddressPool
                   type: object
                 type: array
+              kubeconfigSecretName:
+                default: ""
+                description: Name of a secret that contains a kubeconfig. The kubeconfig
+                  is mounted under /var/lib/tempest/.kube/config in the test pod.
+                type: string
               networkAttachments:
                 description: NetworkAttachments is a list of NetworkAttachment resource
                   names to expose the services to the given network

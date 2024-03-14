@@ -101,6 +101,7 @@ type TempestRunSpec struct {
         // If this option is specified then only tests that are part of
         // the external plugin can be executed.
         ExternalPlugin []ExternalPluginType `json:"externalPlugin,omitempty"`
+
 }
 
 // TempestSpec PythonTempestconf parts
@@ -285,7 +286,11 @@ type TempestSpec struct {
         // But can also be used to add additional files. Those get added to the service config dir in /etc/test_operator/<file>
         ConfigOverwrite map[string]string `json:"configOverwrite,omitempty"`
 
-	// TODO(slaweq): add more tempest run parameters here
+        // Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tempest/.kube/config
+        // in the test pod.
+        // +kubebuilder:default:=""
+        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+        KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 }
 
 // MetalLBConfig to configure the MetalLB loadbalancer service
