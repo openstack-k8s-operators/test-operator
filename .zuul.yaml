@@ -22,6 +22,9 @@
                 tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_live_migration
                 tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_mtu_sized_frames
                 test_create_server_invalid_bdm_in_2nd_dict
+                tempest.api.identity.admin.v3.test_credentials.CredentialsTestJSON
+                tempest.api.identity.admin.v3.test_tokens.TokensV3TestJSON.test_rescope_token
+                tempest.api.identity.admin.v3.test_users.UsersV3TestJSON.test_update_user_password
               cifmw_tempest_tempestconf_config:
                 overrides: |
                   identity.v3_endpoint_type public
