@@ -33,9 +33,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: TempestSpec defines the desired state of Tempest
+            description: TempestSpec - configuration of execution of tempest. For
+              specific configuration of tempest see TempestRunSpec and for discover-tempest-config
+              see TempestconfRunSpec.
             properties:
               SSHKeySecretName:
+                default: ""
                 description: SSHKeySecretName is the name of the k8s secret that contains
                   an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest
                   pod
@@ -54,51 +57,9 @@ spec:
                   files. Those get added to the service config dir in /etc/test_operator/<file>
                 type: object
               containerImage:
-                description: Tempest Container Image URL (will be set to environmental
-                  default if empty)
+                description: An URL of a tempest container image that should be used
+                  for the execution of tempest tests.
                 type: string
-              externalEndpoints:
-                description: ExternalEndpoints, expose a VIP using a pre-created IPAddressPool
-                items:
-                  description: MetalLBConfig to configure the MetalLB loadbalancer
-                    service
-                  properties:
-                    endpoint:
-                      description: Endpoint, OpenStack endpoint this service maps
-                        to
-                      enum:
-                      - internal
-                      - public
-                      type: string
-                    ipAddressPool:
-                      description: IPAddressPool expose VIP via MetalLB on the IPAddressPool
-                      minLength: 1
-                      type: string
-                    loadBalancerIPs:
-                      description: LoadBalancerIPs, request given IPs from the pool
-                        if available. Using a list to allow dual stack (IPv4/IPv6)
-                        support
-                      items:
-                        type: string
-                      type: array
-                    sharedIP:
-                      default: true
-                      description: SharedIP if true, VIP/VIPs get shared with multiple
-                        services
-                      type: boolean
-                    sharedIPKey:
-                      default: ""
-                      description: SharedIPKey specifies the sharing key which gets
-                        set as the annotation on the LoadBalancer service. Services
-                        which share the same VIP must have the same SharedIPKey. Defaults
-                        to the IPAddressPool if SharedIP is true, but no SharedIPKey
-                        specified.
-                      type: string
-                  required:
-                  - endpoint
-                  - ipAddressPool
-                  type: object
-                type: array
               networkAttachments:
                 description: NetworkAttachments is a list of NetworkAttachment resource
                   names to expose the services to the given network
@@ -123,183 +84,448 @@ spec:
                 type: string
               parallel:
                 default: false
-                description: Execute tests parallely
+                description: By default test-operator executes the test-pods sequentially
+                  if multiple instances of test-operator related CRs exist. If you
+                  want to turn off this behaviour then set this option to true.
                 type: boolean
               storageClass:
                 default: local-storage
-                description: StorageClass used to create PVCs that store the logs
+                description: Name of a storage class that is used to create PVCs for
+                  logs storage. Required if default storage class does not exist.
                 type: string
               tempestRun:
-                description: TempestSpec TempestRun parts
+                description: TempestRunSpec - is used to configure execution of tempest.
+                  Please refer to Please refer to https://docs.openstack.org/tempest/latest/
+                  for the further explanation of the CLI parameters.
                 properties:
                   concurrency:
                     default: -1
-                    description: Concurrency is the Default concurrency
+                    description: Concurrency value that is passed to tempest via --concurrency
                     format: int64
                     type: integer
                   excludeList:
-                    default: ""
-                    description: ExcludeList
+                    description: A content of exclude.txt file that is passed to tempest
+                      via --exclude-list
                     type: string
                   externalPlugin:
                     description: ExternalPlugin contains information about plugin
-                      that should be installed within the tempest container. If this
+                      that should be installed within the tempest test pod. If this
                       option is specified then only tests that are part of the external
                       plugin can be executed.
                     items:
+                      description: ExternalPluginType - is used to specify a plugin
+                        that should be installed from an external resource
                       properties:
                         changeRefspec:
-                          default: ""
                           description: ChangeRefspec specifies which change the remote
                             repository should be checked out to (ChangeRepository
                             must be defined as well).
                           type: string
                         changeRepository:
-                          default: ""
                           description: URL that points to a repository that contains
                             a change that should be applied to the repository defined
                             by Repository (ChangeRefspec must be defined as well).
                           type: string
                         repository:
-                          default: ""
                           description: URL that points to a git repository containing
-                            the external plugin.
+                            an external plugin.
                           type: string
                       type: object
                     type: array
                   includeList:
                     default: tempest.api.identity.v3
-                    description: IncludeList
+                    description: A content of include.txt file that is passed to tempest
+                      via --include-list
                     type: string
                   parallel:
                     default: true
-                    description: Run tests in parallel
+                    description: Indicate whether tempest should be executed with
+                      --parallel
                     type: boolean
                   serial:
                     default: false
-                    description: Serial run
+                    description: Indicate whether tempest should be executed with
+                      --serial
                     type: boolean
                   smoke:
                     default: false
-                    description: Smoke tests
+                    description: Indicate whether tempest should be executed with
+                      --smoke
                     type: boolean
                   workerFile:
                     default: ""
-                    description: WorkerFile is the detailed concurrency spec file
+                    description: A content of worker_file.yaml that is passed to tempest
+                      via --worker-file
                     type: string
                 type: object
               tempestconfRun:
-                description: TempestSpec PythonTempestconf parts
+                description: TempestconfRunSpec - is used to configure execution of
+                  discover-tempest-config Please refer to https://docs.opendev.org/openinfra/python-tempestconf
+                  for the further explanation of the CLI parameters.
                 properties:
                   append:
                     default: ""
-                    description: Append values to tempest.conf
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --append
                     type: string
                   collectTiming:
                     default: false
-                    description: Collect per-API call timing information.
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --collect-timing
                     type: boolean
                   convertToRaw:
                     default: false
-                    description: Convert images to raw format before uploading.
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --convert-to-raw
                     type: boolean
                   create:
                     default: true
-                    description: Create Tempest resources
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --create
                     type: boolean
                   createAccountsFile:
                     default: ""
-                    description: Generate Tempest accounts file.
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via the --create-accounts-file
                     type: string
                   debug:
                     default: false
-                    description: Print debugging information.
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --debug
                     type: boolean
                   deployerInput:
                     default: ""
-                    description: Path to deployer file
+                    description: A content of deployer_input.ini that is passed to
+                      tempest via --deployer-input
                     type: string
                   flavorMinDisk:
                     default: -1
-                    description: Specify minimum disk size for new flavors
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --flavor-min-disk
                     format: int64
                     type: integer
                   flavorMinMem:
                     default: -1
-                    description: Specify minimum memory for new flavors
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --flavor-min-mem
                     format: int64
                     type: integer
                   generateProfile:
                     default: ""
-                    description: Generate a sample profile.yaml file.
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --generate-profile
                     type: string
                   image:
                     default: ""
-                    description: An image name/path/url to be uploaded to glance if
-                      it’s not already there.
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --image
                     type: string
                   imageDiskFormat:
                     default: ""
-                    description: A format of an image to be uploaded to glance.
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --image-disk-format
                     type: string
                   insecure:
                     default: false
-                    description: Explicitly allow client to perform “insecure” TLS
-                      (https) requests.
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --insecure
                     type: boolean
                   networkID:
                     default: ""
-                    description: Specify which network with external connectivity
-                      should be used by the test.
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --network-id
                     type: string
                   noDefaultDeployer:
                     default: false
-                    description: Do not check for the default deployer input in
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --no-default-deployer
                     type: boolean
                   nonAdmin:
                     default: false
-                    description: Simulate non-admin credentials.
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --non-admin
                     type: boolean
                   out:
                     default: ""
-                    description: Output file
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via the --out parameter
                     type: string
                   overrides:
                     default: identity.v3_endpoint_type public
-                    description: Override options
+                    description: The content of this variable will be appended at
+                      the end of the command that executes discover-tempest-config
+                      (override values).
                     type: string
                   profile:
                     default: ""
-                    description: python-tempestconf’s profile.yaml file
+                    description: A content of profile.yaml that is passed to tempest
+                      via --profile
                     type: string
                   remove:
                     default: ""
-                    description: Append values to tempest.conf
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --remove
                     type: string
                   retryImage:
                     default: false
-                    description: Allow tempestconf to retry download an image, in
-                      case of failure.
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --retry-image
                     type: boolean
                   testAccounts:
                     default: ""
-                    description: Tempest accounts.yaml file
+                    description: A content of accounts.yaml that is passed to tempest
+                      via --test-acounts
                     type: string
                   timeout:
                     default: -1
-                    description: Set request timeout (in seconds).
+                    description: The content of this variable will be passed to discover-tempest-config
+                      via --timeout
                     format: int64
                     type: integer
                   verbose:
                     default: false
-                    description: Print more information about the execution.
+                    description: Indicate whether discover-tempest-config should be
+                      executed with --verbose
                     type: boolean
                 type: object
+              workflow:
+                description: Workflow - can be used to specify a multiple executions
+                  of tempest with a different configuration in a single CR. Accepts
+                  a list of dictionaries where each member of the list accepts the
+                  same values as the Tempest CR does in the `spec`` section. Values
+                  specified using the workflow section have a higher precedence than
+                  the values specified higher in the Tempest CR hierarchy.
+                items:
+                  description: TempestSpec - configuration of execution of tempest.
+                    For specific configuration of tempest see TempestRunSpec and for
+                    discover-tempest-config see TempestconfRunSpec.
+                  properties:
+                    SSHKeySecretName:
+                      description: SSHKeySecretName is the name of the k8s secret
+                        that contains an ssh key. The key is mounted to ~/.ssh/id_ecdsa
+                        in the tempest pod
+                      type: string
+                    backoffLimit:
+                      description: BackoffLimimt allows to define the maximum number
+                        of retried executions (defaults to 6).
+                      format: int32
+                      type: integer
+                    configOverwrite:
+                      additionalProperties:
+                        type: string
+                      description: ConfigOverwrite - interface to overwrite default
+                        config files like e.g. logging.conf But can also be used to
+                        add additional files. Those get added to the service config
+                        dir in /etc/test_operator/<file>
+                      type: object
+                    containerImage:
+                      description: An URL of a tempest container image that should
+                        be used for the execution of tempest tests.
+                      type: string
+                    networkAttachments:
+                      description: NetworkAttachments is a list of NetworkAttachment
+                        resource names to expose the services to the given network
+                      items:
+                        type: string
+                      type: array
+                    nodeSelector:
+                      additionalProperties:
+                        type: string
+                      description: NodeSelector to target subset of worker nodes running
+                        this service
+                      type: object
+                    openStackConfigMap:
+                      description: OpenStackConfigMap is the name of the ConfigMap
+                        containing the clouds.yaml
+                      type: string
+                    openStackConfigSecret:
+                      description: OpenStackConfigSecret is the name of the Secret
+                        containing the secure.yaml
+                      type: string
+                    parallel:
+                      description: By default test-operator executes the test-pods
+                        sequentially if multiple instances of test-operator related
+                        CRs exist. If you want to turn off this behaviour then set
+                        this option to true.
+                      type: boolean
+                    storageClass:
+                      description: Name of a storage class that is used to create
+                        PVCs for logs storage. Required if default storage class does
+                        not exist.
+                      type: string
+                    tempestRun:
+                      description: TempestRunSpec - is used to configure execution
+                        of tempest. Please refer to Please refer to https://docs.openstack.org/tempest/latest/
+                        for the further explanation of the CLI parameters.
+                      properties:
+                        concurrency:
+                          description: Concurrency value that is passed to tempest
+                            via --concurrency
+                          format: int64
+                          type: integer
+                        excludeList:
+                          description: A content of exclude.txt file that is passed
+                            to tempest via --exclude-list
+                          type: string
+                        externalPlugin:
+                          description: ExternalPlugin contains information about plugin
+                            that should be installed within the tempest test pod.
+                            If this option is specified then only tests that are part
+                            of the external plugin can be executed.
+                          items:
+                            description: ExternalPluginType - is used to specify a
+                              plugin that should be installed from an external resource
+                            properties:
+                              changeRefspec:
+                                description: ChangeRefspec specifies which change
+                                  the remote repository should be checked out to (ChangeRepository
+                                  must be defined as well).
+                                type: string
+                              changeRepository:
+                                description: URL that points to a repository that
+                                  contains a change that should be applied to the
+                                  repository defined by Repository (ChangeRefspec
+                                  must be defined as well).
+                                type: string
+                              repository:
+                                description: URL that points to a git repository containing
+                                  an external plugin.
+                                type: string
+                            type: object
+                          type: array
+                        includeList:
+                          description: A content of include.txt file that is passed
+                            to tempest via --include-list
+                          type: string
+                        parallel:
+                          description: Indicate whether tempest should be executed
+                            with --parallel
+                          type: boolean
+                        serial:
+                          description: Indicate whether tempest should be executed
+                            with --serial
+                          type: boolean
+                        smoke:
+                          description: Indicate whether tempest should be executed
+                            with --smoke
+                          type: boolean
+                        workerFile:
+                          description: A content of worker_file.yaml that is passed
+                            to tempest via --worker-file
+                          type: string
+                      type: object
+                    tempestconfRun:
+                      description: TempestconfRunSpec - is used to configure execution
+                        of discover-tempest-config Please refer to https://docs.opendev.org/openinfra/python-tempestconf
+                        for the further explanation of the CLI parameters.
+                      properties:
+                        append:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --append
+                          type: string
+                        collectTiming:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --collect-timing
+                          type: boolean
+                        convertToRaw:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --convert-to-raw
+                          type: boolean
+                        create:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --create
+                          type: boolean
+                        createAccountsFile:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via the --create-accounts-file
+                          type: string
+                        debug:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --debug
+                          type: boolean
+                        deployerInput:
+                          description: A content of deployer_input.ini that is passed
+                            to tempest via --deployer-input
+                          type: string
+                        flavorMinDisk:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --flavor-min-disk
+                          format: int64
+                          type: integer
+                        flavorMinMem:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --flavor-min-mem
+                          format: int64
+                          type: integer
+                        generateProfile:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --generate-profile
+                          type: string
+                        image:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --image
+                          type: string
+                        imageDiskFormat:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --image-disk-format
+                          type: string
+                        insecure:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --insecure
+                          type: boolean
+                        networkID:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --network-id
+                          type: string
+                        noDefaultDeployer:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --no-default-deployer
+                          type: boolean
+                        nonAdmin:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --non-admin
+                          type: boolean
+                        out:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via the --out parameter
+                          type: string
+                        overrides:
+                          description: The content of this variable will be appended
+                            at the end of the command that executes discover-tempest-config
+                            (override values).
+                          type: string
+                        profile:
+                          description: A content of profile.yaml that is passed to
+                            tempest via --profile
+                          type: string
+                        remove:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --remove
+                          type: string
+                        retryImage:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --retry-image
+                          type: boolean
+                        testAccounts:
+                          description: A content of accounts.yaml that is passed to
+                            tempest via --test-acounts
+                          type: string
+                        timeout:
+                          description: The content of this variable will be passed
+                            to discover-tempest-config via --timeout
+                          format: int64
+                          type: integer
+                        verbose:
+                          description: Indicate whether discover-tempest-config should
+                            be executed with --verbose
+                          type: boolean
+                      type: object
+                  type: object
+                type: array
             required:
             - containerImage
             - openStackConfigMap
             - openStackConfigSecret
-            - storageClass
             type: object
           status:
             description: TempestStatus defines the observed state of Tempest
