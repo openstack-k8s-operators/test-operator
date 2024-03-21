@@ -3,6 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: tempest-home
 spec:
+  storageClassName: local-storage
   resources:
     requests:
         storage: 10G
