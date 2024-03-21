@@ -4,6 +4,8 @@
     periodic:
       jobs:
         - podified-multinode-edpm-deployment-crc: &podified_multinode_edpm_deployment_crc
+            branches:
+              - main
             vars:
               cifmw_run_test_role: test_operator
               cifmw_run_tempest: true
