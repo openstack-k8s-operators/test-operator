@@ -203,13 +203,13 @@ type TempestconfRunSpec struct {
 	Image string `json:"image"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
+	// +kubebuilder:default=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-mem
 	FlavorMinMem int64 `json:"flavorMinMem"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
+	// +kubebuilder:default=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-disk
 	FlavorMinDisk int64 `json:"flavorMinDisk"`
@@ -238,8 +238,7 @@ type TempestconfRunSpec struct {
 	// that executes discover-tempest-config (override values).
 	Overrides string `json:"overrides"`
 
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
+	// +kubebuilder:default=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --timeout
 	Timeout int64 `json:"timeout"`
@@ -248,8 +247,13 @@ type TempestconfRunSpec struct {
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type TempestSpec struct {
+
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default="local-storage"
+	// +kubebuilder:default="s0:c478,c978"
+	// A SELinuxLevel that is used for all the tempest test pods.
+	SELinuxLevel string `json:"SELinuxLevel"`
+
+	// +kubebuilder:validation:Optional
 	// Name of a storage class that is used to create PVCs for logs storage. Required
 	// if default storage class does not exist.
 	StorageClass string `json:"storageClass"`
@@ -291,10 +295,10 @@ type TempestSpec struct {
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestRun *TempestRunSpec `json:"tempestRun,omitempty"`
+	TempestRun TempestRunSpec `json:"tempestRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestconfRun *TempestconfRunSpec `json:"tempestconfRun,omitempty"`
+	TempestconfRun TempestconfRunSpec `json:"tempestconfRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""

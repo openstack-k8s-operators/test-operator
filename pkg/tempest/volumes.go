@@ -6,7 +6,12 @@ import (
 )
 
 // GetVolumes -
-func GetVolumes(mountCerts bool, mountSSHKey bool, instance *testv1beta1.Tempest) []corev1.Volume {
+func GetVolumes(
+	customDataConfigMapName string,
+	mountCerts bool,
+	mountSSHKey bool,
+	instance *testv1beta1.Tempest,
+) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
@@ -36,7 +41,7 @@ func GetVolumes(mountCerts bool, mountSSHKey bool, instance *testv1beta1.Tempest
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					DefaultMode: &scriptsVolumeDefaultMode,
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "-config-data",
+						Name: customDataConfigMapName,
 					},
 				},
 			},
