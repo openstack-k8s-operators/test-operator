@@ -104,3 +104,21 @@ spec:
     # overrides: | # <-- Use | to preserve \n
     #  overrides_section1.name1 value1
     #  overrides_section1.name1 value2
+
+  # Workflow
+  # --------
+  # Workflow section can be utilized to spawn multiple test pods at the same time.
+  # The commented out example spawns two test pods that are executed sequentially.
+  # Each step inherits all configuration that is specified outside of the workflow
+  # field. For each step you can overwrite values specified in the tempestRun and
+  # tempestconfRun sections.
+  #
+  # workflow:
+  #   - stepName: FirstStep
+  #     tempestRun:
+  #       includeList: |
+  #         tempest.api.*
+  #   - stepName: SecondStep
+  #     tempestRun:
+  #       includeList: |
+  #         neutron_tempest_plugin.*

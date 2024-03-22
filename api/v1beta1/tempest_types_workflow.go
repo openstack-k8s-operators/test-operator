@@ -1,5 +1,5 @@
 /*
-Copyright 2023.
+Copyright 2024.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,25 +15,6 @@ limitations under the License.
 */
 
 package v1beta1
-
-// ExternalPluginType - is used to specify a plugin that should be installed
-// from an external resource
-type WorkflowExternalPluginType struct {
-	// +kubebuilder:validation:Optional
-	// URL that points to a git repository containing an external plugin.
-	Repository *string `json:"repository,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// URL that points to a repository that contains a change that should be
-	// applied to the repository defined by Repository (ChangeRefspec must be
-	// defined as well).
-	ChangeRepository *string `json:"changeRepository,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// ChangeRefspec specifies which change the remote repository should be
-	// checked out to (ChangeRepository must be defined as well).
-	ChangeRefspec *string `json:"changeRefspec,omitempty"`
-}
 
 // TempestRunSpec - is used to configure execution of tempest. Please refer to
 // Please refer to https://docs.openstack.org/tempest/latest/ for the further
@@ -71,7 +52,7 @@ type WorkflowTempestRunSpec struct {
 	// ExternalPlugin contains information about plugin that should be installed
 	// within the tempest test pod. If this option is specified then only tests
 	// that are part of the external plugin can be executed.
-	ExternalPlugin []WorkflowExternalPluginType `json:"externalPlugin,omitempty"`
+	ExternalPlugin *[]ExternalPluginType `json:"externalPlugin,omitempty"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config
@@ -193,6 +174,11 @@ type WorkflowTempestconfRunSpec struct {
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type WorkflowTempestSpec struct {
+	// +kubebuilder:validation:Required
+	// Name of a workflow step. The step name will be used for example to create
+	// a logs directory.
+	StepName string `json:"stepName"`
+
 	// +kubebuilder:validation:Optional
 	// Name of a storage class that is used to create PVCs for logs storage. Required
 	// if default storage class does not exist.
@@ -219,7 +205,7 @@ type WorkflowTempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-	OpenStackConfigSecret string `json:"openStackConfigSecret"`
+	OpenStackConfigSecret *string `json:"openStackConfigSecret"`
 
 	// +kubebuilder:validation:Optional
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
@@ -231,10 +217,10 @@ type WorkflowTempestSpec struct {
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestRun *WorkflowTempestRunSpec `json:"tempestRun,omitempty"`
+	TempestRun WorkflowTempestRunSpec `json:"tempestRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestconfRun *WorkflowTempestconfRunSpec `json:"tempestconfRun,omitempty"`
+	TempestconfRun WorkflowTempestconfRunSpec `json:"tempestconfRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// SSHKeySecretName is the name of the k8s secret that contains an ssh key.
