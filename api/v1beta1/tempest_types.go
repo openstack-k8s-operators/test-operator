@@ -203,13 +203,13 @@ type TempestconfRunSpec struct {
 	Image string `json:"image"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
+	// +kubebuilder:default=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-mem
 	FlavorMinMem int64 `json:"flavorMinMem"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
+	// +kubebuilder:default=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-disk
 	FlavorMinDisk int64 `json:"flavorMinDisk"`
@@ -238,8 +238,7 @@ type TempestconfRunSpec struct {
 	// that executes discover-tempest-config (override values).
 	Overrides string `json:"overrides"`
 
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
+	// +kubebuilder:default=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --timeout
 	Timeout int64 `json:"timeout"`
@@ -291,10 +290,10 @@ type TempestSpec struct {
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestRun *TempestRunSpec `json:"tempestRun,omitempty"`
+	TempestRun TempestRunSpec `json:"tempestRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestconfRun *TempestconfRunSpec `json:"tempestconfRun,omitempty"`
+	TempestconfRun TempestconfRunSpec `json:"tempestconfRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
