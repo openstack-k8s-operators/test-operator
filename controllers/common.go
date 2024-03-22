@@ -24,10 +24,12 @@ import (
 )
 
 const (
-	workflowNameSuffix     = "-workflow-counter"
-	jobNameStepInfix       = "-workflow-step-"
-	logDirNameInfix        = "-workflow-step-"
-	workflowStepNumInvalid = -1
+	workflowNameSuffix       = "-workflow-counter"
+	jobNameStepInfix         = "-workflow-step-"
+	logDirNameInfix          = "-workflow-step-"
+	envVarsConfigMapinfix    = "-env-vars-step-"
+	customDataConfigMapinfix = "-custom-data-step-"
+	workflowStepNumInvalid   = -1
 )
 
 type Reconciler struct {
@@ -35,6 +37,26 @@ type Reconciler struct {
 	Kclient kubernetes.Interface
 	Log     logr.Logger
 	Scheme  *runtime.Scheme
+}
+
+func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {
+	if _, ok := instance.(*v1beta1.Tobiko); ok {
+		return "not-implemented"
+	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
+		return typedInstance.Name + envVarsConfigMapinfix + strconv.Itoa(workflowStepNum)
+	}
+
+	return "not-implemented"
+}
+
+func GetCustomDataConfigMapName(instance interface{}, workflowStepNum int) string {
+	if _, ok := instance.(*v1beta1.Tobiko); ok {
+		return "not-implemented"
+	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
+		return typedInstance.Name + customDataConfigMapinfix + strconv.Itoa(workflowStepNum)
+	}
+
+	return "not-implemented"
 }
 
 func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) string {
@@ -46,7 +68,12 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 		}
 	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		return typedInstance.Name
+		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
+			return typedInstance.Name
+		} else {
+			workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
+		}
 	} else {
 		return ""
 	}

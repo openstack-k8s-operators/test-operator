@@ -14,6 +14,8 @@ func Job(
 	instance *testv1beta1.Tempest,
 	labels map[string]string,
 	jobName string,
+	envVarsConfigMapName string,
+	customDataConfigMapName string,
 	mountCerts bool,
 	mountSSHKey bool,
 ) *batchv1.Job {
@@ -53,21 +55,21 @@ func Job(
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: instance.Name + "-config-data",
+											Name: customDataConfigMapName,
 										},
 									},
 								},
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: instance.Name + "-env-vars",
+											Name: envVarsConfigMapName,
 										},
 									},
 								},
 							},
 						},
 					},
-					Volumes: GetVolumes(mountCerts, mountSSHKey, instance),
+					Volumes: GetVolumes(customDataConfigMapName, mountCerts, mountSSHKey, instance),
 				},
 			},
 		},
