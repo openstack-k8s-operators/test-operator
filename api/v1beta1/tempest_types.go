@@ -103,6 +103,11 @@ type TempestRunSpec struct {
 	// within the tempest test pod. If this option is specified then only tests
 	// that are part of the external plugin can be executed.
 	ExternalPlugin []ExternalPluginType `json:"externalPlugin,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=""
+	// Add extra image for Neutron Tempest plugin
+	NeutronExtraImage string `json:"neutronExtraImage,omitempty"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config

@@ -48,6 +48,7 @@ spec:
     #   - repository: "https://opendev.org/openstack/neutron-tempest-plugin.git"
     #     changeRepository: "https://review.opendev.org/openstack/neutron-tempest-plugin"
     #     changeRefspec: "refs/changes/97/896397/2"
+    # neutronExtraImage: https://download.fedoraproject.org/pub/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2
   tempestconfRun:
     # NOTE: All parameters have default values (use only when you want to override
     #       the default behaviour)
