@@ -138,6 +138,12 @@ func GetVolumeMounts(mountCerts bool, mountSSHKey bool) []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
+			Name:      "openstack-config",
+			MountPath: "/var/lib/tempest/.config/openstack/clouds.yaml",
+			SubPath:   "clouds.yaml",
+			ReadOnly:  true,
+		},
+		{
 			Name:      "openstack-config-secret",
 			MountPath: "/etc/openstack/secure.yaml",
 			ReadOnly:  false,
