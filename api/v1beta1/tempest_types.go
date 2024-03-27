@@ -101,6 +101,10 @@ type TempestRunSpec struct {
         // If this option is specified then only tests that are part of
         // the external plugin can be executed.
         ExternalPlugin []ExternalPluginType `json:"externalPlugin,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// Add extra image for Whitebox Neutron Tempest plugin
+	WhiteboxNeutronExtraImage string `json:"whiteboxNeutronExtraImage,omitempty"`
 }
 
 // TempestSpec PythonTempestconf parts

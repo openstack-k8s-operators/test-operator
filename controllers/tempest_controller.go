@@ -345,6 +345,11 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXCLUDE_LIST"] = testOperatorDir + excludeListFile
 	}
 
+	// String
+	if len(tempestRun.WhiteboxNeutronExtraImage) != 0 {
+		envVars["TEMPEST_WHITEBOX_NEUTRON_IMAGE_URL"] = tempestRun.WhiteboxNeutronExtraImage
+	}
+
 	// Bool
 	tempestBoolEnvVars := make(map[string]bool)
 	tempestBoolEnvVars = map[string]bool{
