@@ -94,6 +94,7 @@ spec:
                   want to turn off this behaviour then set this option to true.
                 type: boolean
               storageClass:
+                default: local-storage
                 description: Name of a storage class that is used to create PVCs for
                   logs storage. Required if default storage class does not exist.
                 type: string

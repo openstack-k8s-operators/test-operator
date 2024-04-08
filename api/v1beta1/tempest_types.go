@@ -254,6 +254,7 @@ type TempestSpec struct {
 	SELinuxLevel string `json:"SELinuxLevel"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="local-storage"
 	// Name of a storage class that is used to create PVCs for logs storage. Required
 	// if default storage class does not exist.
 	StorageClass string `json:"storageClass"`
