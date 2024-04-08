@@ -14,11 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file contains an extension of the Tempest CR. Ultimataly it is a copy of
+tempest_types.go that removes all default values for each config options. This
+is necessary to be able to detect when the user explicitly set a value in the
+`workflow` setcion.
+*/
+
 package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/endpoint"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,72 +41,69 @@ type Hash struct {
 	Hash string `json:"hash,omitempty"`
 }
 
-
+// ExternalPluginType - is used to specify a plugin that should be installed
+// from an external resource
 type ExternalPluginType struct {
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=""
-	// URL that points to a git repository containing
-	// the external plugin.
+	// +kubebuilder:validation:Required
+	// URL that points to a git repository containing an external plugin.
 	Repository string `json:"repository,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=""
-	// URL that points to a repository that contains a change
-	// that should be applied to the repository defined by Repository
-	// (ChangeRefspec must be defined as well).
+	// URL that points to a repository that contains a change that should be
+	// applied to the repository defined by Repository (ChangeRefspec must be
+	// defined as well).
 	ChangeRepository string `json:"changeRepository,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=""
-	// ChangeRefspec specifies which change the remote repository
-	// should be checked out to (ChangeRepository must be defined
-	// as well).
+	// ChangeRefspec specifies which change the remote repository should be
+	// checked out to (ChangeRepository must be defined as well).
 	ChangeRefspec string `json:"changeRefspec,omitempty"`
 }
 
-// TempestSpec TempestRun parts
+// TempestRunSpec - is used to configure execution of tempest. Please refer to
+// Please refer to https://docs.openstack.org/tempest/latest/ for the further
+// explanation of the CLI parameters.
 type TempestRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="tempest.api.identity.v3"
-	// IncludeList
+	// A content of include.txt file that is passed to tempest via --include-list
 	IncludeList string `json:"includeList,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=""
-	// ExcludeList
+	// A content of exclude.txt file that is passed to tempest via --exclude-list
 	ExcludeList string `json:"excludeList,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=-1
-	// Concurrency is the Default concurrency
+	// Concurrency value that is passed to tempest via --concurrency
 	Concurrency int64 `json:"concurrency,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=false
-	// Smoke tests
+	// Indicate whether tempest should be executed with --smoke
 	Smoke bool `json:"smoke,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=true
-	// Run tests in parallel
+	// Indicate whether tempest should be executed with --parallel
 	Parallel bool `json:"parallel,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=false
-	// Serial run
+	// Indicate whether tempest should be executed with --serial
 	Serial bool `json:"serial,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=""
-	// WorkerFile is the detailed concurrency spec file
+	// A content of worker_file.yaml that is passed to tempest via --worker-file
 	WorkerFile string `json:"workerFile,omitempty"`
 
-        // +kubebuilder:validation:Optional
-        // ExternalPlugin contains information about plugin
-        // that should be installed within the tempest container.
-        // If this option is specified then only tests that are part of
-        // the external plugin can be executed.
-        ExternalPlugin []ExternalPluginType `json:"externalPlugin,omitempty"`
+  // +kubebuilder:validation:Optional
+  // ExternalPlugin contains information about plugin
+  // that should be installed within the tempest container.
+  // If this option is specified then only tests that are part of
+  // the external plugin can be executed.
+  ExternalPlugin []ExternalPluginType `json:"externalPlugin,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=""
@@ -108,143 +111,169 @@ type TempestRunSpec struct {
 	NeutronExtraImage string `json:"neutronExtraImage,omitempty"`
 }
 
-// TempestSpec PythonTempestconf parts
+// TempestconfRunSpec - is used to configure execution of discover-tempest-config
+// Please refer to https://docs.opendev.org/openinfra/python-tempestconf for the
+// further explanation of the CLI parameters.
 type TempestconfRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=true
-	// Create Tempest resources
+	// Indicate whether discover-tempest-config should be executed with --create
 	Create bool `json:"create"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Collect per-API call timing information.
+	// Indicate whether discover-tempest-config should be executed with
+	// --collect-timing
 	CollectTiming bool `json:"collectTiming"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Explicitly allow client to perform “insecure” TLS (https) requests.
+	// Indicate whether discover-tempest-config should be executed with --insecure
 	Insecure bool `json:"insecure"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Do not check for the default deployer input in
+	// Indicate whether discover-tempest-config should be executed with
+	// --no-default-deployer
 	NoDefaultDeployer bool `json:"noDefaultDeployer"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Print debugging information.
+	// Indicate whether discover-tempest-config should be executed with --debug
 	Debug bool `json:"debug"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Print more information about the execution.
+	// Indicate whether discover-tempest-config should be executed with --verbose
 	Verbose bool `json:"verbose"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Simulate non-admin credentials.
+	// Indicate whether discover-tempest-config should be executed with --non-admin
 	NonAdmin bool `json:"nonAdmin"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Allow tempestconf to retry download an image, in case of failure.
+	// Indicate whether discover-tempest-config should be executed with --retry-image
 	RetryImage bool `json:"retryImage"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	// Convert images to raw format before uploading.
+	// Indicate whether discover-tempest-config should be executed with
+	// --convert-to-raw
 	ConvertToRaw bool `json:"convertToRaw"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Output file
+	// The content of this variable will be passed to discover-tempest-config via
+	// the --out parameter
 	Out string `json:"out"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Path to deployer file
+	// A content of deployer_input.ini that is passed to tempest via --deployer-input
 	DeployerInput string `json:"deployerInput"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Tempest accounts.yaml file
+	// A content of accounts.yaml that is passed to tempest via --test-acounts
 	TestAccounts string `json:"testAccounts"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Generate Tempest accounts file.
+	// The content of this variable will be passed to discover-tempest-config via
+	// the --create-accounts-file
 	CreateAccountsFile string `json:"createAccountsFile"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// python-tempestconf’s profile.yaml file
+	// A content of profile.yaml that is passed to tempest via --profile
 	Profile string `json:"profile"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Generate a sample profile.yaml file.
+	// The content of this variable will be passed to discover-tempest-config via
+	// --generate-profile
 	GenerateProfile string `json:"generateProfile"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// A format of an image to be uploaded to glance.
+	// The content of this variable will be passed to discover-tempest-config via
+	// --image-disk-format
 	ImageDiskFormat string `json:"imageDiskFormat"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// An image name/path/url to be uploaded to glance if it’s not already there.
+	// The content of this variable will be passed to discover-tempest-config via
+	// --image
 	Image string `json:"image"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
-	// Specify minimum memory for new flavors
+	// +kubebuilder:default=0
+	// The content of this variable will be passed to discover-tempest-config via
+	// --flavor-min-mem
 	FlavorMinMem int64 `json:"flavorMinMem"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
-	// Specify minimum disk size for new flavors
+	// +kubebuilder:default=0
+	// The content of this variable will be passed to discover-tempest-config via
+	// --flavor-min-disk
 	FlavorMinDisk int64 `json:"flavorMinDisk"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Specify which network with external connectivity should be used by the test.
+	// The content of this variable will be passed to discover-tempest-config via
+	// --network-id
 	NetworkID string `json:"networkID"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Append values to tempest.conf
+	// The content of this variable will be passed to discover-tempest-config via
+	// --append
 	Append string `json:"append"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// Append values to tempest.conf
+	// The content of this variable will be passed to discover-tempest-config via
+	// --remove
 	Remove string `json:"remove"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="identity.v3_endpoint_type public"
-	// Override options
+	// The content of this variable will be appended at the end of the command
+	// that executes discover-tempest-config (override values).
 	Overrides string `json:"overrides"`
 
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=-1
-	// Set request timeout (in seconds).
+	// +kubebuilder:default=0
+	// The content of this variable will be passed to discover-tempest-config via
+	// --timeout
 	Timeout int64 `json:"timeout"`
 }
 
-// TempestSpec defines the desired state of Tempest
+// TempestSpec - configuration of execution of tempest. For specific configuration
+// of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type TempestSpec struct {
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default="local-storage"
-        // StorageClass used to create PVCs that store the logs
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="s0:c478,c978"
+	// A SELinuxLevel that is used for all the tempest test pods.
+	SELinuxLevel string `json:"SELinuxLevel"`
+
+	// +kubebuilder:validation:Optional
+	// Name of a storage class that is used to create PVCs for logs storage. Required
+	// if default storage class does not exist.
 	StorageClass string `json:"storageClass"`
 
 	// +kubebuilder:validation:Required
-	// Tempest Container Image URL (will be set to environmental default if empty)
+	// An URL of a tempest container image that should be used for the execution
+	// of tempest tests.
 	ContainerImage string `json:"containerImage"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-        // Execute tests parallely
+	// By default test-operator executes the test-pods sequentially if multiple
+	// instances of test-operator related CRs exist. If you want to turn off this
+	// behaviour then set this option to true.
 	Parallel bool `json:"parallel,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -262,12 +291,9 @@ type TempestSpec struct {
 	OpenStackConfigSecret string `json:"openStackConfigSecret"`
 
 	// +kubebuilder:validation:Optional
-	// NetworkAttachments is a list of NetworkAttachment resource names to expose the services to the given network
+	// NetworkAttachments is a list of NetworkAttachment resource names to expose
+	// the services to the given network
 	NetworkAttachments []string `json:"networkAttachments,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// ExternalEndpoints, expose a VIP using a pre-created IPAddressPool
-	ExternalEndpoints []MetalLBConfig `json:"externalEndpoints,omitempty"`
 
 	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
 	// +kubebuilder:default:=0
@@ -275,51 +301,31 @@ type TempestSpec struct {
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestRun *TempestRunSpec `json:"tempestRun,omitempty"`
+	TempestRun TempestRunSpec `json:"tempestRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TempestconfRun *TempestconfRunSpec `json:"tempestconfRun,omitempty"`
-
-        // +kubebuilder:validation:Optional
-        // SSHKeySecretName is the name of the k8s secret that contains an ssh key.
-        // The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
-        SSHKeySecretName string `json:"SSHKeySecretName,omitempty"`
-
-        // +kubebuilder:validation:Optional
-        // ConfigOverwrite - interface to overwrite default config files like e.g. logging.conf
-        // But can also be used to add additional files. Those get added to the service config dir in /etc/test_operator/<file>
-        ConfigOverwrite map[string]string `json:"configOverwrite,omitempty"`
-
-	// TODO(slaweq): add more tempest run parameters here
-}
-
-// MetalLBConfig to configure the MetalLB loadbalancer service
-type MetalLBConfig struct {
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=internal;public
-	// Endpoint, OpenStack endpoint this service maps to
-	Endpoint endpoint.Endpoint `json:"endpoint"`
-
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
-	// IPAddressPool expose VIP via MetalLB on the IPAddressPool
-	IPAddressPool string `json:"ipAddressPool"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=true
-	// SharedIP if true, VIP/VIPs get shared with multiple services
-	SharedIP bool `json:"sharedIP"`
+	TempestconfRun TempestconfRunSpec `json:"tempestconfRun,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=""
-	// SharedIPKey specifies the sharing key which gets set as the annotation on the LoadBalancer service.
-	// Services which share the same VIP must have the same SharedIPKey. Defaults to the IPAddressPool if
-	// SharedIP is true, but no SharedIPKey specified.
-	SharedIPKey string `json:"sharedIPKey"`
+	// SSHKeySecretName is the name of the k8s secret that contains an ssh key.
+	// The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
+	SSHKeySecretName string `json:"SSHKeySecretName,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// LoadBalancerIPs, request given IPs from the pool if available. Using a list to allow dual stack (IPv4/IPv6) support
-	LoadBalancerIPs []string `json:"loadBalancerIPs,omitempty"`
+	// ConfigOverwrite - interface to overwrite default config files like e.g. logging.conf
+	// But can also be used to add additional files. Those get added to the
+	// service config dir in /etc/test_operator/<file>
+	ConfigOverwrite map[string]string `json:"configOverwrite,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// Workflow - can be used to specify a multiple executions of tempest with
+	// a different configuration in a single CR. Accepts a list of dictionaries
+	// where each member of the list accepts the same values as the Tempest CR
+	// does in the `spec`` section. Values specified using the workflow section have
+	// a higher precedence than the values specified higher in the Tempest CR
+	// hierarchy.
+	Workflow []WorkflowTempestSpec `json:"workflow,omitempty"`
 }
 
 // TempestStatus defines the observed state of Tempest

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
@@ -37,6 +38,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -67,6 +69,9 @@ type TempestReconciler struct {
 func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
 	_ = r.Log.WithValues("tempest", req.NamespacedName)
 
+	// How much time should we wait before calling Reconcile loop when there is a failure
+	requeueAfter := time.Second * 60
+
 	// Fetch the Tempest instance
 	instance := &testv1beta1.Tempest{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
@@ -77,12 +82,9 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrl.Result{}, err
 	}
 
-	logging := log.FromContext(ctx)
-	if r.CompletedJobExists(ctx, instance, 0) {
-		// The job created by the instance was completed. Release the lock
-		// so that other instances can spawn a job.
-		logging.Info("Job completed")
-		r.ReleaseLock(ctx, instance)
+	workflowActive := false
+	if len(instance.Spec.Workflow) > 0 {
+		workflowActive = true
 	}
 
 	// Create a helper
@@ -95,6 +97,31 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	)
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	// Ensure that there is an external counter and read its value
+	// We use the external counter to keep track of the workflow steps
+	r.WorkflowStepCounterCreate(ctx, instance, helper)
+	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance, helper)
+	if externalWorkflowCounter == -1 {
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	// Each job that is being executed by the test operator has
+	currentWorkflowStep := 0
+	runningTobikoJob := &batchv1.Job{}
+	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
+	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningTobikoJob)
+	if err == nil {
+		currentWorkflowStep, err = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
+	}
+
+	logging := log.FromContext(ctx)
+	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
+		// The job created by the instance was completed. Release the lock
+		// so that other instances can spawn a job.
+		logging.Info("Job completed")
+		r.ReleaseLock(ctx, instance)
 	}
 
 	// Always patch the instance status when exiting this function so we
@@ -139,13 +166,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return r.reconcileDelete(ctx, instance, helper)
 	}
 
-	// Handle non-deleted clusters
-	return r.reconcileNormal(ctx, instance, helper)
-}
-
-func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
-	r.Log.Info("Reconciling Service")
-
 	// Service account, role, binding
 	rbacRules := []rbacv1.PolicyRule{
 		{
@@ -174,23 +194,9 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 	// Service account, role, binding - end
 
-	// Generate ConfigMaps
-	err = r.generateServiceConfigMaps(ctx, helper, instance)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.ServiceConfigReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.ServiceConfigReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{}, err
-	}
-	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
-	// Generate ConfigMaps - end
-
 	serviceLabels := map[string]string{
 		common.AppSelector: tempest.ServiceName,
-		"workflowStep":     "0",
+		"workflowStep":     strconv.Itoa(externalWorkflowCounter),
 		"instanceName":     instance.Name,
 		"operator":         "test-operator",
 	}
@@ -217,10 +223,6 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	}
 	// NetworkAttachments - end
 
-	//
-	// TODO check when/if Init, Update, or Upgrade should/could be skipped
-	//
-
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, serviceLabels, instance.Spec.StorageClass)
 	if err != nil {
@@ -235,27 +237,15 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 		mountSSHKey = r.CheckSecretExists(ctx, instance, instance.Spec.SSHKeySecretName)
 	}
 
-	// Create a new job
-	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	jobName := r.GetJobName(instance, 0)
-	jobDef := tempest.Job(instance, serviceLabels, jobName, mountCerts, mountSSHKey)
-	tempestJob := job.NewJob(
-		jobDef,
-		testv1beta1.ConfigHash,
-		false,
-		time.Duration(5)*time.Second,
-		"",
-	)
-
-	// If there is a job that is completed do not try to create
-	// another one
-	if r.JobExists(ctx, instance, 0) {
+	// If the current job is executing the last workflow step -> do not create another job
+	if workflowActive && externalWorkflowCounter >= len(instance.Spec.Workflow) {
+		return ctrl.Result{}, nil
+	} else if !workflowActive && r.JobExists(ctx, instance, currentWorkflowStep) {
 		return ctrl.Result{}, nil
 	}
 
 	// We are about to start job that spawns the pod with tests.
 	// This lock ensures that there is always only one pod running.
-	logging := log.FromContext(ctx)
 	if !r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel) {
 		logging.Info("Can not acquire lock")
 		requeueAfter := time.Second * 60
@@ -263,6 +253,46 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	} else {
 		logging.Info("Lock acquired")
 	}
+
+	if workflowActive {
+		r.WorkflowStepCounterIncrease(ctx, instance, helper)
+	}
+
+	// Generate ConfigMaps
+	err = r.generateServiceConfigMaps(ctx, helper, instance, externalWorkflowCounter)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.ServiceConfigReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.ServiceConfigReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
+	// Generate ConfigMaps - end
+
+	// Create a new job
+	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
+	customDataConfigMapName := GetCustomDataConfigMapName(instance, externalWorkflowCounter)
+	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
+	jobName := r.GetJobName(instance, externalWorkflowCounter)
+	jobDef := tempest.Job(
+		instance,
+		serviceLabels,
+		jobName,
+		EnvVarsConfigMapName,
+		customDataConfigMapName,
+		mountCerts,
+		mountSSHKey,
+	)
+	tempestJob := job.NewJob(
+		jobDef,
+		testv1beta1.ConfigHash,
+		false,
+		time.Duration(5)*time.Second,
+		"",
+	)
 
 	ctrlResult, err = tempestJob.DoJob(ctx, helper)
 	if err != nil {
@@ -291,7 +321,11 @@ func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv
 	return ctrl.Result{}, nil
 }
 
-func (r *TempestReconciler) reconcileDelete(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
+func (r *TempestReconciler) reconcileDelete(
+	ctx context.Context,
+	instance *testv1beta1.Tempest,
+	helper *helper.Helper,
+) (ctrl.Result, error) {
 	r.Log.Info("Reconciling Service delete")
 
 	// remove the finalizer
@@ -314,34 +348,37 @@ func (r *TempestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	customData map[string]string,
-	tempestRun *testv1beta1.TempestRunSpec,
-	ctx context.Context) {
-
-	testOperatorDir := "/etc/test_operator/"
-	if tempestRun == nil {
-		includeListFile := "include.txt"
-		customData[includeListFile] = "tempest.api.identity.v3"
-		envVars["TEMPEST_INCLUDE_LIST"] = testOperatorDir + includeListFile
-		envVars["TEMPEST_PARALLEL"] = "true"
-		return
+	instance *testv1beta1.Tempest,
+	ctx context.Context,
+	workflowStepNum int,
+) {
+	tRun := instance.Spec.TempestRun
+	wtRun := testv1beta1.WorkflowTempestRunSpec{}
+	if workflowStepNum < len(instance.Spec.Workflow) {
+		wtRun = instance.Spec.Workflow[workflowStepNum].TempestRun
 	}
 
+	testOperatorDir := "/etc/test_operator/"
+
 	// Files
-	if len(tempestRun.WorkerFile) != 0 {
+	value := mergeWithWorkflow(tRun.WorkerFile, wtRun.WorkerFile)
+	if len(value) != 0 {
 		workerFile := "worker_file.yaml"
-		customData[workerFile] = tempestRun.WorkerFile
+		customData[workerFile] = value
 		envVars["TEMPEST_WORKER_FILE"] = testOperatorDir + workerFile
 	}
 
-	if len(tempestRun.IncludeList) != 0 {
+	value = mergeWithWorkflow(tRun.IncludeList, wtRun.IncludeList)
+	if len(value) != 0 {
 		includeListFile := "include.txt"
-		customData[includeListFile] = tempestRun.IncludeList
+		customData[includeListFile] = value
 		envVars["TEMPEST_INCLUDE_LIST"] = testOperatorDir + includeListFile
 	}
 
-	if len(tempestRun.ExcludeList) != 0 {
+	value = mergeWithWorkflow(tRun.ExcludeList, wtRun.ExcludeList)
+	if len(value) != 0 {
 		excludeListFile := "exclude.txt"
-		customData[excludeListFile] = tempestRun.ExcludeList
+		customData[excludeListFile] = value
 		envVars["TEMPEST_EXCLUDE_LIST"] = testOperatorDir + excludeListFile
 	}
 
@@ -353,9 +390,9 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	// Bool
 	tempestBoolEnvVars := make(map[string]bool)
 	tempestBoolEnvVars = map[string]bool{
-		"TEMPEST_SERIAL":     tempestRun.Serial,
-		"TEMPEST_PARALLEL":   tempestRun.Parallel,
-		"TEMPEST_SMOKE":      tempestRun.Smoke,
+		"TEMPEST_SERIAL":     mergeWithWorkflow(tRun.Serial, wtRun.Serial),
+		"TEMPEST_PARALLEL":   mergeWithWorkflow(tRun.Parallel, wtRun.Parallel),
+		"TEMPEST_SMOKE":      mergeWithWorkflow(tRun.Smoke, wtRun.Smoke),
 		"USE_EXTERNAL_FILES": true,
 	}
 
@@ -364,10 +401,12 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	}
 
 	// Int
-	envVars["TEMPEST_CONCURRENCY"] = r.GetDefaultInt(tempestRun.Concurrency)
+	numValue := mergeWithWorkflow(tRun.Concurrency, wtRun.Concurrency)
+	envVars["TEMPEST_CONCURRENCY"] = r.GetDefaultInt(numValue)
 
 	// Dictionary
-	for _, externalPluginDictionary := range tempestRun.ExternalPlugin {
+	dictValue := mergeWithWorkflow(tRun.ExternalPlugin, wtRun.ExternalPlugin)
+	for _, externalPluginDictionary := range dictValue {
 		envVars["TEMPEST_EXTERNAL_PLUGIN_GIT_URL"] += externalPluginDictionary.Repository + ","
 
 		if len(externalPluginDictionary.ChangeRepository) == 0 || len(externalPluginDictionary.ChangeRefspec) == 0 {
@@ -379,62 +418,76 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXTERNAL_PLUGIN_CHANGE_URL"] += externalPluginDictionary.ChangeRepository + ","
 		envVars["TEMPEST_EXTERNAL_PLUGIN_REFSPEC"] += externalPluginDictionary.ChangeRefspec + ","
 	}
+
+	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetJobName(instance, workflowStepNum)
 }
 
-func (r *TempestReconciler) setTempestconfConfigVars(envVars map[string]string,
-	customData map[string]string,
-	tempestconfRun *testv1beta1.TempestconfRunSpec) {
-
-	if tempestconfRun == nil {
-		envVars["TEMPESTCONF_CREATE"] = "true"
-		envVars["TEMPESTCONF_OVERRIDES"] = "identity.v3_endpoint_type public"
-		return
+func mergeWithWorkflow[T any](value T, workflowValue *T) T {
+	if workflowValue == nil {
+		return value
 	}
 
-	// Files
+	return *workflowValue
+}
+
+func (r *TempestReconciler) setTempestconfConfigVars(
+	envVars map[string]string,
+	customData map[string]string,
+	instance *testv1beta1.Tempest,
+	ctx context.Context,
+	workflowStepNum int,
+) {
+	tcRun := instance.Spec.TempestconfRun
+	wtcRun := testv1beta1.WorkflowTempestconfRunSpec{}
+	if workflowStepNum < len(instance.Spec.Workflow) {
+		wtcRun = instance.Spec.Workflow[workflowStepNum].TempestconfRun
+	}
+
 	testOperatorDir := "/etc/test_operator/"
-	if len(tempestconfRun.DeployerInput) != 0 {
+	value := mergeWithWorkflow(tcRun.DeployerInput, wtcRun.DeployerInput)
+	if len(value) != 0 {
 		deployerInputFile := "deployer_input.ini"
-		customData[deployerInputFile] = tempestconfRun.DeployerInput
+		customData[deployerInputFile] = value
 		envVars["TEMPESTCONF_DEPLOYER_INPUT"] = testOperatorDir + deployerInputFile
 	}
 
-	if len(tempestconfRun.TestAccounts) != 0 {
+	value = mergeWithWorkflow(tcRun.TestAccounts, wtcRun.TestAccounts)
+	if len(value) != 0 {
 		accountsFile := "accounts.yaml"
-		customData[accountsFile] = tempestconfRun.TestAccounts
+		customData[accountsFile] = value
 		envVars["TEMPESTCONF_TEST_ACCOUNTS"] = testOperatorDir + accountsFile
 	}
 
-	if len(tempestconfRun.Profile) != 0 {
+	value = mergeWithWorkflow(tcRun.Profile, wtcRun.Profile)
+	if len(value) != 0 {
 		profileFile := "profile.yaml"
-		customData[profileFile] = tempestconfRun.Profile
+		customData[profileFile] = value
 		envVars["TEMPESTCONF_PROFILE"] = testOperatorDir + profileFile
 	}
 
 	// Bool
 	tempestconfBoolEnvVars := make(map[string]bool)
 	tempestconfBoolEnvVars = map[string]bool{
-		"TEMPESTCONF_CREATE":              tempestconfRun.Create,
-		"TEMPESTCONF_COLLECT_TIMING":      tempestconfRun.CollectTiming,
-		"TEMPESTCONF_INSECURE":            tempestconfRun.Insecure,
-		"TEMPESTCONF_NO_DEFAULT_DEPLOYER": tempestconfRun.NoDefaultDeployer,
-		"TEMPESTCONF_DEBUG":               tempestconfRun.Debug,
-		"TEMPESTCONF_VERBOSE":             tempestconfRun.Verbose,
-		"TEMPESTCONF_NON_ADMIN":           tempestconfRun.NonAdmin,
-		"TEMPESTCONF_RETRY_IMAGE":         tempestconfRun.RetryImage,
-		"TEMPESTCONF_CONVERT_TO_RAW":      tempestconfRun.ConvertToRaw,
+		"TEMPESTCONF_CREATE":              mergeWithWorkflow(tcRun.Create, wtcRun.Create),
+		"TEMPESTCONF_COLLECT_TIMING":      mergeWithWorkflow(tcRun.CollectTiming, wtcRun.CollectTiming),
+		"TEMPESTCONF_INSECURE":            mergeWithWorkflow(tcRun.Insecure, wtcRun.Insecure),
+		"TEMPESTCONF_NO_DEFAULT_DEPLOYER": mergeWithWorkflow(tcRun.NoDefaultDeployer, wtcRun.NoDefaultDeployer),
+		"TEMPESTCONF_DEBUG":               mergeWithWorkflow(tcRun.Debug, wtcRun.Debug),
+		"TEMPESTCONF_VERBOSE":             mergeWithWorkflow(tcRun.Verbose, wtcRun.Verbose),
+		"TEMPESTCONF_NON_ADMIN":           mergeWithWorkflow(tcRun.NonAdmin, wtcRun.NonAdmin),
+		"TEMPESTCONF_RETRY_IMAGE":         mergeWithWorkflow(tcRun.RetryImage, wtcRun.RetryImage),
+		"TEMPESTCONF_CONVERT_TO_RAW":      mergeWithWorkflow(tcRun.ConvertToRaw, wtcRun.ConvertToRaw),
 	}
 
 	for key, value := range tempestconfBoolEnvVars {
 		envVars[key] = r.GetDefaultBool(value)
 	}
 
-	// Int
 	tempestconfIntEnvVars := make(map[string]int64)
 	tempestconfIntEnvVars = map[string]int64{
-		"TEMPESTCONF_TIMEOUT":         tempestconfRun.Timeout,
-		"TEMPESTCONF_FLAVOR_MIN_MEM":  tempestconfRun.FlavorMinMem,
-		"TEMPESTCONF_FLAVOR_MIN_DISK": tempestconfRun.FlavorMinDisk,
+		"TEMPESTCONF_TIMEOUT":         mergeWithWorkflow(tcRun.Timeout, wtcRun.Timeout),
+		"TEMPESTCONF_FLAVOR_MIN_MEM":  mergeWithWorkflow(tcRun.FlavorMinMem, wtcRun.FlavorMinMem),
+		"TEMPESTCONF_FLAVOR_MIN_DISK": mergeWithWorkflow(tcRun.FlavorMinDisk, wtcRun.FlavorMinDisk),
 	}
 
 	for key, value := range tempestconfIntEnvVars {
@@ -442,15 +495,32 @@ func (r *TempestReconciler) setTempestconfConfigVars(envVars map[string]string,
 	}
 
 	// String
-	envVars["TEMPESTCONF_OUT"] = tempestconfRun.Out
-	envVars["TEMPESTCONF_CREATE_ACCOUNTS_FILE"] = tempestconfRun.CreateAccountsFile
-	envVars["TEMPESTCONF_GENERATE_PROFILE"] = tempestconfRun.GenerateProfile
-	envVars["TEMPESTCONF_IMAGE_DISK_FORMAT"] = tempestconfRun.ImageDiskFormat
-	envVars["TEMPESTCONF_IMAGE"] = tempestconfRun.Image
-	envVars["TEMPESTCONF_NETWORK_ID"] = tempestconfRun.NetworkID
-	envVars["TEMPESTCONF_APPEND"] = tempestconfRun.Append
-	envVars["TEMPESTCONF_REMOVE"] = tempestconfRun.Remove
-	envVars["TEMPESTCONF_OVERRIDES"] = tempestconfRun.Overrides
+	mValue := mergeWithWorkflow(tcRun.Out, wtcRun.Out)
+	envVars["TEMPESTCONF_OUT"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.CreateAccountsFile, wtcRun.CreateAccountsFile)
+	envVars["TEMPESTCONF_CREATE_ACCOUNTS_FILE"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.GenerateProfile, wtcRun.GenerateProfile)
+	envVars["TEMPESTCONF_GENERATE_PROFILE"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.ImageDiskFormat, wtcRun.ImageDiskFormat)
+	envVars["TEMPESTCONF_IMAGE_DISK_FORMAT"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.Image, wtcRun.Image)
+	envVars["TEMPESTCONF_IMAGE"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.NetworkID, wtcRun.NetworkID)
+	envVars["TEMPESTCONF_NETWORK_ID"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.Append, wtcRun.Append)
+	envVars["TEMPESTCONF_APPEND"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.Remove, wtcRun.Remove)
+	envVars["TEMPESTCONF_REMOVE"] = mValue
+
+	mValue = mergeWithWorkflow(tcRun.Overrides, wtcRun.Overrides)
+	envVars["TEMPESTCONF_OVERRIDES"] = mValue
 }
 
 // Create ConfigMaps:
@@ -462,6 +532,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	ctx context.Context,
 	h *helper.Helper,
 	instance *testv1beta1.Tempest,
+	workflowStepNum int,
 ) error {
 	// Create/update configmaps from template
 	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
@@ -480,14 +551,14 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	customData := make(map[string]string)
 	envVars := make(map[string]string)
 
-	r.setTempestConfigVars(envVars, customData, instance.Spec.TempestRun, ctx)
-	r.setTempestconfConfigVars(envVars, customData, instance.Spec.TempestconfRun)
+	r.setTempestConfigVars(envVars, customData, instance, ctx, workflowStepNum)
+	r.setTempestconfConfigVars(envVars, customData, instance, ctx, workflowStepNum)
 	r.setConfigOverwrite(customData, instance.Spec.ConfigOverwrite)
 
 	cms := []util.Template{
 		// ConfigMap
 		{
-			Name:          fmt.Sprintf("%s-config-data", instance.Name),
+			Name:          GetCustomDataConfigMapName(instance, workflowStepNum),
 			Namespace:     instance.Namespace,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
@@ -496,7 +567,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 		},
 		// configMap - EnvVars
 		{
-			Name:          fmt.Sprintf("%s-env-vars", instance.Name),
+			Name:          GetEnvVarsConfigMapName(instance, workflowStepNum),
 			Namespace:     instance.Namespace,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
