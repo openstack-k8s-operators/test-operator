@@ -16,6 +16,7 @@ func GetVolumes(
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
 	var tlsCertificateMode int32 = 0444
+	var privateKeyMode int32 = 0600
 
 	//source_type := corev1.HostPathDirectoryOrCreate
 	volumes := []corev1.Volume{
@@ -96,7 +97,8 @@ func GetVolumes(
 			Name: "ssh-key",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: instance.Spec.SSHKeySecretName,
+					SecretName:  instance.Spec.SSHKeySecretName,
+					DefaultMode: &privateKeyMode,
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "ssh-privatekey",
@@ -164,7 +166,7 @@ func GetVolumeMounts(mountCerts bool, mountSSHKey bool) []corev1.VolumeMount {
 	if mountSSHKey {
 		sshKeyMount := corev1.VolumeMount{
 			Name:      "ssh-key",
-			MountPath: "/var/lib/tempest/.ssh/id_ecdsa",
+			MountPath: "/var/lib/tempest/id_ecdsa",
 			SubPath:   "ssh_key",
 		}
 
