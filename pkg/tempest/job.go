@@ -13,6 +13,7 @@ import (
 func Job(
 	instance *testv1beta1.Tempest,
 	labels map[string]string,
+	annotations map[string]string,
 	jobName string,
 	envVarsConfigMapName string,
 	customDataConfigMapName string,
@@ -34,7 +35,8 @@ func Job(
 			BackoffLimit: instance.Spec.BackoffLimit,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Annotations: annotations,
+					Labels:      labels,
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy:      corev1.RestartPolicyNever,
