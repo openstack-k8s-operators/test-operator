@@ -201,28 +201,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		"operator":         "test-operator",
 	}
 
-	// NetworkAttachments
-	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	instance.Status.NetworkAttachments = networkAttachmentStatus
-
-	if networkReady {
-		instance.Status.Conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
-	} else {
-		err := fmt.Errorf("not all pods have interfaces with ips as configured in NetworkAttachments: %s", instance.Spec.NetworkAttachments)
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.NetworkAttachmentsReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.NetworkAttachmentsReadyErrorMessage,
-			err.Error()))
-
-		return ctrl.Result{}, err
-	}
-	// NetworkAttachments - end
-
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, serviceLabels, instance.Spec.StorageClass)
 	if err != nil {
@@ -272,6 +250,11 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
 	// Generate ConfigMaps - end
 
+	serviceAnnotations, err := nad.CreateNetworksAnnotation(instance.Namespace, instance.Spec.NetworkAttachments)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed create network annotation from %s: %w",
+			instance.Spec.NetworkAttachments, err)
+	}
 	// Create a new job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	customDataConfigMapName := GetCustomDataConfigMapName(instance, externalWorkflowCounter)
@@ -280,6 +263,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	jobDef := tempest.Job(
 		instance,
 		serviceLabels,
+		serviceAnnotations,
 		jobName,
 		EnvVarsConfigMapName,
 		customDataConfigMapName,
@@ -316,6 +300,27 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrlResult, nil
 	}
 	// Create a new job - end
+	// NetworkAttachments
+	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	instance.Status.NetworkAttachments = networkAttachmentStatus
+
+	if networkReady {
+		instance.Status.Conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
+	} else {
+		err := fmt.Errorf("not all pods have interfaces with ips as configured in NetworkAttachments: %s", instance.Spec.NetworkAttachments)
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.NetworkAttachmentsReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.NetworkAttachmentsReadyErrorMessage,
+			err.Error()))
+
+		return ctrl.Result{}, err
+	}
+	// NetworkAttachments - end
 
 	r.Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil
