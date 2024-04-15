@@ -34,7 +34,7 @@ Currently, there are the following tempest images:
 * `openstack-tempest-extras <https://quay.io/podified-antelope-centos9/openstack-tempest-extras>`_
 
   An image that installs `openstack-tempest-all` RPM package. On top of the all the plugins that are part of the RPM,
-  this image contains a few extras. The list of the extra projects (mainly tempest pluginsg) that are installed there has
+  this image contains a few extras. The list of the extra projects (mainly tempest plugins) that are installed there has
   a tendency to change. Therefore for the up to date list check the
   `TCIB definition <https://github.com/openstack-k8s-operators/tcib/blob/main/container-images/tcib/base/os/tempest/tempest-extras/tempest-extras.yaml>`_
   of the image.
