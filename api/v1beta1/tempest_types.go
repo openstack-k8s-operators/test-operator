@@ -277,6 +277,11 @@ type TempestSpec struct {
 	Parallel bool `json:"parallel,omitempty"`
 
 	// +kubebuilder:validation:Optional
+        // +kubebuilder:default=false
+        // Activate debug mode
+        Debug bool `json:"debug,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	// NodeSelector to target subset of worker nodes running this service
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
