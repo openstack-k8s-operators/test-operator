@@ -195,7 +195,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	tobikoJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,
-		false,
+		true,
 		time.Duration(5)*time.Second,
 		"",
 	)

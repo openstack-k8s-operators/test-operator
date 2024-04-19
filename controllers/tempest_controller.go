@@ -273,7 +273,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	tempestJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,
-		false,
+		true,
 		time.Duration(5)*time.Second,
 		"",
 	)
