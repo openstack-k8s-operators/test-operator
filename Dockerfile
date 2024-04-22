@@ -1,5 +1,5 @@
 # Build the manager binary
-ARG GOLANG_BUILDER=golang:1.19
+ARG GOLANG_BUILDER=registry.access.redhat.com/ubi9/go-toolset:1.20
 ARG OPERATOR_BASE_IMAGE=gcr.io/distroless/static:nonroot
 
 FROM $GOLANG_BUILDER AS builder
@@ -17,6 +17,7 @@ ARG GO_BUILD_EXTRA_ARGS=
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
 WORKDIR $REMOTE_SOURCE_DIR/$REMOTE_SOURCE_SUBDIR
 
+USER root
 RUN mkdir -p ${DEST_ROOT}/usr/local/bin/
 
 # cache deps before building and copying source so that we don't need to re-download as much
