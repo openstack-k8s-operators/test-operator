@@ -79,6 +79,24 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 	}
 }
 
+func GetPVCName(instance interface{}) string {
+	hash := sha256.New()
+	suffixLength := 5
+
+	switch instance {
+	case *v1beta1.Tobiko:
+		hash.Write([]byte(instance.ObjectMeta.creationTimestamp))
+		byteSlice := hash.Sum(nil)
+		return instance.Name + "-" + byteSlice[:suffixLength]
+	case *v1beta1.Tempest:
+		hash.Write([]byte(instance.ObjectMeta.creatio3nTimestamp))
+		byteSlice := hash.Sum(nil)
+		return instance.Name + "-" + byteSlice[:suffixLength]
+	default
+		return instance.Name + "-NO-SUFFIX"
+	}
+}
+
 func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
 	return instance.GetName() + workflowNameSuffix
 }
