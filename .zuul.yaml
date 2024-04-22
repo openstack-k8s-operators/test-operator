@@ -3,9 +3,7 @@
     name: openstack-k8s-operators/test-operator
     github-check:
       jobs:
-        - openstack-k8s-operators-content-provider:
-            vars:
-              cifmw_operator_build_meta_build: false
+        - openstack-k8s-operators-content-provider
         - podified-multinode-edpm-deployment-crc: &podified_multinode_edpm_deployment_crc
             dependencies:
               - openstack-k8s-operators-content-provider
@@ -15,7 +13,7 @@
               cifmw_run_test_role: test_operator
               cifmw_run_tempest: true
               cifmw_install_yamls_whitelisted_vars: ['TEST_REPO', 'TEST_BRANCH', 'OUTPUT_DIR']
-              cifmw_test_operator_index: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator-index:{{ cifmw_repo_setup_full_hash }}"
+              cifmw_test_operator_index: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator-index:{{ zuul.patchset }}"
               cifmw_test_operator_concurrency: 4
               cifmw_test_operator_timeout: 7200
               cifmw_test_operator_tempest_include_list: |
