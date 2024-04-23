@@ -7,10 +7,11 @@ import (
 
 // GetVolumes -
 func GetVolumes(
+	instance *testv1beta1.Tempest,
 	customDataConfigMapName string,
+	logsPVCName string,
 	mountCerts bool,
 	mountSSHKey bool,
-	instance *testv1beta1.Tempest,
 ) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
@@ -71,7 +72,7 @@ func GetVolumes(
 			Name: "test-operator-logs",
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: instance.Name,
+					ClaimName: logsPVCName,
 					ReadOnly:  false,
 				},
 			},

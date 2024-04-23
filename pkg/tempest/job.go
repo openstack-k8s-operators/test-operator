@@ -17,6 +17,7 @@ func Job(
 	jobName string,
 	envVarsConfigMapName string,
 	customDataConfigMapName string,
+	logsPVCName string,
 	mountCerts bool,
 	mountSSHKey bool,
 ) *batchv1.Job {
@@ -79,7 +80,13 @@ func Job(
 							},
 						},
 					},
-					Volumes: GetVolumes(customDataConfigMapName, mountCerts, mountSSHKey, instance),
+					Volumes: GetVolumes(
+						instance,
+						customDataConfigMapName,
+						logsPVCName,
+						mountCerts,
+						mountSSHKey,
+					),
 				},
 			},
 		},
