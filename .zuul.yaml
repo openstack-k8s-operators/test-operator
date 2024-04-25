@@ -9,6 +9,8 @@
         - podified-multinode-edpm-deployment-crc-test-operator:
             dependencies:
               - openstack-k8s-operators-content-provider
+            vars:
+              cifmw_test_operator_index: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator-index:{{ zuul.patchset }}"
     periodic:
       jobs:
         - openstack-k8s-operators-content-provider:
@@ -30,7 +32,6 @@
         - 'OUTPUT_DIR'
 
       cifmw_run_test_role: test_operator
-      cifmw_test_operator_index: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator-index:{{ zuul.patchset }}"
 
       cifmw_run_tempest: true
       cifmw_test_operator_concurrency: 4
