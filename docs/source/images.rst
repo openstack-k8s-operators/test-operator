@@ -5,6 +5,8 @@ The `test-operator` uses images that are built and defined in
 `TCIB (The Container Image Build) <https://github.com/openstack-k8s-operators/tcib>`_.
 The built images are published to `quay.io <https://quay.io/>`_.
 
+.. _tempest-images:
+
 Tempest Images
 --------------
 
