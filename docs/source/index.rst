@@ -24,6 +24,7 @@ Running Test Operator
    prerequisites.rst
    guide.rst
    crds.rst
+   FAQ.rst
 
 Alternative Ways of Running Tempest Container
 =============================================
