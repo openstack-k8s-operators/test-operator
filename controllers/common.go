@@ -2,10 +2,12 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 	"time"
 
+	"crypto/sha256"
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
@@ -87,6 +89,14 @@ func (r *Reconciler) GetLogDirName(frameworkName string, instance client.Object,
 	return frameworkName + "-" + instance.GetName() + logDirNameInfix + strconv.Itoa(workflowStepNum)
 }
 
+func (r *Reconciler) GetPVCLogsName(instance client.Object) string {
+	instanceName := instance.GetName()
+	instanceCreationTimestamp := instance.GetCreationTimestamp().Format(time.UnixDate)
+	suffixLength := 5
+	nameSuffix := GetStringHash(instanceName+instanceCreationTimestamp, suffixLength)
+	return instanceName + "-" + nameSuffix
+}
+
 func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Object, secretName string) bool {
 	secret := &corev1.Secret{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: secretName}, secret)
@@ -97,24 +107,35 @@ func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Obje
 	}
 }
 
+func GetStringHash(str string, hashLength int) string {
+	hash := sha256.New()
+	hash.Write([]byte(str))
+	byteSlice := hash.Sum(nil)
+	hashString := fmt.Sprintf("%x", byteSlice)
+
+	return hashString[:hashLength]
+}
+
 func (r *Reconciler) EnsureLogsPVCExists(
 	ctx context.Context,
 	instance client.Object,
 	helper *helper.Helper,
-	NamePVC string,
 	labels map[string]string,
-	StorageClassName string) (ctrl.Result, error) {
+	StorageClassName string,
+) (ctrl.Result, error) {
+	instanceNamespace := instance.GetNamespace()
+	pvcName := r.GetPVCLogsName(instance)
 
 	pvvc := &corev1.PersistentVolumeClaim{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: NamePVC}, pvvc)
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instanceNamespace, Name: pvcName}, pvvc)
 	if err == nil {
 		return ctrl.Result{}, nil
 	}
 
 	testOperatorPvcDef := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      NamePVC,
-			Namespace: instance.GetNamespace(),
+			Name:      pvcName,
+			Namespace: instanceNamespace,
 			Labels:    labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{

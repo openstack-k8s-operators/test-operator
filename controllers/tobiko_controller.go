@@ -146,7 +146,13 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, serviceLabels, instance.Spec.StorageClass)
+	ctrlResult, err := r.EnsureLogsPVCExists(
+		ctx,
+		instance,
+		helper,
+		serviceLabels,
+		instance.Spec.StorageClass,
+	)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {
@@ -191,7 +197,17 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Prepare Tobiko env vars
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
-	jobDef := tobiko.Job(instance, serviceLabels, jobName, mountCerts, mountKeys, mountKubeconfig, envVars)
+	logsPVCName := r.GetPVCLogsName(instance)
+	jobDef := tobiko.Job(
+		instance,
+		serviceLabels,
+		jobName,
+		logsPVCName,
+		mountCerts,
+		mountKeys,
+		mountKubeconfig,
+		envVars,
+	)
 	tobikoJob := job.NewJob(
 		jobDef,
 		testv1beta1.ConfigHash,

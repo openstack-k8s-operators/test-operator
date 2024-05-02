@@ -202,7 +202,14 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(ctx, instance, helper, instance.Name, serviceLabels, instance.Spec.StorageClass)
+	ctrlResult, err := r.EnsureLogsPVCExists(
+		ctx,
+		instance,
+		helper,
+		serviceLabels,
+		instance.Spec.StorageClass,
+	)
+
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {
@@ -260,6 +267,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	customDataConfigMapName := GetCustomDataConfigMapName(instance, externalWorkflowCounter)
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
+	logsPVCName := r.GetPVCLogsName(instance)
 	jobDef := tempest.Job(
 		instance,
 		serviceLabels,
@@ -267,6 +275,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		jobName,
 		EnvVarsConfigMapName,
 		customDataConfigMapName,
+		logsPVCName,
 		mountCerts,
 		mountSSHKey,
 	)

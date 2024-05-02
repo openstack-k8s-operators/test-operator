@@ -6,7 +6,13 @@ import (
 )
 
 // GetVolumes -
-func GetVolumes(mountCerts bool, mountKeys bool, mountKubeconfig bool, instance *testv1beta1.Tobiko) []corev1.Volume {
+func GetVolumes(
+	instance *testv1beta1.Tobiko,
+	logsPVCName string,
+	mountCerts bool,
+	mountKeys bool,
+	mountKubeconfig bool,
+) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
@@ -66,7 +72,7 @@ func GetVolumes(mountCerts bool, mountKeys bool, mountKubeconfig bool, instance 
 			Name: "test-operator-logs",
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: instance.Name,
+					ClaimName: logsPVCName,
 					ReadOnly:  false,
 				},
 			},
