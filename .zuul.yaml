@@ -57,6 +57,12 @@
           identity.v3_endpoint_type public
           service_available.swift false
           service_available.cinder false
+      cifmw_test_operator_tempest_workflow:
+        - stepName: 'full'
+        - stepName: 'single-test'
+          tempestRun:
+            includeList: |
+              tempest.api.compute.admin.test_flavors.FlavorsAdminTestJSON.test_create_flavor_using_string_ram
 
       cifmw_run_tobiko: true
       cifmw_test_operator_tobiko_workflow:
