@@ -41,6 +41,70 @@ type Hash struct {
 	Hash string `json:"hash,omitempty"`
 }
 
+// ExtraImagesType - is used to specify extra images that should be downloaded
+// inside the test pod and uploaded to openstack
+type ExtraImagesType struct {
+	// +kubebuilder:validation:Required
+	// URL that points to a location where the image is located
+	URL string `json:"URL"`
+
+	// +kubebuilder:validation:Required
+	// Name of the image
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="-"
+	// Cloud that should be used for authentication
+	OsCloud string `json:"osCloud"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="-"
+	// Image container format
+	ContainerFormat string `json:"containerFormat"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="-"
+	// Image disk format
+	DiskFormat string `json:"diskFormat"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="-"
+	// ID that should be assigned to the newly created image
+	ID string `json:"ID"`
+
+	// +kubebuilder:validation:Optional
+	// Information about flavor that should be created together with the image
+	Flavor ExtraImagesFlavorType `json:"flavor"`
+}
+
+type ExtraImagesFlavorType struct {
+	// +kubebuilder:validation:Required
+	// Name of the flavor that should be created
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	// How much RAM should be allocated when this flavor is used
+	RAM int64 `json:"RAM"`
+
+	// +kubebuilder:validation:Required
+	// How much disk space should be allocated when this flavor is used
+	Disk int64 `json:"disk"`
+
+	// +kubebuilder:validation:Required
+	// How many vcpus should be be allocated when this flavor is used
+	Vcpus int64 `json:"vcpus"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="-"
+	// ID that should be assigned to the newly created flavor
+	ID string `json:"ID"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default="-"
+	// Cloud that should be used for authentication
+	OsCloud string `json:"osCloud"`
+}
+
 // ExternalPluginType - is used to specify a plugin that should be installed
 // from an external resource
 type ExternalPluginType struct {
@@ -108,6 +172,11 @@ type TempestRunSpec struct {
 	// +kubebuilder:default:=""
 	// Add extra image for Neutron Tempest plugin
 	NeutronExtraImage string `json:"neutronExtraImage,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// Extra images that should be downloaded inside the test pod and uploaded to
+	// openstack.
+	ExtraImages []ExtraImagesType `json:"extraImages"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config

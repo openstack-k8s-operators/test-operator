@@ -63,6 +63,15 @@
           tempestRun:
             includeList: |
               tempest.api.compute.admin.test_flavors.FlavorsAdminTestJSON.test_create_flavor_using_string_ram
+      cifmw_test_operator_tempest_extra_images:
+        - URL: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+          name: cirros-0.6.2-test-operator
+          flavor:
+            name: cirros-0.6.2-test-operator-flavor
+            RAM: 512
+            disk: 20
+            vcpus: 1
+      cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
 
       cifmw_run_tobiko: true
       cifmw_test_operator_tobiko_workflow:
