@@ -300,7 +300,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetLogDirName("tobiko", instance, step))
+	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetJobName(instance, step))
 	logging := log.FromContext(ctx)
 	logging.Info("STEP: " + strconv.Itoa(step))
 

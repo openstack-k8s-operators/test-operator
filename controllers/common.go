@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"crypto/sha256"
+
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
@@ -83,10 +84,6 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 
 func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
 	return instance.GetName() + workflowNameSuffix
-}
-
-func (r *Reconciler) GetLogDirName(frameworkName string, instance client.Object, workflowStepNum int) string {
-	return frameworkName + "-" + instance.GetName() + logDirNameInfix + strconv.Itoa(workflowStepNum)
 }
 
 func (r *Reconciler) GetPVCLogsName(instance client.Object) string {
