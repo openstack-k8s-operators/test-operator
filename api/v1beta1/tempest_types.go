@@ -74,7 +74,7 @@ type TempestRunSpec struct {
 	ExcludeList string `json:"excludeList,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=-1
+	// +kubebuilder:default:=0
 	// Concurrency value that is passed to tempest via --concurrency
 	Concurrency int64 `json:"concurrency,omitempty"`
 
