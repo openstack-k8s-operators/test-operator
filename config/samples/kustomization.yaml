@@ -2,4 +2,5 @@
 resources:
 - test_v1beta1_tempest.yaml
 - test_v1beta1_tobiko.yaml
+- test_v1beta1_horizon.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

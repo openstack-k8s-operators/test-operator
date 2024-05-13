@@ -1,0 +1,12 @@
+apiVersion: test.openstack.org/v1beta1
+kind: Horizon
+metadata:
+  labels:
+    app.kubernetes.io/name: horizon
+    app.kubernetes.io/instance: horizon-sample
+    app.kubernetes.io/part-of: test-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: test-operator
+  name: horizon-sample
+spec:
+  # TODO(user): Add fields here

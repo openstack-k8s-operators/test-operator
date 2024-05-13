@@ -29,4 +29,13 @@ resources:
   kind: Tobiko
   path: github.com/openstack-k8s-operators/test-operator/api/v1beta1
   version: v1beta1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openstack.org
+  group: test
+  kind: Horizon
+  path: github.com/openstack-k8s-operators/test-operator/api/v1beta1
+  version: v1beta1
 version: "3"
