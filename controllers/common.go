@@ -181,9 +181,11 @@ func (r *Reconciler) GetDefaultBool(variable bool) string {
 	}
 }
 
-func (r *Reconciler) GetDefaultInt(variable int64) string {
+func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) string {
 	if variable != 0 {
 		return strconv.FormatInt(variable, 10)
+	} else if len(defaultValue) > 0 {
+		return defaultValue[0]
 	} else {
 		return ""
 	}

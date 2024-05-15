@@ -55,6 +55,11 @@ type WorkflowTempestRunSpec struct {
 	ExternalPlugin *[]ExternalPluginType `json:"externalPlugin,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// Extra images that should be downloaded inside the test pod and uploaded to
+	// openstack.
+	ExtraImages *[]ExtraImagesType `json:"extraImagesType"`
+
+	// +kubebuilder:validation:Optional
 	// Add extra image for Neutron Tempest plugin
 	NeutronExtraImage *string `json:"neutronExtraImage,omitempty"`
 }

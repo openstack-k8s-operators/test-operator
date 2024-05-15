@@ -48,7 +48,14 @@ spec:
     #   - repository: "https://opendev.org/openstack/neutron-tempest-plugin.git"
     #     changeRepository: "https://review.opendev.org/openstack/neutron-tempest-plugin"
     #     changeRefspec: "refs/changes/97/896397/2"
-    # neutronExtraImage: https://download.fedoraproject.org/pub/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2
+    # extraImages:
+    #   - URL: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+    #     name: cirros-0.6.2-test-operator
+    #       flavor:
+    #         name: cirros-0.6.2-test-operator-flavor
+    #         RAM: 512
+    #         disk: 20
+    #         vcpus: 1
   tempestconfRun:
     # NOTE: All parameters have default values (use only when you want to override
     #       the default behaviour)

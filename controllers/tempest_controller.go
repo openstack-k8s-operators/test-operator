@@ -396,12 +396,6 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXCLUDE_LIST"] = testOperatorDir + excludeListFile
 	}
 
-	// String
-	value = mergeWithWorkflow(tRun.NeutronExtraImage, wtRun.NeutronExtraImage)
-	if len(value) != 0 {
-		envVars["TEMPEST_NEUTRON_IMAGE_URL"] = value
-	}
-
 	// Bool
 	tempestBoolEnvVars := make(map[string]bool)
 	tempestBoolEnvVars = map[string]bool{
@@ -435,6 +429,29 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	}
 
 	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetJobName(instance, workflowStepNum)
+
+	// String
+	value = mergeWithWorkflow(tRun.NeutronExtraImage, wtRun.NeutronExtraImage)
+	if len(value) != 0 {
+		envVars["TEMPEST_NEUTRON_IMAGE_URL"] = value
+	}
+
+	extraImages := mergeWithWorkflow(tRun.ExtraImages, wtRun.ExtraImages)
+	for _, extraImageDict := range extraImages {
+		envVars["TEMPEST_EXTRA_IMAGES_URL"] += extraImageDict.URL + ","
+		envVars["TEMPEST_EXTRA_IMAGES_OS_CLOUD"] += extraImageDict.OsCloud + ","
+		envVars["TEMPEST_EXTRA_IMAGES_CONTAINER_FORMAT"] += extraImageDict.ContainerFormat + ","
+		envVars["TEMPEST_EXTRA_IMAGES_ID"] += extraImageDict.ID + ","
+		envVars["TEMPEST_EXTRA_IMAGES_NAME"] += extraImageDict.Name + ","
+		envVars["TEMPEST_EXTRA_IMAGES_DISK_FORMAT"] += extraImageDict.DiskFormat + ","
+
+		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_ID"] += extraImageDict.Flavor.ID + ","
+		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_NAME"] += extraImageDict.Flavor.Name + ","
+		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_OS_CLOUD"] += extraImageDict.Flavor.OsCloud + ","
+		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_RAM"] += r.GetDefaultInt(extraImageDict.Flavor.RAM, "-") + ","
+		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_DISK"] += r.GetDefaultInt(extraImageDict.Flavor.Disk, "-") + ","
+		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_VCPUS"] += r.GetDefaultInt(extraImageDict.Flavor.Vcpus, "-") + ","
+	}
 }
 
 func mergeWithWorkflow[T any](value T, workflowValue *T) T {
