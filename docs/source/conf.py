@@ -73,6 +73,11 @@ language = "en"
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
 
+# This is needed so that we do not treat the following warning in a job
+# as a failure:
+#  * WARNING: cannot cache unpickable configuration value: 'html_context'
+suppress_warnings = ["config.cache"]
+
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
 
