@@ -50,6 +50,8 @@ func Job(
 							Level: instance.Spec.SELinuxLevel,
 						},
 					},
+					Tolerations:  instance.Spec.Tolerations,
+					NodeSelector: instance.Spec.NodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:         instance.Name + "-tests-runner",

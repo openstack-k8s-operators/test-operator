@@ -16,6 +16,10 @@ limitations under the License.
 
 package v1beta1
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 // TempestRunSpec - is used to configure execution of tempest. Please refer to
 // Please refer to https://docs.openstack.org/tempest/latest/ for the further
 // explanation of the CLI parameters.
@@ -200,8 +204,15 @@ type WorkflowTempestSpec struct {
 	Parallel *bool `json:"parallel,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// NodeSelector to target subset of worker nodes running this service
+	// This value contains a nodeSelector value that is applied to test pods
+	// spawned by the test operator.
 	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// This value contains a toleration that is applied to pods spawned by the
+	// test pods that are spawned by the test-operator.
+	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
+
 
 	// +kubebuilder:validation:Optional
 	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
