@@ -297,12 +297,24 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	helper *helper.Helper,
 	step int,
 ) map[string]env.Setter {
+
+	// NOTE(lpiwowar): Move all the merge code to the webhook once it is completed.
+	//                 It will clean up the workflow code and remove the duplicit code
+	//                 (Tempest vs Tobiko)
+	if step < len(instance.Spec.Workflow) {
+		if instance.Spec.Workflow[step].NodeSelector != nil {
+			instance.Spec.NodeSelector = *instance.Spec.Workflow[step].NodeSelector
+		}
+
+		if instance.Spec.Workflow[step].Tolerations != nil {
+			instance.Spec.Tolerations = *instance.Spec.Workflow[step].Tolerations
+		}
+	}
+
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
 	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetJobName(instance, step))
-	logging := log.FromContext(ctx)
-	logging.Info("STEP: " + strconv.Itoa(step))
 
 	testenv := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "Testenv", "string", step).(string)
 	envVars["TOBIKO_TESTENV"] = env.SetValue(testenv)

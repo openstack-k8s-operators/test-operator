@@ -25,6 +25,7 @@ package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -346,8 +347,14 @@ type TempestSpec struct {
 	Parallel bool `json:"parallel,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// NodeSelector to target subset of worker nodes running this service
+	// This value contains a nodeSelector value that is applied to test pods
+	// spawned by the test operator.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// This value contains a toleration that is applied to pods spawned by the
+	// test pods that are spawned by the test-operator.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=openstack-config

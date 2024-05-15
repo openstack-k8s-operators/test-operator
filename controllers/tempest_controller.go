@@ -268,6 +268,19 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance)
+
+	// Note(lpiwowar): Remove all the workflow merge code to webhook once it is done.
+	//                 It will simplify the logic and duplicite code (Tempest vs Tobiko)
+	if externalWorkflowCounter < len(instance.Spec.Workflow) {
+		if instance.Spec.Workflow[externalWorkflowCounter].NodeSelector != nil {
+			instance.Spec.NodeSelector = *instance.Spec.Workflow[externalWorkflowCounter].NodeSelector
+		}
+
+		if instance.Spec.Workflow[externalWorkflowCounter].Tolerations != nil {
+			instance.Spec.Tolerations = *instance.Spec.Workflow[externalWorkflowCounter].Tolerations
+		}
+	}
+
 	jobDef := tempest.Job(
 		instance,
 		serviceLabels,

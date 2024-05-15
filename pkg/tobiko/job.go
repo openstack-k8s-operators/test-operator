@@ -26,6 +26,8 @@ func Job(
 	parallelism := int32(1)
 	completions := int32(1)
 
+	// Note(lpiwowar): Once the webhook is implemented move all the logic of merging
+	//                 the workflows there.
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
@@ -48,6 +50,8 @@ func Job(
 						RunAsGroup: &runAsGroup,
 						FSGroup:    &runAsGroup,
 					},
+					Tolerations:  instance.Spec.Tolerations,
+					NodeSelector: instance.Spec.NodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:         instance.Name,
@@ -63,12 +67,12 @@ func Job(
 						},
 					},
 					Volumes: GetVolumes(
-								instance,
-								logsPVCName,
-								mountCerts,
-								mountKeys,
-								mountKubeconfig,
-							),
+						instance,
+						logsPVCName,
+						mountCerts,
+						mountKeys,
+						mountKubeconfig,
+					),
 				},
 			},
 		},
