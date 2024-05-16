@@ -102,7 +102,7 @@ command can be utilized:
 
 .. code-block:: bash
 
-    oc create secret generic my-private-key-secret --from-file=ssh-privatekey=/path/to/private/key/file
+    $ oc create secret generic my-private-key-secret --from-file=ssh-privatekey=/path/to/private/key/file
 
 
 **5. I want to execute tests from tempest plugin XYZ, but the tests seem to be
@@ -144,4 +144,32 @@ The issue can be fixed in two steps:
    so that value under :code:`ClaimRef` is changed to :code:`null`. This will
    free the PVs and you can continue with the testing but please make sure that
    you can afford to lose the data stored on the PVs you are about the free.
+
+
+**7. How can I build test-operator-index locally?**
+
+To build test-operator locally you can follow these steps inside `/test-operator`
+directory. Be sure to double-check which image name is required for each step.
+
+1. Create test-operator image
+
+.. code-block:: bash
+
+    $ make docker-build IMG=<registry>/<user>/<operator_image_name>:<tag>
+    $ make docker-push IMG=<registry>/<user>/<operator_image_name>:<tag>
+
+2. Create test-operator-bundle image
+
+.. code-block:: bash
+
+    $ make bundle IMG=<registry>/<user>/<operator_image_name>:<tag>
+    $ make bundle-build BUNDLE_IMG=<registry>/<user>/<bundle_image_name>:<tag>
+    $ make bundle-push BUNDLE_IMG=<registry>/<user>/<bundle_image_name>:<tag>
+
+3. Create test-operator-index image
+
+.. code-block:: bash
+
+    $ make catalog-build CATALOG_IMG=<registry>/<user>/<index_image_name>:<tag>
+    $ make catalog-push CATALOG_IMG=<registry>/<user>/<index_image_name>:<tag>
 

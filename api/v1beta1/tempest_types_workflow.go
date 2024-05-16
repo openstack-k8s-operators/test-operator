@@ -61,7 +61,7 @@ type WorkflowTempestRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// Extra images that should be downloaded inside the test pod and uploaded to
 	// openstack.
-	ExtraImages *[]ExtraImagesType `json:"extraImagesType"`
+	ExtraImages *[]ExtraImagesType `json:"extraImagesType,omitempty"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config
@@ -70,114 +70,114 @@ type WorkflowTempestRunSpec struct {
 type WorkflowTempestconfRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with --create
-	Create *bool `json:"create"`
+	Create *bool `json:"create,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with
 	// --collect-timing
-	CollectTiming *bool `json:"collectTiming"`
+	CollectTiming *bool `json:"collectTiming,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with --insecure
-	Insecure *bool `json:"insecure"`
+	Insecure *bool `json:"insecure,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with
 	// --no-default-deployer
-	NoDefaultDeployer *bool `json:"noDefaultDeployer"`
+	NoDefaultDeployer *bool `json:"noDefaultDeployer,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with --debug
-	Debug *bool `json:"debug"`
+	Debug *bool `json:"debug,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with --verbose
-	Verbose *bool `json:"verbose"`
+	Verbose *bool `json:"verbose,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with --non-admin
-	NonAdmin *bool `json:"nonAdmin"`
+	NonAdmin *bool `json:"nonAdmin,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with --retry-image
-	RetryImage *bool `json:"retryImage"`
+	RetryImage *bool `json:"retryImage,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// Indicate whether discover-tempest-config should be executed with
 	// --convert-to-raw
-	ConvertToRaw *bool `json:"convertToRaw"`
+	ConvertToRaw *bool `json:"convertToRaw,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// the --out parameter
-	Out *string `json:"out"`
+	Out *string `json:"out,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// A content of deployer_input.ini that is passed to tempest via --deployer-input
-	DeployerInput *string `json:"deployerInput"`
+	DeployerInput *string `json:"deployerInput,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// A content of accounts.yaml that is passed to tempest via --test-acounts
-	TestAccounts *string `json:"testAccounts"`
+	TestAccounts *string `json:"testAccounts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// the --create-accounts-file
-	CreateAccountsFile *string `json:"createAccountsFile"`
+	CreateAccountsFile *string `json:"createAccountsFile,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// A content of profile.yaml that is passed to tempest via --profile
-	Profile *string `json:"profile"`
+	Profile *string `json:"profile,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --generate-profile
-	GenerateProfile *string `json:"generateProfile"`
+	GenerateProfile *string `json:"generateProfile,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --image-disk-format
-	ImageDiskFormat *string `json:"imageDiskFormat"`
+	ImageDiskFormat *string `json:"imageDiskFormat,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --image
-	Image *string `json:"image"`
+	Image *string `json:"image,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-mem
-	FlavorMinMem *int64 `json:"flavorMinMem"`
+	FlavorMinMem *int64 `json:"flavorMinMem,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-disk
-	FlavorMinDisk *int64 `json:"flavorMinDisk"`
+	FlavorMinDisk *int64 `json:"flavorMinDisk,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --network-id
-	NetworkID *string `json:"networkID"`
+	NetworkID *string `json:"networkID,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --append
-	Append *string `json:"append"`
+	Append *string `json:"append,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --remove
-	Remove *string `json:"remove"`
+	Remove *string `json:"remove,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be appended at the end of the command
 	// that executes discover-tempest-config (override values).
-	Overrides *string `json:"overrides"`
+	Overrides *string `json:"overrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// The content of this variable will be passed to discover-tempest-config via
 	// --timeout
-	Timeout *int64 `json:"timeout"`
+	Timeout *int64 `json:"timeout,omitempty"`
 }
 
 // TempestSpec - configuration of execution of tempest. For specific configuration
@@ -191,12 +191,12 @@ type WorkflowTempestSpec struct {
 	// +kubebuilder:validation:Optional
 	// Name of a storage class that is used to create PVCs for logs storage. Required
 	// if default storage class does not exist.
-	StorageClass *string `json:"storageClass"`
+	StorageClass *string `json:"storageClass,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// An URL of a tempest container image that should be used for the execution
 	// of tempest tests.
-	ContainerImage *string `json:"containerImage"`
+	ContainerImage *string `json:"containerImage,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// By default test-operator executes the test-pods sequentially if multiple
@@ -217,11 +217,11 @@ type WorkflowTempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
-	OpenStackConfigMap *string `json:"openStackConfigMap"`
+	OpenStackConfigMap *string `json:"openStackConfigMap,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-	OpenStackConfigSecret *string `json:"openStackConfigSecret"`
+	OpenStackConfigSecret *string `json:"openStackConfigSecret,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose

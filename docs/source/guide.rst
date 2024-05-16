@@ -81,7 +81,7 @@ development of a new feature.
 
 .. code-block:: bash
 
-    make install run
+    ENABLE_WEBHOOKS=false make install run
 
 Note that after running the following command, you will need to switch to
 another terminal unless you run it in the background.
