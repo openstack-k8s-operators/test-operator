@@ -172,7 +172,7 @@ type TempestRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// Extra images that should be downloaded inside the test pod and uploaded to
 	// openstack.
-	ExtraImages []ExtraImagesType `json:"extraImages"`
+	ExtraImages []ExtraImagesType `json:"extraImages,omitempty"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config
@@ -345,7 +345,6 @@ type TempestSpec struct {
 	// This value contains a nodeSelector value that is applied to test pods
 	// spawned by the test operator.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
 
 	// +kubebuilder:validation:Optional
         // +kubebuilder:default=false
