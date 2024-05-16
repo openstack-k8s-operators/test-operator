@@ -346,6 +346,15 @@ type TempestSpec struct {
 	// spawned by the test operator.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+
+	// +kubebuilder:validation:Optional
+        // +kubebuilder:default=false
+        // Activate debug mode. When debug mode is activated any error encountered
+        // inside the test-pod causes that the pod will be kept alive indefinitely
+        // (stuck in "Running" phase) or until the corresponding Tempest CR is deleted.
+        // This allows the user to debug any potential troubles with `oc rsh`.
+        Debug bool `json:"debug,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	// This value contains a toleration that is applied to pods spawned by the
 	// test pods that are spawned by the test-operator.

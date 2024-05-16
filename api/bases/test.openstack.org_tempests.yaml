@@ -65,6 +65,14 @@ spec:
                 description: An URL of a tempest container image that should be used
                   for the execution of tempest tests.
                 type: string
+              debug:
+                default: false
+                description: Activate debug mode. When debug mode is activated any
+                  error encountered inside the test-pod causes that the pod will be
+                  kept alive indefinitely (stuck in "Running" phase) or until the
+                  corresponding Tempest CR is deleted. This allows the user to debug
+                  any potential troubles with `oc rsh`.
+                type: boolean
               networkAttachments:
                 description: NetworkAttachments is a list of NetworkAttachment resource
                   names to expose the services to the given network
