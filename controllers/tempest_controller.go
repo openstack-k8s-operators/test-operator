@@ -208,6 +208,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
+		instance.Spec.Parallel,
 	)
 
 	if err != nil {

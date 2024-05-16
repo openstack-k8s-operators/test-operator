@@ -119,6 +119,7 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	helper *helper.Helper,
 	labels map[string]string,
 	StorageClassName string,
+	parallel bool,
 ) (ctrl.Result, error) {
 	instanceNamespace := instance.GetNamespace()
 	pvcName := r.GetPVCLogsName(instance)
@@ -129,6 +130,11 @@ func (r *Reconciler) EnsureLogsPVCExists(
 		return ctrl.Result{}, nil
 	}
 
+	pvcAccessMode := []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce}
+	if parallel {
+		pvcAccessMode = append(pvcAccessMode, corev1.ReadWriteMany)
+	}
+
 	testOperatorPvcDef := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pvcName,
@@ -136,10 +142,7 @@ func (r *Reconciler) EnsureLogsPVCExists(
 			Labels:    labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteMany,
-				corev1.ReadWriteOnce,
-			},
+			AccessModes: pvcAccessMode,
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: k8sresource.MustParse("1Gi"),

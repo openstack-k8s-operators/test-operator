@@ -152,6 +152,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
+		instance.Spec.Parallel,
 	)
 	if err != nil {
 		return ctrlResult, err
