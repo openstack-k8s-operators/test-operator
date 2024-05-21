@@ -9,12 +9,12 @@ metadata:
     app.kubernetes.io/created-by: test-operator
     app.kubernetes.io/part-of: test-operator
     app.kubernetes.io/managed-by: kustomize
-  name: ansibleTests-editor-role
+  name: ansibletests-editor-role
 rules:
 - apiGroups:
   - test.openstack.org
   resources:
-  - ansibleTests
+  - ansibletests
   verbs:
   - create
   - delete
@@ -26,6 +26,6 @@ rules:
 - apiGroups:
   - test.openstack.org
   resources:
-  - ansibleTests/status
+  - ansibletests/status
   verbs:
   - get

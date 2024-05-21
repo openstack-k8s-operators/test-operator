@@ -122,22 +122,23 @@ func GetVolumes(
 		volumes = append(volumes, extraVol)
 	}
 
-	for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraMounts {
-		extraWorkflowVol := corev1.Volume{
-			Name: vol.Name,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &publicInfoMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: vol.Name,
+	if len(instance.Spec.Workflow) > 0 {
+		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraMounts {
+			extraWorkflowVol := corev1.Volume{
+				Name: vol.Name,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						DefaultMode: &publicInfoMode,
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: vol.Name,
+						},
 					},
 				},
-			},
+			}
+
+			volumes = append(volumes, extraWorkflowVol)
 		}
-
-		volumes = append(volumes, extraWorkflowVol)
 	}
-
 	return volumes
 }
 
@@ -229,17 +230,18 @@ func GetVolumeMounts(mountCerts bool, instance *testv1beta1.AnsibleTests, extern
 		volumeMounts = append(volumeMounts, extraMounts)
 	}
 
-	for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraMounts {
+	if len(instance.Spec.Workflow) > 0 {
+		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraMounts {
 
-		extraMounts := corev1.VolumeMount{
-			Name:      vol.Name,
-			MountPath: vol.MountPath,
-			SubPath:   vol.SubPath,
-			ReadOnly:  true,
+			extraMounts := corev1.VolumeMount{
+				Name:      vol.Name,
+				MountPath: vol.MountPath,
+				SubPath:   vol.SubPath,
+				ReadOnly:  true,
+			}
+
+			volumeMounts = append(volumeMounts, extraMounts)
 		}
-
-		volumeMounts = append(volumeMounts, extraMounts)
 	}
-
 	return volumeMounts
 }

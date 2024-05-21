@@ -9,12 +9,12 @@ metadata:
     app.kubernetes.io/created-by: test-operator
     app.kubernetes.io/part-of: test-operator
     app.kubernetes.io/managed-by: kustomize
-  name: ansibleTests-viewer-role
+  name: ansibletests-viewer-role
 rules:
 - apiGroups:
   - test.openstack.org
   resources:
-  - ansibleTests
+  - ansibletests
   verbs:
   - get
   - list
@@ -22,6 +22,6 @@ rules:
 - apiGroups:
   - test.openstack.org
   resources:
-  - ansibleTests/status
+  - ansibletests/status
   verbs:
   - get
