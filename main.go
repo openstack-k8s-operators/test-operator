@@ -106,6 +106,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	ansibleReconciler := &controllers.AnsibleTestReconciler{}
+	ansibleReconciler.Client = mgr.GetClient()
+	ansibleReconciler.Scheme = mgr.GetScheme()
+	if err = ansibleReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AnsibleTest")
+		os.Exit(1)
+	}
+
 	// Setup webhooks if requested
 	if strings.ToLower(os.Getenv("ENABLE_WEBHOOKS")) != "false" {
 		if err = (&testv1beta1.Tempest{}).SetupWebhookWithManager(mgr); err != nil {

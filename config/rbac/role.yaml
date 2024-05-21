@@ -121,6 +121,32 @@ rules:
 - apiGroups:
   - test.openstack.org
   resources:
+  - ansibletests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - test.openstack.org
+  resources:
+  - ansibletests/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - test.openstack.org
+  resources:
+  - ansibletests/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - test.openstack.org
+  resources:
   - horizontests
   verbs:
   - create

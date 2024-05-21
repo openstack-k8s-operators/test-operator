@@ -1,0 +1,28 @@
+---
+apiVersion: test.openstack.org/v1beta1
+kind: AnsibleTest
+metadata:
+  name: performance-tests
+  namespace: openstack
+spec:
+  extraMounts:
+    - Name: some-configmap
+      subPath: this.conf
+      mountPath: /var/conf
+  debug: true
+  workloadSSHKeySecretName: 'open-ssh-keys'
+  ansiblePlaybookPath: playbooks/my_playbook.yaml
+  ansibleGitRepo: https://github.com/myansible/project
+  # containerImage:
+  ansibleInventory: |
+    localhost ansible_connection=local ansible_python_interpreter=python3
+  ansibleVarFiles: |
+    ---
+    # Use exist cloud resources
+    somevar: somevalue
+  workflow:
+    - stepName: beststep
+      ansibleExtraVars: ' -e manual_run=false '
+    - stepName: laststep
+      ansibleExtraVars: ' -e manual_run=false '
+
