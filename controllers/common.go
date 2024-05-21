@@ -78,7 +78,14 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 		}
 	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
-			return typedInstance.Name 
+		return typedInstance.Name
+	} else if typedInstance, ok := instance.(*v1beta1.AnsibleTest); ok {
+		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
+			return typedInstance.Name
+		} else {
+			workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
+		}
 	} else {
 		return ""
 	}
