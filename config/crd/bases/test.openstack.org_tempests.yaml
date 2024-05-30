@@ -216,10 +216,6 @@ spec:
                     description: A content of include.txt file that is passed to tempest
                       via --include-list
                     type: string
-                  neutronExtraImage:
-                    default: ""
-                    description: Add extra image for Neutron Tempest plugin
-                    type: string
                   parallel:
                     default: true
                     description: Indicate whether tempest should be executed with
@@ -601,9 +597,6 @@ spec:
                         includeList:
                           description: A content of include.txt file that is passed
                             to tempest via --include-list
-                          type: string
-                        neutronExtraImage:
-                          description: Add extra image for Neutron Tempest plugin
                           type: string
                         parallel:
                           description: Indicate whether tempest should be executed

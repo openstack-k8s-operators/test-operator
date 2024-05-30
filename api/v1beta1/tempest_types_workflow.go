@@ -62,10 +62,6 @@ type WorkflowTempestRunSpec struct {
 	// Extra images that should be downloaded inside the test pod and uploaded to
 	// openstack.
 	ExtraImages *[]ExtraImagesType `json:"extraImagesType"`
-
-	// +kubebuilder:validation:Optional
-	// Add extra image for Neutron Tempest plugin
-	NeutronExtraImage *string `json:"neutronExtraImage,omitempty"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config
