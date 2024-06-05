@@ -11,6 +11,76 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - description: HorizonTest is the Schema for the horizontests API
+      displayName: Horizon Test
+      kind: HorizonTest
+      name: horizontests.test.openstack.org
+      specDescriptors:
+      - description: AdminPassword is the password for the OpenStack admin user.
+        displayName: Admin Password
+        path: adminPassword
+      - description: AdminUsername is the username for the OpenStack admin user.
+        displayName: Admin Username
+        path: adminUsername
+      - description: AuthUrl is the authentication URL for OpenStack.
+        displayName: Auth Url
+        path: authUrl
+      - description: BackoffLimimt allows to define the maximum number of retried
+          executions.
+        displayName: Backoff Limit
+        path: backoffLimit
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Container image for horizontest
+        displayName: Container Image
+        path: containerImage
+      - description: DashboardUrl is the URL of the Horizon dashboard.
+        displayName: Dashboard Url
+        path: dashboardUrl
+      - description: FlavorName is the name of the OpenStack flavor to create for
+          Horizon tests.
+        displayName: Flavor Name
+        path: flavorName
+      - description: HorizonRepoBranch is the branch of the Horizon repository to
+          checkout.
+        displayName: Horizon Repo Branch
+        path: horizonRepoBranch
+      - description: HorizonTestDir is the directory path for Horizon tests.
+        displayName: Horizon Test Dir
+        path: horizonTestDir
+      - description: ImageUrl is the URL to download the Cirros image.
+        displayName: Image Url
+        path: imageUrl
+      - description: Name of a secret that contains a kubeconfig. The kubeconfig is
+          mounted under /var/lib/horizontest/.kube/config in the test pod.
+        displayName: Kubeconfig Secret Name
+        path: kubeconfigSecretName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: LogsDirectoryName is the name of the directory to store test
+          logs.
+        displayName: Logs Directory Name
+        path: logsDirectoryName
+      - description: Parallel
+        displayName: Parallel
+        path: parallel
+      - description: Password is the password for the user running the Horizon tests.
+        displayName: Password
+        path: password
+      - description: ProjectName is the name of the OpenStack project for Horizon
+          tests.
+        displayName: Project Name
+        path: projectName
+      - description: RepoUrl is the URL of the Horizon repository.
+        displayName: Repo Url
+        path: repoUrl
+      - description: StorageClass used to create PVCs that store the logs
+        displayName: Storage Class
+        path: storageClass
+      - description: User is the username under which the Horizon tests will run.
+        displayName: User
+        path: user
+      version: v1beta1
     - description: Tempest is the Schema for the tempests API
       displayName: Tempest
       kind: Tempest

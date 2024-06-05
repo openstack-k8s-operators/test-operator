@@ -1,0 +1,57 @@
+apiVersion: test.openstack.org/v1beta1
+kind: HorizonTest
+metadata:
+  labels:
+    app.kubernetes.io/name: horizontest
+    app.kubernetes.io/instance: horizontest-sample
+    app.kubernetes.io/part-of: test-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: test-operator
+  name: horizontest-sample
+spec:
+  spec:
+  containerImage: quay.io/podified-antelope-centos9/openstack-horizontest:current-podified
+
+  # OpenStack admin credentials
+  adminUsername: "admin"
+  adminPassword: "12345678"
+
+  # The URL of the Horizon dashboard
+  dashboardUrl: "https://horizon-openstack.apps.ocp.openstack.lab/"
+
+  # The OpenStack authentication URL
+  authUrl: "https://keystone-public-openstack.apps.ocp.openstack.lab"
+
+  # The Horizon repository URL
+  repoUrl: "https://review.opendev.org/openstack/horizon"
+
+  # The branch of the Horizon repository to checkout
+  horizonRepoBranch: "master"
+
+  # The URL to download the Cirros image (optional)
+  imageUrl: "http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
+
+  # The name of the OpenStack project for Horizon tests (optional)
+  projectName: "horizontest"
+
+  # The username under which Horizon tests will run (optional)
+  user: "horizontest"
+
+  # The password for the user running the Horizon tests (optional)
+  password: "horizontest"
+
+  # The name of the OpenStack flavor to create for Horizon tests (optional)
+  flavorName: "m1.tiny"
+
+  # The name of the directory to store test logs (optional)
+  logsDirectoryName: "horizon"
+
+  # The directory path for Horizon tests (optional)
+  horizonTestDir: "/var/lib/horizontest"
+
+  # Whether to run tests in parallel (optional)
+  parallel: false
+
+  # The maximum number of retry executions (optional)
+  backoffLimit: 0
+ 

@@ -114,6 +114,14 @@ func main() {
 		}
 	}
 
+	horizontestReconciler := &controllers.HorizonTestReconciler{}
+	horizontestReconciler.Client = mgr.GetClient()
+	horizontestReconciler.Scheme = mgr.GetScheme()
+	if err = horizontestReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "HorizonTest")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
