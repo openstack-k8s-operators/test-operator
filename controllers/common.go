@@ -77,6 +77,8 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
 			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 		}
+	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
+			return typedInstance.Name 
 	} else {
 		return ""
 	}
