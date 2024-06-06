@@ -211,6 +211,12 @@ spec:
                       - name
                       type: object
                     type: array
+                  extraRPMs:
+                    description: A list URLs that point to RPMs that should be downloaded
+                      and installed inside the tempest test pod.
+                    items:
+                      type: string
+                    type: array
                   includeList:
                     default: tempest.api.identity.v3
                     description: A content of include.txt file that is passed to tempest
@@ -593,6 +599,12 @@ spec:
                             - URL
                             - name
                             type: object
+                          type: array
+                        extraRPMs:
+                          description: A list URLs that point to RPMs that should
+                            be downloaded and installed inside the tempest test pod.
+                          items:
+                            type: string
                           type: array
                         includeList:
                           description: A content of include.txt file that is passed

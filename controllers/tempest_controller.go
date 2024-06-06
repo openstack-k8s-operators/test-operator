@@ -460,6 +460,11 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_DISK"] += r.GetDefaultInt(extraImageDict.Flavor.Disk, "-") + ","
 		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_VCPUS"] += r.GetDefaultInt(extraImageDict.Flavor.Vcpus, "-") + ","
 	}
+
+	extraRPMs := mergeWithWorkflow(tRun.ExtraRPMs, wtRun.ExtraRPMs)
+	for _, extraRPMURL := range extraRPMs {
+		envVars["TEMPEST_EXTRA_RPMS"] += extraRPMURL + ","
+	}
 }
 
 func mergeWithWorkflow[T any](value T, workflowValue *T) T {
