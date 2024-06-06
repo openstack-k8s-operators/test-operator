@@ -444,12 +444,6 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 
 	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetJobName(instance, workflowStepNum)
 
-	// String
-	value = mergeWithWorkflow(tRun.NeutronExtraImage, wtRun.NeutronExtraImage)
-	if len(value) != 0 {
-		envVars["TEMPEST_NEUTRON_IMAGE_URL"] = value
-	}
-
 	extraImages := mergeWithWorkflow(tRun.ExtraImages, wtRun.ExtraImages)
 	for _, extraImageDict := range extraImages {
 		envVars["TEMPEST_EXTRA_IMAGES_URL"] += extraImageDict.URL + ","
