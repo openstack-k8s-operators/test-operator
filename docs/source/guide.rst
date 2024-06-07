@@ -30,59 +30,13 @@ Running Test Operator Using the Operator Lifecycle Manager (OLM)
 ----------------------------------------------------------------
 
 The first option of how to start the operator is by running the pre-built operator image
-stored on
-`quay.io <https://quay.io/repository/openstack-k8s-operators/test-operator>`_
+stored in the `openstack-operator-index <https://quay.io/repository/openstack-k8s-operators/openstack-operator-index>`_
 using the OLM.
 
-.. note::
+Follow these steps to install the operator in the :code:`openstack-operators`
+project.
 
-   Currently, the `test-operator <https://quay.io/openstack-k8s-operators/test-operator>`_ is not
-   part of the `openstack-operator-index <https://quay.io/openstack-k8s-operators/
-   openstack-operator-index>`_; therefore, a new catalog source which uses `test-operator-index
-   <https://quay.io/openstack-k8s-operators/test-operator-index>`_ image needs to be created
-   in advance.
-
-Follow these steps to install the operator in the OpenStack project.
-
-1. Create :code:`OperatorGroup`
-
-.. code-block:: yaml
-
-   cat operator-group.yaml
-   ---
-   apiVersion: operators.coreos.com/v1
-   kind: OperatorGroup
-   metadata:
-     name: openstack-operatorgroup
-     namespace: openstack
-   spec:
-     targetNamespaces:
-       - openstack
-
-.. code-block:: bash
-
-   oc apply -f operator-group.yaml
-
-2. Create :code:`CatalogSource`
-
-.. code-block:: yaml
-
-   cat catalog-source.yaml
-   ---
-   apiVersion: operators.coreos.com/v1alpha1
-   kind: CatalogSource
-   metadata:
-     name: test-operator-catalog
-     namespace: openstack
-   spec:
-     sourceType: grpc
-     image: quay.io/openstack-k8s-operators/test-operator-index:latest
-
-.. code-block:: bash
-
-   oc apply -f catalog-source.yaml
-
-3. Create :code:`Subscription`
+1. Create :code:`Subscription`
 
 .. code-block:: yaml
 
@@ -92,24 +46,28 @@ Follow these steps to install the operator in the OpenStack project.
    kind: Subscription
    metadata:
      name: test-operator
-     namespace: openstack
+     namespace: openstack-operators
    spec:
      name: test-operator
-     source: test-operator-catalog
-     sourceNamespace: openstack
+     source: openstack-operator-index
+     sourceNamespace: openstack-operators
+
+2. Apply :code:`subscription.yaml`
 
 .. code-block:: bash
 
    oc apply -f subscription.yaml
 
-4. Wait for the :code:`test-operator-controller-manager` pod to successfully
+3. Wait for the :code:`test-operator-controller-manager` pod to successfully
    spawn. Once you see the pod running, you can start communicating with the
-   operator using the :code:`Tempest` resource defined in the
-   :ref:`executing-tests` section.
+   operator using the CRs understood by the test-operator (see
+   :ref:`custom-resources-used-by-the-test-operator`). For more information
+   about how to run tests via the test-operator, refer to the :ref:`executing-tests`
+   section.
 
 .. code-block:: bash
 
-   oc get pods
+   oc get pods -n openstack-operators
    ...
    test-operator-controller-manager-6c9994847c-6jwn5                 2/2     Running     0              20s
    ...
