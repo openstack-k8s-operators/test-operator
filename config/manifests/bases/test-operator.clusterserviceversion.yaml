@@ -15,6 +15,59 @@ spec:
       displayName: Tempest
       kind: Tempest
       name: tempests.test.openstack.org
+      specDescriptors:
+      - description: BackoffLimimt allows to define the maximum number of retried
+          executions (defaults to 6).
+        displayName: Backoff Limit
+        path: backoffLimit
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: BackoffLimimt allows to define the maximum number of retried
+          executions (defaults to 6).
+        displayName: Backoff Limit
+        path: workflow[0].backoffLimit
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      version: v1beta1
+    - description: Tobiko is the Schema for the tobikoes API
+      displayName: Tobiko
+      kind: Tobiko
+      name: tobikos.test.openstack.org
+      specDescriptors:
+      - description: BackoffLimimt allows to define the maximum number of retried
+          executions (defaults to 6).
+        displayName: Backoff Limit
+        path: backoffLimit
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Name of a secret that contains a kubeconfig. The kubeconfig is
+          mounted under /var/lib/tobiko/.kube/config in the test pod.
+        displayName: Kubeconfig Secret Name
+        path: kubeconfigSecretName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: A parameter  that contains a workflow definition.
+        displayName: Workflow
+        path: workflow
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: BackoffLimimt allows to define the maximum number of retried
+          executions (defaults to 6).
+        displayName: Backoff Limit
+        path: workflow[0].backoffLimit
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Name of a secret that contains a kubeconfig. The kubeconfig is
+          mounted under /var/lib/tobiko/.kube/config in the test pod.
+        displayName: Kubeconfig Secret Name
+        path: workflow[0].kubeconfigSecretName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: A parameter that contains a definition of a single workflow step.
+        displayName: Step Name
+        path: workflow[0].stepName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
       version: v1beta1
   description: Test Operator
   displayName: OpenStack Test Operator
