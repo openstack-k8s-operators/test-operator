@@ -73,7 +73,9 @@
             vcpus: 1
       cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
 
-      cifmw_run_tobiko: true
+      # NOTE(lpiwowar): Change to true once this fix fully propagates into the latest build of the tobiko image
+      # https://review.opendev.org/c/x/tobiko/+/922184
+      cifmw_run_tobiko: false
       cifmw_test_operator_tobiko_workflow:
         - stepName: 'podified-functional'
           testenv: 'functional -- tobiko/tests/functional/podified/test_topology.py'
