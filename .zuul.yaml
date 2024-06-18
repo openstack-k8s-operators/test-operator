@@ -32,7 +32,6 @@
         - 'OUTPUT_DIR'
 
       cifmw_run_test_role: test_operator
-
       cifmw_run_tempest: true
       cifmw_test_operator_concurrency: 4
       cifmw_test_operator_timeout: 7200
@@ -72,6 +71,9 @@
             disk: 20
             vcpus: 1
       cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+      cifmw_test_operator_tempest_extra_rpms:
+        - https://cbs.centos.org/kojifiles/packages/python-whitebox-tests-tempest/0.0.3/0.1.766ff04git.el9s/noarch/python3-whitebox-tests-tempest-0.0.3-0.1.766ff04git.el9s.noarch.rpm
+        - https://cbs.centos.org/kojifiles/packages/python-sshtunnel/0.4.0/12.el9s/noarch/python3-sshtunnel-0.4.0-12.el9s.noarch.rpm
 
       cifmw_run_tobiko: true
       cifmw_test_operator_tobiko_workflow:
