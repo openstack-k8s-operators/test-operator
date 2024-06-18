@@ -16,18 +16,477 @@ spec:
       kind: Tempest
       name: tempests.test.openstack.org
       specDescriptors:
+      - description: A SELinuxLevel that is used for all the tempest test pods.
+        displayName: SELinux Level
+        path: SELinuxLevel
+      - description: SSHKeySecretName is the name of the k8s secret that contains
+          an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
+        displayName: SSHKey Secret Name
+        path: SSHKeySecretName
       - description: BackoffLimimt allows to define the maximum number of retried
           executions (defaults to 6).
         displayName: Backoff Limit
         path: backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: ConfigOverwrite - interface to overwrite default config files
+          like e.g. logging.conf But can also be used to add additional files. Those
+          get added to the service config dir in /etc/test_operator/<file>
+        displayName: Config Overwrite
+        path: configOverwrite
+      - description: An URL of a tempest container image that should be used for the
+          execution of tempest tests.
+        displayName: Container Image
+        path: containerImage
+      - description: Activate debug mode. When debug mode is activated any error encountered
+          inside the test-pod causes that the pod will be kept alive indefinitely
+          (stuck in "Running" phase) or until the corresponding Tempest CR is deleted.
+          This allows the user to debug any potential troubles with `oc rsh`.
+        displayName: Debug
+        path: debug
+      - description: NetworkAttachments is a list of NetworkAttachment resource names
+          to expose the services to the given network
+        displayName: Network Attachments
+        path: networkAttachments
+      - description: This value contains a nodeSelector value that is applied to test
+          pods spawned by the test operator.
+        displayName: Node Selector
+        path: nodeSelector
+      - description: OpenStackConfigMap is the name of the ConfigMap containing the
+          clouds.yaml
+        displayName: Open Stack Config Map
+        path: openStackConfigMap
+      - description: OpenStackConfigSecret is the name of the Secret containing the
+          secure.yaml
+        displayName: Open Stack Config Secret
+        path: openStackConfigSecret
+      - description: By default test-operator executes the test-pods sequentially
+          if multiple instances of test-operator related CRs exist. If you want to
+          turn off this behaviour then set this option to true.
+        displayName: Parallel
+        path: parallel
+      - description: Name of a storage class that is used to create PVCs for logs
+          storage. Required if default storage class does not exist.
+        displayName: Storage Class
+        path: storageClass
+      - displayName: Tempest Run
+        path: tempestRun
+      - description: Concurrency value that is passed to tempest via --concurrency
+        displayName: Concurrency
+        path: tempestRun.concurrency
+      - description: A content of exclude.txt file that is passed to tempest via --exclude-list
+        displayName: Exclude List
+        path: tempestRun.excludeList
+      - description: ExternalPlugin contains information about plugin that should
+          be installed within the tempest test pod. If this option is specified then
+          only tests that are part of the external plugin can be executed.
+        displayName: External Plugin
+        path: tempestRun.externalPlugin
+      - description: ChangeRefspec specifies which change the remote repository should
+          be checked out to (ChangeRepository must be defined as well).
+        displayName: Change Refspec
+        path: tempestRun.externalPlugin[0].changeRefspec
+      - description: URL that points to a repository that contains a change that should
+          be applied to the repository defined by Repository (ChangeRefspec must be
+          defined as well).
+        displayName: Change Repository
+        path: tempestRun.externalPlugin[0].changeRepository
+      - description: URL that points to a git repository containing an external plugin.
+        displayName: Repository
+        path: tempestRun.externalPlugin[0].repository
+      - description: Extra images that should be downloaded inside the test pod and
+          uploaded to openstack.
+        displayName: Extra Images
+        path: tempestRun.extraImages
+      - description: ID that should be assigned to the newly created image
+        displayName: ID
+        path: tempestRun.extraImages[0].ID
+      - description: URL that points to a location where the image is located
+        displayName: URL
+        path: tempestRun.extraImages[0].URL
+      - description: Image container format
+        displayName: Container Format
+        path: tempestRun.extraImages[0].containerFormat
+      - description: Image disk format
+        displayName: Disk Format
+        path: tempestRun.extraImages[0].diskFormat
+      - description: ID that should be assigned to the newly created flavor
+        displayName: ID
+        path: tempestRun.extraImages[0].flavor.ID
+      - description: How much RAM should be allocated when this flavor is used
+        displayName: RAM
+        path: tempestRun.extraImages[0].flavor.RAM
+      - description: How much disk space should be allocated when this flavor is used
+        displayName: Disk
+        path: tempestRun.extraImages[0].flavor.disk
+      - description: Name of the flavor that should be created
+        displayName: Name
+        path: tempestRun.extraImages[0].flavor.name
+      - description: Cloud that should be used for authentication
+        displayName: Os Cloud
+        path: tempestRun.extraImages[0].flavor.osCloud
+      - description: How many vcpus should be be allocated when this flavor is used
+        displayName: Vcpus
+        path: tempestRun.extraImages[0].flavor.vcpus
+      - description: Cloud that should be used for authentication
+        displayName: Os Cloud
+        path: tempestRun.extraImages[0].osCloud
+      - description: A list URLs that point to RPMs that should be downloaded and
+          installed inside the tempest test pod.
+        displayName: Extra RPMs
+        path: tempestRun.extraRPMs
+      - description: A content of include.txt file that is passed to tempest via --include-list
+        displayName: Include List
+        path: tempestRun.includeList
+      - description: Indicate whether tempest should be executed with --parallel
+        displayName: Parallel
+        path: tempestRun.parallel
+      - description: Indicate whether tempest should be executed with --serial
+        displayName: Serial
+        path: tempestRun.serial
+      - description: Indicate whether tempest should be executed with --smoke
+        displayName: Smoke
+        path: tempestRun.smoke
+      - description: A content of worker_file.yaml that is passed to tempest via --worker-file
+        displayName: Worker File
+        path: tempestRun.workerFile
+      - displayName: Tempestconf Run
+        path: tempestconfRun
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --append
+        displayName: Append
+        path: tempestconfRun.append
+      - description: Indicate whether discover-tempest-config should be executed with
+          --collect-timing
+        displayName: Collect Timing
+        path: tempestconfRun.collectTiming
+      - description: Indicate whether discover-tempest-config should be executed with
+          --convert-to-raw
+        displayName: Convert To Raw
+        path: tempestconfRun.convertToRaw
+      - description: Indicate whether discover-tempest-config should be executed with
+          --create
+        displayName: Create
+        path: tempestconfRun.create
+      - description: The content of this variable will be passed to discover-tempest-config
+          via the --create-accounts-file
+        displayName: Create Accounts File
+        path: tempestconfRun.createAccountsFile
+      - description: Indicate whether discover-tempest-config should be executed with
+          --debug
+        displayName: Debug
+        path: tempestconfRun.debug
+      - description: A content of deployer_input.ini that is passed to tempest via
+          --deployer-input
+        displayName: Deployer Input
+        path: tempestconfRun.deployerInput
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --flavor-min-disk
+        displayName: Flavor Min Disk
+        path: tempestconfRun.flavorMinDisk
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --flavor-min-mem
+        displayName: Flavor Min Mem
+        path: tempestconfRun.flavorMinMem
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --generate-profile
+        displayName: Generate Profile
+        path: tempestconfRun.generateProfile
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --image
+        displayName: Image
+        path: tempestconfRun.image
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --image-disk-format
+        displayName: Image Disk Format
+        path: tempestconfRun.imageDiskFormat
+      - description: Indicate whether discover-tempest-config should be executed with
+          --insecure
+        displayName: Insecure
+        path: tempestconfRun.insecure
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --network-id
+        displayName: Network ID
+        path: tempestconfRun.networkID
+      - description: Indicate whether discover-tempest-config should be executed with
+          --no-default-deployer
+        displayName: No Default Deployer
+        path: tempestconfRun.noDefaultDeployer
+      - description: Indicate whether discover-tempest-config should be executed with
+          --non-admin
+        displayName: Non Admin
+        path: tempestconfRun.nonAdmin
+      - description: The content of this variable will be passed to discover-tempest-config
+          via the --out parameter
+        displayName: Out
+        path: tempestconfRun.out
+      - description: The content of this variable will be appended at the end of the
+          command that executes discover-tempest-config (override values).
+        displayName: Overrides
+        path: tempestconfRun.overrides
+      - description: A content of profile.yaml that is passed to tempest via --profile
+        displayName: Profile
+        path: tempestconfRun.profile
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --remove
+        displayName: Remove
+        path: tempestconfRun.remove
+      - description: Indicate whether discover-tempest-config should be executed with
+          --retry-image
+        displayName: Retry Image
+        path: tempestconfRun.retryImage
+      - description: A content of accounts.yaml that is passed to tempest via --test-acounts
+        displayName: Test Accounts
+        path: tempestconfRun.testAccounts
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --timeout
+        displayName: Timeout
+        path: tempestconfRun.timeout
+      - description: Indicate whether discover-tempest-config should be executed with
+          --verbose
+        displayName: Verbose
+        path: tempestconfRun.verbose
+      - description: This value contains a toleration that is applied to pods spawned
+          by the test pods that are spawned by the test-operator.
+        displayName: Tolerations
+        path: tolerations
+      - description: Workflow - can be used to specify a multiple executions of tempest
+          with a different configuration in a single CR. Accepts a list of dictionaries
+          where each member of the list accepts the same values as the Tempest CR
+          does in the `spec`` section. Values specified using the workflow section
+          have a higher precedence than the values specified higher in the Tempest
+          CR hierarchy.
+        displayName: Workflow
+        path: workflow
+      - description: SSHKeySecretName is the name of the k8s secret that contains
+          an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
+        displayName: SSHKey Secret Name
+        path: workflow[0].SSHKeySecretName
       - description: BackoffLimimt allows to define the maximum number of retried
           executions (defaults to 6).
         displayName: Backoff Limit
         path: workflow[0].backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: ConfigOverwrite - interface to overwrite default config files
+          like e.g. logging.conf But can also be used to add additional files. Those
+          get added to the service config dir in /etc/test_operator/<file>
+        displayName: Config Overwrite
+        path: workflow[0].configOverwrite
+      - description: An URL of a tempest container image that should be used for the
+          execution of tempest tests.
+        displayName: Container Image
+        path: workflow[0].containerImage
+      - description: NetworkAttachments is a list of NetworkAttachment resource names
+          to expose the services to the given network
+        displayName: Network Attachments
+        path: workflow[0].networkAttachments
+      - description: This value contains a nodeSelector value that is applied to test
+          pods spawned by the test operator.
+        displayName: Node Selector
+        path: workflow[0].nodeSelector
+      - description: OpenStackConfigMap is the name of the ConfigMap containing the
+          clouds.yaml
+        displayName: Open Stack Config Map
+        path: workflow[0].openStackConfigMap
+      - description: OpenStackConfigSecret is the name of the Secret containing the
+          secure.yaml
+        displayName: Open Stack Config Secret
+        path: workflow[0].openStackConfigSecret
+      - description: By default test-operator executes the test-pods sequentially
+          if multiple instances of test-operator related CRs exist. If you want to
+          turn off this behaviour then set this option to true.
+        displayName: Parallel
+        path: workflow[0].parallel
+      - description: Name of a workflow step. The step name will be used for example
+          to create a logs directory.
+        displayName: Step Name
+        path: workflow[0].stepName
+      - description: Name of a storage class that is used to create PVCs for logs
+          storage. Required if default storage class does not exist.
+        displayName: Storage Class
+        path: workflow[0].storageClass
+      - displayName: Tempest Run
+        path: workflow[0].tempestRun
+      - description: Concurrency value that is passed to tempest via --concurrency
+        displayName: Concurrency
+        path: workflow[0].tempestRun.concurrency
+      - description: A content of exclude.txt file that is passed to tempest via --exclude-list
+        displayName: Exclude List
+        path: workflow[0].tempestRun.excludeList
+      - description: ExternalPlugin contains information about plugin that should
+          be installed within the tempest test pod. If this option is specified then
+          only tests that are part of the external plugin can be executed.
+        displayName: External Plugin
+        path: workflow[0].tempestRun.externalPlugin
+      - description: ChangeRefspec specifies which change the remote repository should
+          be checked out to (ChangeRepository must be defined as well).
+        displayName: Change Refspec
+        path: workflow[0].tempestRun.externalPlugin.changeRefspec
+      - description: URL that points to a repository that contains a change that should
+          be applied to the repository defined by Repository (ChangeRefspec must be
+          defined as well).
+        displayName: Change Repository
+        path: workflow[0].tempestRun.externalPlugin.changeRepository
+      - description: URL that points to a git repository containing an external plugin.
+        displayName: Repository
+        path: workflow[0].tempestRun.externalPlugin.repository
+      - description: Extra images that should be downloaded inside the test pod and
+          uploaded to openstack.
+        displayName: Extra Images
+        path: workflow[0].tempestRun.extraImagesType
+      - description: ID that should be assigned to the newly created image
+        displayName: ID
+        path: workflow[0].tempestRun.extraImagesType.ID
+      - description: URL that points to a location where the image is located
+        displayName: URL
+        path: workflow[0].tempestRun.extraImagesType.URL
+      - description: Image container format
+        displayName: Container Format
+        path: workflow[0].tempestRun.extraImagesType.containerFormat
+      - description: Image disk format
+        displayName: Disk Format
+        path: workflow[0].tempestRun.extraImagesType.diskFormat
+      - description: ID that should be assigned to the newly created flavor
+        displayName: ID
+        path: workflow[0].tempestRun.extraImagesType.flavor.ID
+      - description: How much RAM should be allocated when this flavor is used
+        displayName: RAM
+        path: workflow[0].tempestRun.extraImagesType.flavor.RAM
+      - description: How much disk space should be allocated when this flavor is used
+        displayName: Disk
+        path: workflow[0].tempestRun.extraImagesType.flavor.disk
+      - description: Name of the flavor that should be created
+        displayName: Name
+        path: workflow[0].tempestRun.extraImagesType.flavor.name
+      - description: Cloud that should be used for authentication
+        displayName: Os Cloud
+        path: workflow[0].tempestRun.extraImagesType.flavor.osCloud
+      - description: How many vcpus should be be allocated when this flavor is used
+        displayName: Vcpus
+        path: workflow[0].tempestRun.extraImagesType.flavor.vcpus
+      - description: Cloud that should be used for authentication
+        displayName: Os Cloud
+        path: workflow[0].tempestRun.extraImagesType.osCloud
+      - description: A list URLs that point to RPMs that should be downloaded and
+          installed inside the tempest test pod.
+        displayName: Extra RPMs
+        path: workflow[0].tempestRun.extraRPMs
+      - description: A content of include.txt file that is passed to tempest via --include-list
+        displayName: Include List
+        path: workflow[0].tempestRun.includeList
+      - description: Indicate whether tempest should be executed with --parallel
+        displayName: Parallel
+        path: workflow[0].tempestRun.parallel
+      - description: Indicate whether tempest should be executed with --serial
+        displayName: Serial
+        path: workflow[0].tempestRun.serial
+      - description: Indicate whether tempest should be executed with --smoke
+        displayName: Smoke
+        path: workflow[0].tempestRun.smoke
+      - description: A content of worker_file.yaml that is passed to tempest via --worker-file
+        displayName: Worker File
+        path: workflow[0].tempestRun.workerFile
+      - displayName: Tempestconf Run
+        path: workflow[0].tempestconfRun
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --append
+        displayName: Append
+        path: workflow[0].tempestconfRun.append
+      - description: Indicate whether discover-tempest-config should be executed with
+          --collect-timing
+        displayName: Collect Timing
+        path: workflow[0].tempestconfRun.collectTiming
+      - description: Indicate whether discover-tempest-config should be executed with
+          --convert-to-raw
+        displayName: Convert To Raw
+        path: workflow[0].tempestconfRun.convertToRaw
+      - description: Indicate whether discover-tempest-config should be executed with
+          --create
+        displayName: Create
+        path: workflow[0].tempestconfRun.create
+      - description: The content of this variable will be passed to discover-tempest-config
+          via the --create-accounts-file
+        displayName: Create Accounts File
+        path: workflow[0].tempestconfRun.createAccountsFile
+      - description: Indicate whether discover-tempest-config should be executed with
+          --debug
+        displayName: Debug
+        path: workflow[0].tempestconfRun.debug
+      - description: A content of deployer_input.ini that is passed to tempest via
+          --deployer-input
+        displayName: Deployer Input
+        path: workflow[0].tempestconfRun.deployerInput
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --flavor-min-disk
+        displayName: Flavor Min Disk
+        path: workflow[0].tempestconfRun.flavorMinDisk
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --flavor-min-mem
+        displayName: Flavor Min Mem
+        path: workflow[0].tempestconfRun.flavorMinMem
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --generate-profile
+        displayName: Generate Profile
+        path: workflow[0].tempestconfRun.generateProfile
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --image
+        displayName: Image
+        path: workflow[0].tempestconfRun.image
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --image-disk-format
+        displayName: Image Disk Format
+        path: workflow[0].tempestconfRun.imageDiskFormat
+      - description: Indicate whether discover-tempest-config should be executed with
+          --insecure
+        displayName: Insecure
+        path: workflow[0].tempestconfRun.insecure
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --network-id
+        displayName: Network ID
+        path: workflow[0].tempestconfRun.networkID
+      - description: Indicate whether discover-tempest-config should be executed with
+          --no-default-deployer
+        displayName: No Default Deployer
+        path: workflow[0].tempestconfRun.noDefaultDeployer
+      - description: Indicate whether discover-tempest-config should be executed with
+          --non-admin
+        displayName: Non Admin
+        path: workflow[0].tempestconfRun.nonAdmin
+      - description: The content of this variable will be passed to discover-tempest-config
+          via the --out parameter
+        displayName: Out
+        path: workflow[0].tempestconfRun.out
+      - description: The content of this variable will be appended at the end of the
+          command that executes discover-tempest-config (override values).
+        displayName: Overrides
+        path: workflow[0].tempestconfRun.overrides
+      - description: A content of profile.yaml that is passed to tempest via --profile
+        displayName: Profile
+        path: workflow[0].tempestconfRun.profile
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --remove
+        displayName: Remove
+        path: workflow[0].tempestconfRun.remove
+      - description: Indicate whether discover-tempest-config should be executed with
+          --retry-image
+        displayName: Retry Image
+        path: workflow[0].tempestconfRun.retryImage
+      - description: A content of accounts.yaml that is passed to tempest via --test-acounts
+        displayName: Test Accounts
+        path: workflow[0].tempestconfRun.testAccounts
+      - description: The content of this variable will be passed to discover-tempest-config
+          via --timeout
+        displayName: Timeout
+        path: workflow[0].tempestconfRun.timeout
+      - description: Indicate whether discover-tempest-config should be executed with
+          --verbose
+        displayName: Verbose
+        path: workflow[0].tempestconfRun.verbose
+      - description: This value contains a toleration that is applied to pods spawned
+          by the test pods that are spawned by the test-operator.
+        displayName: Tolerations
+        path: workflow[0].tolerations
       version: v1beta1
     - description: Tobiko is the Schema for the tobikoes API
       displayName: Tobiko
@@ -40,12 +499,59 @@ spec:
         path: backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: tobiko.conf
+        displayName: Config
+        path: config
+      - description: Container image for tobiko
+        displayName: Container Image
+        path: containerImage
+      - description: Run tests in parallel
+        displayName: Debug
+        path: debug
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
         path: kubeconfigSecretName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: This value contains a nodeSelector value that is applied to test
+          pods spawned by the test operator.
+        displayName: Node Selector
+        path: nodeSelector
+      - description: Number of processes/workers used to run tobiko tests - value
+          0 results in automatic decission
+        displayName: Num Processes
+        path: numProcesses
+      - description: Container image for tobiko
+        displayName: Parallel
+        path: parallel
+      - description: Boolean specifying whether tobiko tests create new resources
+          or re-use those previously created
+        displayName: Prevent Create
+        path: preventCreate
+      - description: Private Key
+        displayName: Private Key
+        path: privateKey
+      - description: Public Key
+        displayName: Public Key
+        path: publicKey
+      - description: String including any options to pass to pytest when it runs tobiko
+          tests
+        displayName: Pytest Addopts
+        path: pytestAddopts
+      - description: StorageClass used to create PVCs that store the logs
+        displayName: Storage Class
+        path: storageClass
+      - description: Test environment
+        displayName: Testenv
+        path: testenv
+      - description: This value contains a toleration that is applied to pods spawned
+          by the test pods that are spawned by the test-operator.
+        displayName: Tolerations
+        path: tolerations
+      - description: Tobiko version
+        displayName: Version
+        path: version
       - description: A parameter  that contains a workflow definition.
         displayName: Workflow
         path: workflow
@@ -57,17 +563,61 @@ spec:
         path: workflow[0].backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: tobiko.conf
+        displayName: Config
+        path: workflow[0].config
+      - description: Container image for tobiko
+        displayName: Container Image
+        path: workflow[0].containerImage
+      - description: Run tests in parallel
+        displayName: Debug
+        path: workflow[0].debug
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
         path: workflow[0].kubeconfigSecretName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: This value contains a nodeSelector value that is applied to test
+          pods spawned by the test operator.
+        displayName: Node Selector
+        path: workflow[0].nodeSelector
+      - description: Number of processes/workers used to run tobiko tests - value
+          0 results in automatic decission
+        displayName: Num Processes
+        path: workflow[0].numProcesses
+      - description: Boolean specifying whether tobiko tests create new resources
+          or re-use those previously created
+        displayName: Prevent Create
+        path: workflow[0].preventCreate
+      - description: Private Key
+        displayName: Private Key
+        path: workflow[0].privateKey
+      - description: Public Key
+        displayName: Public Key
+        path: workflow[0].publicKey
+      - description: String including any options to pass to pytest when it runs tobiko
+          tests
+        displayName: Pytest Addopts
+        path: workflow[0].pytestAddopts
       - description: A parameter that contains a definition of a single workflow step.
         displayName: Step Name
         path: workflow[0].stepName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: StorageClass used to create PVCs that store the logs
+        displayName: Storage Class
+        path: workflow[0].storageClass
+      - description: Test environment
+        displayName: Testenv
+        path: workflow[0].testenv
+      - description: This value contains a toleration that is applied to pods spawned
+          by the test pods that are spawned by the test-operator.
+        displayName: Tolerations
+        path: workflow[0].tolerations
+      - description: Tobiko version
+        displayName: Version
+        path: workflow[0].version
       version: v1beta1
   description: Test Operator
   displayName: OpenStack Test Operator
@@ -87,6 +637,8 @@ spec:
   keywords:
   - OpenStack
   - Tempest
+  - Tobiko
+  - Tests
   links:
   - name: Test Operator
     url: https://github.com/openstack-k8s-operators/test-operator
