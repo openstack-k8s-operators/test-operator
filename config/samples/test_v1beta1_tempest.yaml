@@ -57,6 +57,16 @@ spec:
     #         RAM: 512
     #         disk: 20
     #         vcpus: 1
+
+    # extraRPMs:
+    # ----------
+    # A list of URLs that point to RPMs that should be installed before
+    # the execution of tempest. WARNING! This parameter has no efect when used
+    # in combination with externalPlugin parameter.
+    # extraRPMs:
+    #   - https://cbs.centos.org/kojifiles/packages/python-sshtunnel/0.4.0/12.el9s/noarch/python3-sshtunnel-0.4.0-12.el9s.noarch.rpm
+    #   - https://cbs.centos.org/kojifiles/packages/python-whitebox-tests-tempest/0.0.3/0.1.766ff04git.el9s/noarch/python3-whitebox-tests-tempest-0.0.3-0.1.766ff04git.el9s.noarch.rpm
+
   tempestconfRun:
     # NOTE: All parameters have default values (use only when you want to override
     #       the default behaviour)

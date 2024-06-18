@@ -170,6 +170,11 @@ func (in *TempestRunSpec) DeepCopyInto(out *TempestRunSpec) {
 		*out = make([]ExternalPluginType, len(*in))
 		copy(*out, *in)
 	}
+	if in.ExtraRPMs != nil {
+		in, out := &in.ExtraRPMs, &out.ExtraRPMs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.ExtraImages != nil {
 		in, out := &in.ExtraImages, &out.ExtraImages
 		*out = make([]ExtraImagesType, len(*in))
@@ -541,6 +546,15 @@ func (in *WorkflowTempestRunSpec) DeepCopyInto(out *WorkflowTempestRunSpec) {
 		if **in != nil {
 			in, out := *in, *out
 			*out = make([]ExternalPluginType, len(*in))
+			copy(*out, *in)
+		}
+	}
+	if in.ExtraRPMs != nil {
+		in, out := &in.ExtraRPMs, &out.ExtraRPMs
+		*out = new([]string)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]string, len(*in))
 			copy(*out, *in)
 		}
 	}
