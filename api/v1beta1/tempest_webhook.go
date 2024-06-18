@@ -63,6 +63,10 @@ func (spec *TempestSpec) Default() {
         if spec.ContainerImage == "" {
 		spec.ContainerImage = tempestDefaults.ContainerImageURL
 	}
+
+	if spec.TempestconfRun == (TempestconfRunSpec{}) {
+		spec.TempestconfRun.Create = true
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

@@ -35,13 +35,41 @@ cat >> ${TMPDIR}/patch_webhook_configurations.yaml <<EOF_CAT
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: mtempest.kb.io
+  name: vtempest.kb.io
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     caBundle: ${CA_BUNDLE}
     url: https://${CRC_IP}:9443/validate-test-openstack-org-v1beta1-tempest
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: vtempest.kb.io
+  objectSelector: {}
+  rules:
+  - apiGroups:
+    - test.openstack.org
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - tempests
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mtempest.kb.io
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: ${CA_BUNDLE}
+    url: https://${CRC_IP}:9443/mutate-test-openstack-org-v1beta1-tempest
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: mtempest.kb.io
@@ -61,4 +89,4 @@ webhooks:
   timeoutSeconds: 10
 EOF_CAT
 
-/home/cloud-user/.crc/cache/crc_libvirt_4.14.7_amd64/oc apply -n openstack -f ${TMPDIR}/patch_webhook_configurations.yaml
+oc apply -n openstack -f ${TMPDIR}/patch_webhook_configurations.yaml
