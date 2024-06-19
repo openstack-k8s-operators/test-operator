@@ -24,6 +24,9 @@ package v1beta1
 
 import (
         "errors"
+
+	"github.com/google/go-cmp/cmp"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -88,7 +91,18 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 func (r *Tempest) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	tempestlog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
+	oldTempest, ok := old.(*Tempest)
+	if !ok || oldTempest == nil {
+		return nil, errors.New("Unable to convert existing object")
+	}
+
+	if !cmp.Equal(oldTempest.Spec, r.Spec) {
+		warnings := admission.Warnings{}
+		warnings = append(warnings, "You are updating an already existing instance of a " +
+					    "Tempest CR! Be aware that changes won't be applied.")
+
+		return warnings, errors.New("Updating an existing Tempest CR is not supported!")
+	}
 	return nil, nil
 }
 
