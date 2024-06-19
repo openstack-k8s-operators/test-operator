@@ -24,6 +24,10 @@ This guide describes:
 If you want to get your hands on the test-operator quickly, then follow these two
 sections: :ref:`running-operator-olm` and :ref:`executing-tests`.
 
+.. note::
+  If you prefer visual guides, you can check out
+  `Test Operator Tempest Guide <https://www.youtube.com/watch?v=nz72z5goEP8>`_ video.
+
 .. _running-operator-olm:
 
 Running Test Operator Using the Operator Lifecycle Manager (OLM)
