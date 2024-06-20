@@ -11,7 +11,7 @@ spec:
       containers:
       - name: manager
         env:
-        - name: RELATED_IMAGE_TEMPEST_IMAGE_URL_DEFAULT
+        - name: RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT
           value: quay.io/podified-antelope-centos9/openstack-tempest-all:current-podified
-        - name: RELATED_IMAGE_TOBIKO_IMAGE_URL_DEFAULT
+        - name: RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT
           value: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
