@@ -15,6 +15,7 @@ func Job(
 	labels map[string]string,
 	jobName string,
 	logsPVCName string,
+	containerImage string,
 	mountCerts bool,
 	mountKeys bool,
 	mountKubeconfig bool,
@@ -55,7 +56,7 @@ func Job(
 					Containers: []corev1.Container{
 						{
 							Name:         instance.Name,
-							Image:        instance.Spec.ContainerImage,
+							Image:        containerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig),

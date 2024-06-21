@@ -23,20 +23,18 @@ limitations under the License.
 package v1beta1
 
 import (
-        "errors"
+	"errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-        "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 )
 
-// TempestDefaults -
-type TempestDefaults struct {
-	ContainerImageURL string
-}
-
-var tempestDefaults TempestDefaults
+const (
+	TestTempestImage = "quay.io/podified-antelope-centos9/openstack-tempest-all:current-podified"
+)
 
 // log is for logging in this package.
 var tempestlog = logf.Log.WithName("tempest-resource")
@@ -55,13 +53,13 @@ var _ webhook.Defaulter = &Tempest{}
 func (r *Tempest) Default() {
 	tempestlog.Info("default", "name", r.Name)
 
-        r.Spec.Default()
+    r.Spec.Default()
 }
 
 // Default - set defaults for this Tempest spec.
 func (spec *TempestSpec) Default() {
-        if spec.ContainerImage == "" {
-		spec.ContainerImage = tempestDefaults.ContainerImageURL
+	if len(spec.ContainerImage) == 0 {
+		spec.ContainerImage = util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", TestTempestImage)
 	}
 
 	if spec.TempestconfRun == (TempestconfRunSpec{}) {
@@ -78,9 +76,10 @@ var _ webhook.Validator = &Tempest{}
 func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	tempestlog.Info("validate create", "name", r.Name)
 
-        if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-            return nil, errors.New("Workflow variable must be empty to run debug mode!")
-        }
+	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
+		return nil, errors.New("Workflow variable must be empty to run debug mode!")
+	}
+
 	return nil, nil
 }
 
