@@ -111,7 +111,7 @@ type TobikoSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:="quay.io/podified-antelope-centos9/openstack-tobiko:current-podified"
+        // +kubebuilder:default:=""
         // Container image for tobiko
         ContainerImage string `json:"containerImage,omitempty"`
 

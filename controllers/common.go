@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -40,6 +41,27 @@ type Reconciler struct {
 	Kclient kubernetes.Interface
 	Log     logr.Logger
 	Scheme  *runtime.Scheme
+}
+
+func GetContainerImage(ctx context.Context, helper *helper.Helper, instance interface{}) string {
+	logging := log.FromContext(ctx)
+	if tempest, ok := instance.(*v1beta1.Tempest); ok {
+		cm, _, _ := configmap.GetConfigMap(ctx, helper, tempest, "test-operator-config", time.Second*10)
+		if cm.Data == nil {
+			return tempest.Spec.ContainerImage
+		}
+
+		return cm.Data["tempest-image"]
+	} else if tobiko, ok := instance.(*v1beta1.Tobiko); ok {
+		cm, _, _ := configmap.GetConfigMap(ctx, helper, tobiko, "test-operator-config", time.Second*10)
+		if cm.Data == nil {
+			return tobiko.Spec.ContainerImage
+		}
+
+		return cm.Data["tobiko-image"]
+	} else {
+		return "NO-IMAGE"
+	}
 }
 
 func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {

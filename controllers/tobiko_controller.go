@@ -199,11 +199,16 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance)
+	logging.Info(instance.Spec.ContainerImage)
+	containerImage := GetContainerImage(ctx, helper, instance)
+	logging.Info("HIHIHI")
+	logging.Info(containerImage)
 	jobDef := tobiko.Job(
 		instance,
 		serviceLabels,
 		jobName,
 		logsPVCName,
+		containerImage,
 		mountCerts,
 		mountKeys,
 		mountKubeconfig,

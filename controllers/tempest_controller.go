@@ -269,6 +269,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance)
+	containerImage := GetContainerImage(ctx, helper, instance)
 
 	// Note(lpiwowar): Remove all the workflow merge code to webhook once it is done.
 	//                 It will simplify the logic and duplicite code (Tempest vs Tobiko)
@@ -290,6 +291,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		EnvVarsConfigMapName,
 		customDataConfigMapName,
 		logsPVCName,
+		containerImage,
 		mountCerts,
 		mountSSHKey,
 	)

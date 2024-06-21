@@ -46,7 +46,7 @@ spec:
                 description: tobiko.conf
                 type: string
               containerImage:
-                default: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
+                default: ""
                 description: Container image for tobiko
                 type: string
               debug:
