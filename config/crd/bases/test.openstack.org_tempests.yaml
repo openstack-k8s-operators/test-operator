@@ -487,6 +487,7 @@ spec:
                     stepName:
                       description: Name of a workflow step. The step name will be
                         used for example to create a logs directory.
+                      pattern: ^[a-z0-9]
                       type: string
                     storageClass:
                       description: Name of a storage class that is used to create

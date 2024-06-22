@@ -223,6 +223,7 @@ type WorkflowTempestconfRunSpec struct {
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type WorkflowTempestSpec struct {
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern:=^[a-z0-9]
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Name of a workflow step. The step name will be used for example to create
 	// a logs directory.
