@@ -133,11 +133,11 @@ spec:
   # tempestconfRun sections.
   #
   # workflow:
-  #   - stepName: FirstStep
+  #   - stepName: firstStep
   #     tempestRun:
   #       includeList: |
   #         tempest.api.*
-  #   - stepName: SecondStep
+  #   - stepName: secondStep
   #     tempestRun:
   #       includeList: |
   #         neutron_tempest_plugin.*
