@@ -133,7 +133,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		instance.Spec.Parallel,
+		0,
 	)
 	if err != nil {
 		return ctrlResult, err
@@ -168,7 +168,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Prepare HorizonTest env vars
 	envVars := r.PrepareHorizonTestEnvVars(ctx, serviceLabels, instance, helper)
 	jobName := r.GetJobName(instance, 0)
-	logsPVCName := r.GetPVCLogsName(instance)
+	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
 	jobDef := horizontest.Job(
 		instance,

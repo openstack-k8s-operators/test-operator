@@ -176,12 +176,13 @@ func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
 	return instance.GetName() + workflowNameSuffix
 }
 
-func (r *Reconciler) GetPVCLogsName(instance client.Object) string {
+func (r *Reconciler) GetPVCLogsName(instance client.Object, workflowStepNum int) string {
 	instanceName := instance.GetName()
 	instanceCreationTimestamp := instance.GetCreationTimestamp().Format(time.UnixDate)
 	suffixLength := 5
 	nameSuffix := GetStringHash(instanceName+instanceCreationTimestamp, suffixLength)
-	return instanceName + "-" + nameSuffix
+	workflowStep := strconv.Itoa(workflowStepNum)
+	return instanceName + "-" + workflowStep + "-" + nameSuffix
 }
 
 func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Object, secretName string) bool {
@@ -209,10 +210,10 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	helper *helper.Helper,
 	labels map[string]string,
 	StorageClassName string,
-	parallel bool,
+	workflowStepNum int,
 ) (ctrl.Result, error) {
 	instanceNamespace := instance.GetNamespace()
-	pvcName := r.GetPVCLogsName(instance)
+	pvcName := r.GetPVCLogsName(instance, workflowStepNum)
 
 	pvvc := &corev1.PersistentVolumeClaim{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instanceNamespace, Name: pvcName}, pvvc)
@@ -221,9 +222,6 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	}
 
 	pvcAccessMode := []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce}
-	if parallel {
-		pvcAccessMode = append(pvcAccessMode, corev1.ReadWriteMany)
-	}
 
 	testOperatorPvcDef := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{

@@ -150,6 +150,13 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, err
 	}
 
+	workflowStepNum := 0
+
+	// Create multiple PVCs for parallel execution
+	if instance.Spec.Parallel && externalWorkflowCounter < len(instance.Spec.Workflow) {
+		workflowStepNum = externalWorkflowCounter
+	}
+
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(
 		ctx,
@@ -157,7 +164,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		instance.Spec.Parallel,
+		workflowStepNum,
 	)
 	if err != nil {
 		return ctrlResult, err
@@ -208,7 +215,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Prepare Tobiko env vars
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
-	logsPVCName := r.GetPVCLogsName(instance)
+	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
 	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
 	jobDef := tobiko.Job(
 		instance,

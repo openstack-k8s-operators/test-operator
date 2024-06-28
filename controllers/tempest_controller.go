@@ -201,6 +201,13 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		"operator":         "test-operator",
 	}
 
+	workflowStepNum := 0
+
+	// Create multiple PVCs for parallel execution
+	if instance.Spec.Parallel && externalWorkflowCounter < len(instance.Spec.Workflow) {
+		workflowStepNum = externalWorkflowCounter
+	}
+
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(
 		ctx,
@@ -208,7 +215,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		instance.Spec.Parallel,
+		workflowStepNum,
 	)
 
 	if err != nil {
@@ -268,7 +275,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	customDataConfigMapName := GetCustomDataConfigMapName(instance, externalWorkflowCounter)
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
-	logsPVCName := r.GetPVCLogsName(instance)
+	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
 	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
 
 	// Note(lpiwowar): Remove all the workflow merge code to webhook once it is done.
