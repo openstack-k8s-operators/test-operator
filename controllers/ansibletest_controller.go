@@ -166,7 +166,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		false,
+		0,
 	)
 	if err != nil {
 		return ctrlResult, err
@@ -202,7 +202,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
-	logsPVCName := r.GetPVCLogsName(instance)
+	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage := r.GetContainerImage(ctx, helper, workflowOverrideParams["ContainerImage"], instance)
 	jobDef := ansibletest.Job(
 		instance,
