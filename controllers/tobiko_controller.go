@@ -152,7 +152,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		instance.Spec.Parallel,
+		externalWorkflowCounter,
 	)
 	if err != nil {
 		return ctrlResult, err
@@ -198,7 +198,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Prepare Tobiko env vars
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
-	logsPVCName := r.GetPVCLogsName(instance)
+	logsPVCName := r.GetPVCLogsName(instance, externalWorkflowCounter)
 	jobDef := tobiko.Job(
 		instance,
 		serviceLabels,

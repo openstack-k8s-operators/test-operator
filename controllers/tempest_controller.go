@@ -208,7 +208,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		instance.Spec.Parallel,
+		0, // default naming
 	)
 
 	if err != nil {
@@ -217,6 +217,28 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrlResult, nil
 	}
 	// Create PersistentVolumeClaim - end
+
+	// Create multiple PVCs for parallel execution
+	if instance.Spec.Parallel == true {
+		if externalWorkflowCounter < len(instance.Spec.Workflow) {
+			// Create PersistentVolumeClaim
+			ctrlResult, err := r.EnsureLogsPVCExists(
+				ctx,
+				instance,
+				helper,
+				serviceLabels,
+				instance.Spec.StorageClass,
+				externalWorkflowCounter,
+			)
+
+			if err != nil {
+				return ctrlResult, err
+			} else if (ctrlResult != ctrl.Result{}) {
+				return ctrlResult, nil
+			}
+			// Create PersistentVolumeClaim - end
+		}
+	}
 
 	mountSSHKey := false
 	if instance.Spec.SSHKeySecretName != "" {
@@ -268,7 +290,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	customDataConfigMapName := GetCustomDataConfigMapName(instance, externalWorkflowCounter)
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
-	logsPVCName := r.GetPVCLogsName(instance)
+	logsPVCName := r.GetPVCLogsName(instance, externalWorkflowCounter)
 
 	// Note(lpiwowar): Remove all the workflow merge code to webhook once it is done.
 	//                 It will simplify the logic and duplicite code (Tempest vs Tobiko)
