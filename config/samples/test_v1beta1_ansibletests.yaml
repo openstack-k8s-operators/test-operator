@@ -1,0 +1,60 @@
+---
+apiVersion: test.openstack.org/v1beta1
+kind: AnsibleTests
+metadata:
+  name: performance-tests
+  namespace: openstack
+spec:
+  extraMounts:
+    - Name: sriov-nova
+      subPath: 03-sriov-nova.conf
+      mountPath: /var/sriov
+  debug: true
+  workloadSSHKeySecretName: 'open-tofu-ssh-keys'
+  ansiblePlaybookPath: playbooks/packet_gen/trex/performance_scenario.yml
+  ansibleGitRepo: https://github.com/eshulman2/ansible-nfv.git
+  containerImage: quay.io/rhos-dfg-nfv/test_performance:latest
+  ansibleInventory: |
+    localhost ansible_connection=local ansible_python_interpreter=python3
+    undercloud-0 ansible_connection=local ansible_python_interpreter=python3
+    compute-0 ansible_host=192.168.122.100 ansible_user=cloud-admin ansible_ssh_private_key_file=/var/lib/perf/.ssh/compute_id
+    compute-1 ansible_host=192.168.122.101 ansible_user=cloud-admin ansible_ssh_private_key_file=/var/lib/perf/.ssh/compute_id
+    [compute]
+    compute-0
+    compute-1
+    [local]
+    localhost
+    [undercloud]
+    undercloud-0
+  ansibleVarFiles: |
+    ---
+    # Use exist cloud resources
+    cloud_resources: external
+    # DUT compute
+    dut_compute: compute-1
+    # Trex config
+    trex_lcores: "2-11"
+    # testpmd path (for rhel 8.4 vm)
+    testpmd_bin: "/root/dpdk/build/app/dpdk-testpmd"
+    # Disable search rates higher than the specified
+    binary_search_disable_upward_search: true
+    # Used to balance queues
+    binary_search_warmup_trial_runtime: 120
+    discover_instance_external_ip: true
+    ssh_key: test_keypair.key
+    dynamic_instances:
+      - name: trex
+        group: trex
+        user: cloud-user
+      - name: testpmd-dpdk-dut
+        group: dpdk_dut
+        user: cloud-user
+      - name: testpmd-sriov-vf-dut
+        group: sriov_dut
+        user: cloud-user
+  workflow:
+    - stepName: dpdk
+      ansibleExtraVars: ' -e manual_run=false -e binary_perf_log=/var/lib/AnsibleTests/external_files/dpdk_performance.log -e dut_group=dpdk_dut -e dut_type=dpdk -e testpmd_lcores=3,4,5 -e trex_rate=2 -e emc_insert_inv_prob=100 -e clone_traffic_gen_repo=false -e private_key_fetch_location=~/ -e python_interperter=/usr/bin/python3 '
+    - stepName: sriov
+      ansibleExtraVars: ' -e manual_run=false -e binary_perf_log=/var/lib/AnsibleTests/external_files/sriov_performance.log -e dut_group=sriov_dut -e dut_type=sriov -e testpmd_lcores=1,2,3 -e trex_rate=15 -e clone_traffic_gen_repo=false -e private_key_fetch_location=~/ -e python_interperter=/usr/bin/python3 '
+
