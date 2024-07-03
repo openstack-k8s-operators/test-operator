@@ -24,6 +24,7 @@
     name: podified-multinode-edpm-deployment-crc-test-operator
     parent: podified-multinode-edpm-deployment-crc
     vars:
+      cifmw_run_horizontest: true
       cifmw_install_yamls_whitelisted_vars:
         - 'TEST_REPO'
         - 'TEST_BRANCH'
@@ -31,7 +32,7 @@
 
       cifmw_run_test_role: test_operator
 
-      cifmw_run_tempest: true
+      cifmw_run_tempest: false
       cifmw_test_operator_concurrency: 4
       cifmw_test_operator_timeout: 7200
       cifmw_test_operator_tempest_include_list: |

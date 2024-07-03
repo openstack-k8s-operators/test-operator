@@ -109,6 +109,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	serviceLabels := map[string]string{
 		common.AppSelector: horizontest.ServiceName,
 		"instanceName":     instance.Name,
+                "workflowStep":     "0",
 		"operator":         "test-operator",
 	}
 
@@ -263,7 +264,7 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 	envVars := make(map[string]env.Setter)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
 	envVars["HORIZON_LOGS_DIR_NAME"] = env.SetValue("horizon")
-	
+
 	// Mandatory variables
 	envVars["ADMIN_USERNAME"] = env.SetValue(instance.Spec.AdminUsername)
 	envVars["ADMIN_PASSWORD"] = env.SetValue(instance.Spec.AdminPassword)
