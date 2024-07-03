@@ -39,6 +39,15 @@ HorizonTest Custom Resource
    :language: yaml
 
 
+.. _ansibletest-custom-resource:
+
+AnsibleTest Custom Resource
+===========================
+
+.. literalinclude:: ../../config/samples/test_v1beta1_ansibletests.yaml
+   :language: yaml
+
+
 .. _parallel-execution:
 
 Parallel Execution
