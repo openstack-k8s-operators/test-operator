@@ -30,6 +30,14 @@ Tobiko Custom Resource
    :language: yaml
 
 
+.. _horizontest-custom-resource:
+
+HorizonTest Custom Resource
+===========================
+
+.. literalinclude:: ../../config/samples/test_v1beta1_horizontest.yaml
+   :language: yaml
+
 
 .. _parallel-execution:
 
