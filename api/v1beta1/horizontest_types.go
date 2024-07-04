@@ -110,7 +110,7 @@ type HorizonTestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="quay.io/podified-antelope-centos9/openstack-horizontest:current-podified"
+	// +kubebuilder:default:=""
 	// Container image for horizontest
 	ContainerImage string `json:"containerImage,omitempty"`
 

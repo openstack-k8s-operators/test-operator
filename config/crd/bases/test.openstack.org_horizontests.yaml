@@ -55,7 +55,7 @@ spec:
                 format: int32
                 type: integer
               containerImage:
-                default: quay.io/podified-antelope-centos9/openstack-horizontest:current-podified
+                default: ""
                 description: Container image for horizontest
                 type: string
               dashboardUrl:

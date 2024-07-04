@@ -76,7 +76,7 @@ spec:
                   in the ansible pod
                 type: string
               containerImage:
-                default: quay.io/podified-antelope-centos9/openstack-ansible-tests:current-podified
+                default: ""
                 description: Container image for AnsibleTest
                 type: string
               debug:
