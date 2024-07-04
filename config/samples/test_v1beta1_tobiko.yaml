@@ -5,7 +5,7 @@ metadata:
   name: tobiko-tests
   namespace: openstack
 spec:
-  containerImage: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
+  containerImage: ""
   # storageClass: local-storage
   # parallel: false
   # privateKey: |

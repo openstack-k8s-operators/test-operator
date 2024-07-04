@@ -5,7 +5,7 @@ metadata:
   name: tempest-tests
   namespace: openstack
 spec:
-  containerImage: quay.io/podified-antelope-centos9/openstack-tempest:current-podified
+  containerImage: ""
   # storageClass: local-storage
   # parallel: false
   # debug: false

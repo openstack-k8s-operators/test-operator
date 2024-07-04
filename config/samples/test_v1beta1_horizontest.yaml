@@ -10,7 +10,7 @@ metadata:
   name: horizontest-sample
 spec:
   spec:
-  containerImage: quay.io/podified-antelope-centos9/openstack-horizontest:current-podified
+  containerImage: ""
 
   # OpenStack admin credentials
   adminUsername: "admin"
@@ -54,4 +54,4 @@ spec:
 
   # The maximum number of retry executions (optional)
   backoffLimit: 0
- 
+

@@ -125,7 +125,7 @@ type AnsibleTestSpec struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="quay.io/podified-antelope-centos9/openstack-ansible-tests:current-podified"
+	// +kubebuilder:default:=""
 	// Container image for AnsibleTest
 	ContainerImage string `json:"containerImage,omitempty"`
 
