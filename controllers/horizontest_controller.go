@@ -30,7 +30,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/horizontest"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -263,7 +263,7 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 	envVars := make(map[string]env.Setter)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
 	envVars["HORIZON_LOGS_DIR_NAME"] = env.SetValue("horizon")
-	
+
 	// Mandatory variables
 	envVars["ADMIN_USERNAME"] = env.SetValue(instance.Spec.AdminUsername)
 	envVars["ADMIN_PASSWORD"] = env.SetValue(instance.Spec.AdminPassword)
