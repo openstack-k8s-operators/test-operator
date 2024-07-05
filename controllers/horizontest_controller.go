@@ -47,7 +47,7 @@ type HorizonTestReconciler struct {
 
 //+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests/finalizers,verbs=update
+//+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests/finalizers,verbs=update;patch
 //+kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;create;update;watch;patch
 
