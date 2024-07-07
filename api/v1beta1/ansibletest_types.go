@@ -24,30 +24,12 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type extraConfigmapsMounts struct {
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
-	// The name of an existing config map for mounting.
-	Name string `json:"Name"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
-	// Path within the container at which the volume should be mounted.
-	MountPath string `json:"mountPath"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
-	// +kubebuilder:default=""
-	// Config map subpath for mounting, defaults to configmap root.
-	SubPath string `json:"subPath"`
-}
-
 // AnsibleTestSpec defines the desired state of AnsibleTest
 type AnsibleTestSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod.
-	ExtraMounts []extraConfigmapsMounts `json:"extraMounts"`
+	ExtraMounts []extraConfigmapsMounts `json:"extraMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
@@ -146,7 +128,7 @@ type AnsibleTestWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod
-	ExtraMounts []extraConfigmapsMounts `json:"extraMounts"`
+	ExtraMounts []extraConfigmapsMounts `json:"extraMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required

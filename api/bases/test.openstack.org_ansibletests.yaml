@@ -87,12 +87,12 @@ spec:
                 description: Extra configmaps for mounting in the pod.
                 items:
                   properties:
-                    Name:
-                      description: The name of an existing config map for mounting.
-                      type: string
                     mountPath:
                       description: Path within the container at which the volume should
                         be mounted.
+                      type: string
+                    name:
+                      description: The name of an existing config map for mounting.
                       type: string
                     subPath:
                       default: ""
@@ -100,8 +100,8 @@ spec:
                         root.
                       type: string
                   required:
-                  - Name
                   - mountPath
+                  - name
                   - subPath
                   type: object
                 type: array
@@ -166,12 +166,12 @@ spec:
                       description: Extra configmaps for mounting in the pod
                       items:
                         properties:
-                          Name:
-                            description: The name of an existing config map for mounting.
-                            type: string
                           mountPath:
                             description: Path within the container at which the volume
                               should be mounted.
+                            type: string
+                          name:
+                            description: The name of an existing config map for mounting.
                             type: string
                           subPath:
                             default: ""
@@ -179,8 +179,8 @@ spec:
                               to configmap root.
                             type: string
                         required:
-                        - Name
                         - mountPath
+                        - name
                         - subPath
                         type: object
                       type: array
