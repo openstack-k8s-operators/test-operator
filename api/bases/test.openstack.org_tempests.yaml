@@ -73,6 +73,28 @@ spec:
                   corresponding Tempest CR is deleted. This allows the user to debug
                   any potential troubles with `oc rsh`.
                 type: boolean
+              extraConfigmapsMounts:
+                description: Extra configmaps for mounting in the pod.
+                items:
+                  properties:
+                    mountPath:
+                      description: Path within the container at which the volume should
+                        be mounted.
+                      type: string
+                    name:
+                      description: The name of an existing config map for mounting.
+                      type: string
+                    subPath:
+                      default: ""
+                      description: Config map subpath for mounting, defaults to configmap
+                        root.
+                      type: string
+                  required:
+                  - mountPath
+                  - name
+                  - subPath
+                  type: object
+                type: array
               networkAttachments:
                 description: NetworkAttachments is a list of NetworkAttachment resource
                   names to expose the services to the given network
