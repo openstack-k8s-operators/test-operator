@@ -58,7 +58,7 @@ func Job(
 							Image:        instance.Spec.ContainerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey),
+							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey, instance),
 							SecurityContext: &corev1.SecurityContext{
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"CAP_AUDIT_WRITE"},

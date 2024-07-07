@@ -113,11 +113,27 @@ func GetVolumes(
 		volumes = append(volumes, sshKeyVolume)
 	}
 
+	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
+		extraVol := corev1.Volume{
+			Name: vol.Name,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					DefaultMode: &scriptsVolumeDefaultMode,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: vol.Name,
+					},
+				},
+			},
+		}
+
+		volumes = append(volumes, extraVol)
+	}
+
 	return volumes
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts(mountCerts bool, mountSSHKey bool) []corev1.VolumeMount {
+func GetVolumeMounts(mountCerts bool, mountSSHKey bool, instance *testv1beta1.Tempest) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "etc-machine-id",
@@ -178,6 +194,18 @@ func GetVolumeMounts(mountCerts bool, mountSSHKey bool) []corev1.VolumeMount {
 		}
 
 		volumeMounts = append(volumeMounts, sshKeyMount)
+	}
+
+	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
+
+		extraMounts := corev1.VolumeMount{
+			Name:      vol.Name,
+			MountPath: vol.MountPath,
+			SubPath:   vol.SubPath,
+			ReadOnly:  true,
+		}
+
+		volumeMounts = append(volumeMounts, extraMounts)
 	}
 
 	return volumeMounts
