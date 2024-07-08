@@ -15,5 +15,7 @@ spec:
           value: quay.io/podified-antelope-centos9/openstack-tempest-all:current-podified
         - name: RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT
           value: quay.io/podified-antelope-centos9/openstack-tobiko:current-podified
+        - name: RELATED_IMAGE_TEST_ANSIBLE_TEST_IMAGE_URL_DEFAULT
+          value: quay.io/podified-antelope-centos9/openstack-ansible-tests:current-podified
         - name: RELATED_IMAGE_HORIZON_TEST_IMAGE_URL_DEFAULT
           value: quay.io/podified-antelope-centos9/openstack-horizontest:current-podified
