@@ -255,16 +255,16 @@ func (r *TobikoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // password value is missing in the clouds.yaml
 func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance client.Object, helper *helper.Helper, labels map[string]string) (ctrl.Result, error) {
 	cm, _, _ := configmap.GetConfigMap(ctx, helper, instance, "openstack-config", time.Second*10)
-	result := make(map[interface{}]interface{})
+	result := make(map[string]interface{})
 
 	err := yaml.Unmarshal([]byte(cm.Data["clouds.yaml"]), &result)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	clouds := result["clouds"].(map[interface{}]interface{})
-	default_value := clouds["default"].(map[interface{}]interface{})
-	auth := default_value["auth"].(map[interface{}]interface{})
+	clouds := result["clouds"].(map[string]interface{})
+	default_value := clouds["default"].(map[string]interface{})
+	auth := default_value["auth"].(map[string]interface{})
 
 	if _, ok := auth["password"].(string); !ok {
 		auth["password"] = "12345678"
