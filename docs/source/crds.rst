@@ -91,3 +91,52 @@ and :code:`crd2.yaml`:
      parallel: true # <-- HERE
      testenv: py3
 
+.. _workflow:
+
+Workflow Section
+================
+The workflow section enables the spawning of multiple test pods at the same
+time. For example, in the Tempest CR shown below, two test pods are spawned,
+each corresponding to a different step. Each step inherits a configuration
+that is specified outside the workflow section. In individual steps, you can
+overwrite values specified in the :code:`tempestRun` and
+:code:`tempestconfRun` sections.
+
+.. code-block:: yaml
+
+  ---
+  apiVersion: test.openstack.org/v1beta1
+  kind: Tempest
+  metadata:
+    name: tempest-tests
+    namespace: openstack
+  spec:
+    containerImage: ""
+    # parallel: true # <-- Uncomment for parallel execution
+    tempestRun:
+    includeList: |
+      tempest.api.identity.v3.*
+    concurrency: 8
+    tempestconfRun:
+    workflow:
+      - stepName: first-step
+        tempestRun:
+          includeList: |
+            tempest.api.*
+      - stepName: second-step
+        tempestRun:
+          includeList: |
+            neutron_tempest_plugin.*
+
+By default, test pods are executed sequentially. To enable parallel
+execution of test pods, you need to set :code:`parallel: true` in the
+:code:`spec` section.
+
+CRs that can use the workflow section:
+
+* :ref:`tempest-custom-resource`
+
+* :ref:`tobiko-custom-resource`
+
+* :ref:`ansibletest-custom-resource`
+
