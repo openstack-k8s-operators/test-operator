@@ -49,10 +49,6 @@ spec:
                 default: ""
                 description: Container image for tobiko
                 type: string
-              debug:
-                default: true
-                description: Run tests in parallel
-                type: boolean
               kubeconfigSecretName:
                 default: ""
                 description: Name of a secret that contains a kubeconfig. The kubeconfig
@@ -71,7 +67,9 @@ spec:
                 type: integer
               parallel:
                 default: false
-                description: Container image for tobiko
+                description: By default test-operator executes the test-pods sequentially
+                  if multiple instances of test-operator related CRs exist. To run
+                  test-pods in parallel set this option to true.
                 type: boolean
               preventCreate:
                 default: false
@@ -159,9 +157,6 @@ spec:
                     containerImage:
                       description: Container image for tobiko
                       type: string
-                    debug:
-                      description: Run tests in parallel
-                      type: boolean
                     kubeconfigSecretName:
                       description: Name of a secret that contains a kubeconfig. The
                         kubeconfig is mounted under /var/lib/tobiko/.kube/config in
