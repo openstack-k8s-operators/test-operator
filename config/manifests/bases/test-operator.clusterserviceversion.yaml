@@ -591,6 +591,10 @@ spec:
         path: kubeconfigSecretName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: NetworkAttachments is a list of NetworkAttachment resource names
+          to expose the services to the given network
+        displayName: Network Attachments
+        path: networkAttachments
       - description: This value contains a nodeSelector value that is applied to test
           pods spawned by the test operator.
         displayName: Node Selector
@@ -655,6 +659,10 @@ spec:
         path: workflow[0].kubeconfigSecretName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: NetworkAttachments is a list of NetworkAttachment resource names
+          to expose the services to the given network
+        displayName: Network Attachments
+        path: workflow[0].networkAttachments
       - description: This value contains a nodeSelector value that is applied to test
           pods spawned by the test operator.
         displayName: Node Selector
