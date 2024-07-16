@@ -57,12 +57,6 @@ type TobikoSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=true
-        // Run tests in parallel
-        Debug bool `json:"debug,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:="py3"
         // Test environment
         Testenv string `json:"testenv,omitempty"`
@@ -118,7 +112,9 @@ type TobikoSpec struct {
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=false
-        // Container image for tobiko
+	// By default test-operator executes the test-pods sequentially if multiple
+	// instances of test-operator related CRs exist. To run test-pods in parallel
+	// set this option to true.
         Parallel bool `json:"parallel,omitempty"`
 
 	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
@@ -164,11 +160,6 @@ type TobikoWorkflowSpec struct {
 	// This value contains a toleration that is applied to pods spawned by the
 	// test pods that are spawned by the test-operator.
 	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Run tests in parallel
-        Debug bool `json:"debug,omitempty"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
