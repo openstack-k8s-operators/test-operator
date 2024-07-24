@@ -690,6 +690,11 @@ func (in *TobikoSpec) DeepCopyInto(out *TobikoSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.NetworkAttachments != nil {
+		in, out := &in.NetworkAttachments, &out.NetworkAttachments
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Workflow != nil {
 		in, out := &in.Workflow, &out.Workflow
 		*out = make([]TobikoWorkflowSpec, len(*in))
@@ -787,6 +792,11 @@ func (in *TobikoWorkflowSpec) DeepCopyInto(out *TobikoWorkflowSpec) {
 		in, out := &in.NumProcesses, &out.NumProcesses
 		*out = new(uint8)
 		**out = **in
+	}
+	if in.NetworkAttachments != nil {
+		in, out := &in.NetworkAttachments, &out.NetworkAttachments
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	if in.BackoffLimit != nil {
 		in, out := &in.BackoffLimit, &out.BackoffLimit
