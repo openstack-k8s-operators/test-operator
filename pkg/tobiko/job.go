@@ -20,6 +20,7 @@ func Job(
 	mountKeys bool,
 	mountKubeconfig bool,
 	envVars map[string]env.Setter,
+	containerImage string,
 ) *batchv1.Job {
 
 	runAsUser := int64(42495)
@@ -57,7 +58,7 @@ func Job(
 					Containers: []corev1.Container{
 						{
 							Name:         instance.Name,
-							Image:        instance.Spec.ContainerImage,
+							Image:        containerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig),

@@ -166,6 +166,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	envVars := r.PrepareHorizonTestEnvVars(ctx, serviceLabels, instance, helper)
 	jobName := r.GetJobName(instance, 0)
 	logsPVCName := r.GetPVCLogsName(instance)
+	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
 	jobDef := horizontest.Job(
 		instance,
 		serviceLabels,
@@ -175,6 +176,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		mountKeys,
 		mountKubeconfig,
 		envVars,
+		containerImage,
 	)
 	horizontestJob := job.NewJob(
 		jobDef,
