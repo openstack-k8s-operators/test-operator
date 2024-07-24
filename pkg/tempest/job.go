@@ -20,6 +20,7 @@ func Job(
 	logsPVCName string,
 	mountCerts bool,
 	mountSSHKey bool,
+	containerImage string,
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
@@ -55,7 +56,7 @@ func Job(
 					Containers: []corev1.Container{
 						{
 							Name:         instance.Name + "-tests-runner",
-							Image:        instance.Spec.ContainerImage,
+							Image:        containerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey, instance),

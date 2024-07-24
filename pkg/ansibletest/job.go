@@ -19,6 +19,7 @@ func Job(
 	envVars map[string]env.Setter,
 	workflowOverrideParams map[string]string,
 	externalWorkflowCounter int,
+	containerImage string,
 ) *batchv1.Job {
 
 	runAsUser := int64(227)
@@ -51,7 +52,7 @@ func Job(
 					Containers: []corev1.Container{
 						{
 							Name:         instance.Name,
-							Image:        workflowOverrideParams["ContainerImage"],
+							Image:        containerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(mountCerts, instance, externalWorkflowCounter),

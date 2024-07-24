@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-    "fmt"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -206,16 +206,18 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance)
+	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
 	jobDef := tobiko.Job(
 		instance,
 		serviceLabels,
-        serviceAnnotations,
+		serviceAnnotations,
 		jobName,
 		logsPVCName,
 		mountCerts,
 		mountKeys,
 		mountKubeconfig,
 		envVars,
+		containerImage,
 	)
 	tobikoJob := job.NewJob(
 		jobDef,

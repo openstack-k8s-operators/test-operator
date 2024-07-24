@@ -13,13 +13,14 @@ import (
 func Job(
 	instance *testv1beta1.Tobiko,
 	labels map[string]string,
-    annotations map[string]string,
+	annotations map[string]string,
 	jobName string,
 	logsPVCName string,
 	mountCerts bool,
 	mountKeys bool,
 	mountKubeconfig bool,
 	envVars map[string]env.Setter,
+	containerImage string,
 ) *batchv1.Job {
 
 	runAsUser := int64(42495)
@@ -42,7 +43,7 @@ func Job(
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: annotations,
-					Labels: labels,
+					Labels:      labels,
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy:      corev1.RestartPolicyNever,
@@ -57,7 +58,7 @@ func Job(
 					Containers: []corev1.Container{
 						{
 							Name:         instance.Name,
-							Image:        instance.Spec.ContainerImage,
+							Image:        containerImage,
 							Args:         []string{},
 							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts: GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig),

@@ -132,6 +132,7 @@ build: generate fmt vet ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
+	source hack/export_related_images.sh && \
 	go run ./main.go
 
 .PHONY: docker-build

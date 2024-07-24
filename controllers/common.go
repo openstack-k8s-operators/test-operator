@@ -14,6 +14,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
+
 	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -60,6 +61,86 @@ func GetCustomDataConfigMapName(instance interface{}, workflowStepNum int) strin
 	}
 
 	return "not-implemented"
+}
+
+func (r *Reconciler) GetContainerImage(
+	ctx context.Context,
+	helper *helper.Helper,
+	containerImage string,
+	instance interface{},
+) string {
+	cm := &corev1.ConfigMap{}
+	testOperatorConfigMapName := "test-operator-config"
+	if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
+		if len(containerImage) > 0 {
+			return containerImage
+		}
+
+		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
+		r.Client.Get(ctx, objectKey, cm)
+		if cm.Data == nil {
+			return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", "")
+
+		}
+
+		if cmImage, exists := cm.Data["tempest-image"]; exists {
+			return cmImage
+		}
+
+		return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", "")
+	} else if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
+		if len(containerImage) > 0 {
+			return containerImage
+		}
+
+		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
+		r.Client.Get(ctx, objectKey, cm)
+		if cm.Data == nil {
+			return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", "")
+
+		}
+
+		if cmImage, exists := cm.Data["tobiko-image"]; exists {
+			return cmImage
+		}
+
+		return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", "")
+	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
+		if len(containerImage) > 0 {
+			return containerImage
+		}
+
+		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
+		r.Client.Get(ctx, objectKey, cm)
+		if cm.Data == nil {
+			return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", "")
+
+		}
+
+		if cmImage, exists := cm.Data["horizontest-image"]; exists {
+			return cmImage
+		}
+
+		return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", "")
+	} else if typedInstance, ok := instance.(*v1beta1.AnsibleTest); ok {
+		if len(containerImage) > 0 {
+			return containerImage
+		}
+
+		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
+		r.Client.Get(ctx, objectKey, cm)
+		if cm.Data == nil {
+			return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", "")
+		}
+
+		if cmImage, exists := cm.Data["ansibletest-image"]; exists {
+			return cmImage
+		}
+
+		return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", "")
+	}
+
+	return ""
 }
 
 func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) string {

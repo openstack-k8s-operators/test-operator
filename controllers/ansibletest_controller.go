@@ -201,6 +201,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance)
+	containerImage := r.GetContainerImage(ctx, helper, workflowOverrideParams["ContainerImage"], instance)
 	jobDef := ansibletest.Job(
 		instance,
 		serviceLabels,
@@ -210,6 +211,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		envVars,
 		workflowOverrideParams,
 		externalWorkflowCounter,
+		containerImage,
 	)
 	ansibleTestsJob := job.NewJob(
 		jobDef,
