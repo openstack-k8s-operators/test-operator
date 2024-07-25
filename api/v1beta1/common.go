@@ -16,7 +16,6 @@ limitations under the License.
 
 package v1beta1
 
-
 type extraConfigmapsMounts struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required

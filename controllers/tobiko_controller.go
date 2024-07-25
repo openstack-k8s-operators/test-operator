@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-    "fmt"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -209,7 +209,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	jobDef := tobiko.Job(
 		instance,
 		serviceLabels,
-        serviceAnnotations,
+		serviceAnnotations,
 		jobName,
 		logsPVCName,
 		mountCerts,
