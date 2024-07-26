@@ -110,6 +110,11 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		common.AppSelector: horizontest.ServiceName,
 		"instanceName":     instance.Name,
 		"operator":         "test-operator",
+
+		// NOTE(lpiwowar):  This is a workaround since the Horizontest CR does not support
+		//                  workflows. However, the label might be required by automation that
+		//                  consumes the test-operator (e.g., ci-framework).
+		"workflowStep":     "0",
 	}
 
 	result, err := r.EnsureHorizonTestCloudsYAML(ctx, instance, helper, serviceLabels)
