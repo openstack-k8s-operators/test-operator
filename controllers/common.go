@@ -291,24 +291,19 @@ func (r *Reconciler) AcquireLock(ctx context.Context, instance client.Object, h 
 		return true
 	}
 
-	for {
-		cm := &corev1.ConfigMap{}
-		err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: "test-operator-lock"}, cm)
-		if err != nil {
-			if k8s_errors.IsNotFound(err) {
-				cms := []util.Template{
-					{
-						Name:      "test-operator-lock",
-						Namespace: instance.GetNamespace(),
-					},
-				}
-				configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-				return true
-			} else {
-				return false
-			}
+	cm := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: "test-operator-lock"}, cm)
+	if err != nil && k8s_errors.IsNotFound(err) {
+		cms := []util.Template{
+			{
+				Name:      "test-operator-lock",
+				Namespace: instance.GetNamespace(),
+			},
 		}
 
+		err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
+		return err == nil
+	} else {
 		return false
 	}
 }
@@ -321,8 +316,8 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) bo
 		},
 	}
 
-	r.Client.Delete(ctx, &cm)
-	return true
+	err := r.Client.Delete(ctx, &cm)
+	return err == nil
 }
 
 func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
@@ -343,8 +338,8 @@ func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance cli
 		},
 	}
 
-	configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return true
+	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
+	return err == nil
 }
 
 func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance client.Object, h *helper.Helper) bool {
@@ -366,8 +361,8 @@ func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance c
 		},
 	}
 
-	configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return true
+	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
+	return err == nil
 }
 
 func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object, h *helper.Helper) int {

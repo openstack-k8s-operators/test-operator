@@ -59,55 +59,55 @@ type TobikoSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:="py3"
         // Test environment
-        Testenv string `json:"testenv,omitempty"`
+        Testenv string `json:"testenv"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=""
         // String including any options to pass to pytest when it runs tobiko tests
-        PytestAddopts string `json:"pytestAddopts,omitempty"`
+        PytestAddopts string `json:"pytestAddopts"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=false
         // Boolean specifying whether tobiko tests create new resources or re-use those previously created
-        PreventCreate bool `json:"preventCreate,omitempty"`
+        PreventCreate bool `json:"preventCreate"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=0
         // Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
-        NumProcesses uint8 `json:"numProcesses,omitempty"`
+        NumProcesses uint8 `json:"numProcesses"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=""
         // Tobiko version
-        Version string `json:"version,omitempty"`
+        Version string `json:"version"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=""
         // tobiko.conf
-        Config string `json:"config,omitempty"`
+        Config string `json:"config"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=""
         // Private Key
-        PrivateKey string `json:"privateKey,omitempty"`
+        PrivateKey string `json:"privateKey"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=""
         // Public Key
-        PublicKey string `json:"publicKey,omitempty"`
+        PublicKey string `json:"publicKey"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=""
         // Container image for tobiko
-        ContainerImage string `json:"containerImage,omitempty"`
+        ContainerImage string `json:"containerImage"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -115,7 +115,7 @@ type TobikoSpec struct {
 	// By default test-operator executes the test-pods sequentially if multiple
 	// instances of test-operator related CRs exist. To run test-pods in parallel
 	// set this option to true.
-        Parallel bool `json:"parallel,omitempty"`
+        Parallel bool `json:"parallel"`
 
 	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

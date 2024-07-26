@@ -82,6 +82,9 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		r.Scheme,
 		r.Log,
 	)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	rbacRules := []rbacv1.PolicyRule{
 		{
@@ -255,7 +258,10 @@ func (r *HorizonTestReconciler) EnsureHorizonTestCloudsYAML(ctx context.Context,
 			},
 		},
 	}
-	configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	err = configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }

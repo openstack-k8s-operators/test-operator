@@ -165,6 +165,8 @@ spec:
                           description: URL that points to a git repository containing
                             an external plugin.
                           type: string
+                      required:
+                      - repository
                       type: object
                     type: array
                   extraImages:
@@ -554,6 +556,8 @@ spec:
                                 description: URL that points to a git repository containing
                                   an external plugin.
                                 type: string
+                            required:
+                            - repository
                             type: object
                           type: array
                         extraImagesType:

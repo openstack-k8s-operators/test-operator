@@ -109,8 +109,10 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	runningAnsibleJob := &batchv1.Job{}
 	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
 	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningAnsibleJob)
-	if err == nil {
-		currentWorkflowStep, err = strconv.Atoi(runningAnsibleJob.Labels["workflowStep"])
+	if err != nil && !k8s_errors.IsNotFound(err) {
+		return ctrl.Result{}, err
+	} else if err == nil {
+		currentWorkflowStep, _ = strconv.Atoi(runningAnsibleJob.Labels["workflowStep"])
 	}
 
 	logging := log.FromContext(ctx)
