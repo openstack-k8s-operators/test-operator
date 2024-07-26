@@ -113,7 +113,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
 	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningTobikoJob)
 	if err == nil {
-		currentWorkflowStep, err = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
+		currentWorkflowStep, _ = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
 	}
 
 	logging := log.FromContext(ctx)
@@ -411,8 +411,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	}
 
 	// Bool
-	tempestBoolEnvVars := make(map[string]bool)
-	tempestBoolEnvVars = map[string]bool{
+	tempestBoolEnvVars := map[string]bool{
 		"TEMPEST_SERIAL":     mergeWithWorkflow(tRun.Serial, wtRun.Serial),
 		"TEMPEST_PARALLEL":   mergeWithWorkflow(tRun.Parallel, wtRun.Parallel),
 		"TEMPEST_SMOKE":      mergeWithWorkflow(tRun.Smoke, wtRun.Smoke),
@@ -511,8 +510,7 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 	}
 
 	// Bool
-	tempestconfBoolEnvVars := make(map[string]bool)
-	tempestconfBoolEnvVars = map[string]bool{
+	tempestconfBoolEnvVars := map[string]bool{
 		"TEMPESTCONF_CREATE":              mergeWithWorkflow(tcRun.Create, wtcRun.Create),
 		"TEMPESTCONF_COLLECT_TIMING":      mergeWithWorkflow(tcRun.CollectTiming, wtcRun.CollectTiming),
 		"TEMPESTCONF_INSECURE":            mergeWithWorkflow(tcRun.Insecure, wtcRun.Insecure),
@@ -528,8 +526,7 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 		envVars[key] = r.GetDefaultBool(value)
 	}
 
-	tempestconfIntEnvVars := make(map[string]int64)
-	tempestconfIntEnvVars = map[string]int64{
+	tempestconfIntEnvVars := map[string]int64{
 		"TEMPESTCONF_TIMEOUT":         mergeWithWorkflow(tcRun.Timeout, wtcRun.Timeout),
 		"TEMPESTCONF_FLAVOR_MIN_MEM":  mergeWithWorkflow(tcRun.FlavorMinMem, wtcRun.FlavorMinMem),
 		"TEMPESTCONF_FLAVOR_MIN_DISK": mergeWithWorkflow(tcRun.FlavorMinDisk, wtcRun.FlavorMinDisk),

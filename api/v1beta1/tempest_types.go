@@ -123,7 +123,7 @@ type ExternalPluginType struct {
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// URL that points to a git repository containing an external plugin.
-	Repository string `json:"repository,omitempty"`
+	Repository string `json:"repository"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -147,42 +147,42 @@ type TempestRunSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="tempest.api.identity.v3"
 	// A content of include.txt file that is passed to tempest via --include-list
-	IncludeList string `json:"includeList,omitempty"`
+	IncludeList string `json:"includeList"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// A content of exclude.txt file that is passed to tempest via --exclude-list
-	ExcludeList string `json:"excludeList,omitempty"`
+	ExcludeList string `json:"excludeList"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=0
 	// Concurrency value that is passed to tempest via --concurrency
-	Concurrency int64 `json:"concurrency,omitempty"`
+	Concurrency int64 `json:"concurrency"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// Indicate whether tempest should be executed with --smoke
-	Smoke bool `json:"smoke,omitempty"`
+	Smoke bool `json:"smoke"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=true
 	// Indicate whether tempest should be executed with --parallel
-	Parallel bool `json:"parallel,omitempty"`
+	Parallel bool `json:"parallel"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// Indicate whether tempest should be executed with --serial
-	Serial bool `json:"serial,omitempty"`
+	Serial bool `json:"serial"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=""
 	// A content of worker_file.yaml that is passed to tempest via --worker-file
-	WorkerFile string `json:"workerFile,omitempty"`
+	WorkerFile string `json:"workerFile"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -400,7 +400,7 @@ type TempestSpec struct {
 	// By default test-operator executes the test-pods sequentially if multiple
 	// instances of test-operator related CRs exist. If you want to turn off this
 	// behaviour then set this option to true.
-	Parallel bool `json:"parallel,omitempty"`
+	Parallel bool `json:"parallel"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -415,7 +415,7 @@ type TempestSpec struct {
 	// inside the test-pod causes that the pod will be kept alive indefinitely
 	// (stuck in "Running" phase) or until the corresponding Tempest CR is deleted.
 	// This allows the user to debug any potential troubles with `oc rsh`.
-	Debug bool `json:"debug,omitempty"`
+	Debug bool `json:"debug"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -460,7 +460,7 @@ type TempestSpec struct {
 	// +kubebuilder:default=""
 	// SSHKeySecretName is the name of the k8s secret that contains an ssh key.
 	// The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
-	SSHKeySecretName string `json:"SSHKeySecretName,omitempty"`
+	SSHKeySecretName string `json:"SSHKeySecretName"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

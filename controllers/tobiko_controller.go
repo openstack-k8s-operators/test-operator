@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-    "fmt"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -86,6 +86,9 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.Scheme,
 		r.Log,
 	)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Ensure that there is an external counter and read its value
 	// We use the external counter to keep track of the workflow steps
@@ -101,7 +104,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
 	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningTobikoJob)
 	if err == nil {
-		currentWorkflowStep, err = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
+		currentWorkflowStep, _ = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
 	}
 
 	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
@@ -209,7 +212,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	jobDef := tobiko.Job(
 		instance,
 		serviceLabels,
-        serviceAnnotations,
+		serviceAnnotations,
 		jobName,
 		logsPVCName,
 		mountCerts,
@@ -314,7 +317,10 @@ func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance 
 			},
 		},
 	}
-	configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	err = configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -405,7 +411,10 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 		},
 	}
 
-	configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	err := configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	if err != nil {
+		return map[string]env.Setter{}
+	}
 
 	return envVars
 }

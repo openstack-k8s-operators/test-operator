@@ -117,6 +117,12 @@ spec:
                   run.
                 type: string
             required:
+            - adminPassword
+            - adminUsername
+            - authUrl
+            - dashboardUrl
+            - horizonRepoBranch
+            - repoUrl
             - storageClass
             type: object
           status:

@@ -13,7 +13,7 @@ import (
 func Job(
 	instance *testv1beta1.Tobiko,
 	labels map[string]string,
-    annotations map[string]string,
+	annotations map[string]string,
 	jobName string,
 	logsPVCName string,
 	mountCerts bool,
@@ -42,7 +42,7 @@ func Job(
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: annotations,
-					Labels: labels,
+					Labels:      labels,
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy:      corev1.RestartPolicyNever,

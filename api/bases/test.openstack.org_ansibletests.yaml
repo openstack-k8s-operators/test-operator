@@ -216,6 +216,8 @@ spec:
                   to ~/test_keypair.key in the ansible pod
                 type: string
             required:
+            - ansibleGitRepo
+            - ansiblePlaybookPath
             - computeSSHKeySecretName
             - openStackConfigMap
             - openStackConfigSecret

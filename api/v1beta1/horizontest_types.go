@@ -36,89 +36,89 @@ type HorizonTestSpec struct {
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="admin"
-	AdminUsername string `json:"adminUsername,omitempty"`
+	AdminUsername string `json:"adminUsername"`
 
 	// AdminPassword is the password for the OpenStack admin user.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="admin"
-	AdminPassword string `json:"adminPassword,omitempty"`
+	AdminPassword string `json:"adminPassword"`
 
 	// DashboardUrl is the URL of the Horizon dashboard.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	DashboardUrl string `json:"dashboardUrl,omitempty"`
+	DashboardUrl string `json:"dashboardUrl"`
 
 	// AuthUrl is the authentication URL for OpenStack.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	AuthUrl string `json:"authUrl,omitempty"`
+	AuthUrl string `json:"authUrl"`
 
 	// RepoUrl is the URL of the Horizon repository.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="https://review.opendev.org/openstack/horizon"
-	RepoUrl string `json:"repoUrl,omitempty"`
+	RepoUrl string `json:"repoUrl"`
 
 	// HorizonRepoBranch is the branch of the Horizon repository to checkout.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="master"
-	HorizonRepoBranch string `json:"horizonRepoBranch,omitempty"`
+	HorizonRepoBranch string `json:"horizonRepoBranch"`
 
 	// ImageUrl is the URL to download the Cirros image.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
-	ImageUrl string `json:"imageUrl,omitempty"`
+	ImageUrl string `json:"imageUrl"`
 
 	// ProjectName is the name of the OpenStack project for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="horizontest"
-	ProjectName string `json:"projectName,omitempty"`
+	ProjectName string `json:"projectName"`
 
 	// User is the username under which the Horizon tests will run.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="horizontest"
-	User string `json:"user,omitempty"`
+	User string `json:"user"`
 
 	// Password is the password for the user running the Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="horizontest"
-	Password string `json:"password,omitempty"`
+	Password string `json:"password"`
 
 	// FlavorName is the name of the OpenStack flavor to create for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="m1.tiny"
-	FlavorName string `json:"flavorName,omitempty"`
+	FlavorName string `json:"flavorName"`
 
 	// LogsDirectoryName is the name of the directory to store test logs.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="horizon"
-	LogsDirectoryName string `json:"logsDirectoryName,omitempty"`
+	LogsDirectoryName string `json:"logsDirectoryName"`
 
 	// HorizonTestDir is the directory path for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default="/var/lib/horizontest"
-	HorizonTestDir string `json:"horizonTestDir,omitempty"`
+	HorizonTestDir string `json:"horizonTestDir"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=""
 	// Container image for horizontest
-	ContainerImage string `json:"containerImage,omitempty"`
+	ContainerImage string `json:"containerImage"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// Parallel
-	Parallel bool `json:"parallel,omitempty"`
+	Parallel bool `json:"parallel"`
 
 	// BackoffLimimt allows to define the maximum number of retried executions.
 	// +kubebuilder:default:=0

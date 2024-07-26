@@ -55,13 +55,13 @@ type AnsibleTestSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=""
 	// AnsibleGitRepo - git repo to clone into container
-	AnsibleGitRepo string `json:"ansibleGitRepo,omitempty"`
+	AnsibleGitRepo string `json:"ansibleGitRepo"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=""
 	// AnsiblePlaybookPath - path to ansible playbook
-	AnsiblePlaybookPath string `json:"ansiblePlaybookPath,omitempty"`
+	AnsiblePlaybookPath string `json:"ansiblePlaybookPath"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
@@ -103,13 +103,13 @@ type AnsibleTestSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=false
 	// Run ansible playbook with -vvvv
-	Debug bool `json:"debug,omitempty"`
+	Debug bool `json:"debug"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=""
 	// Container image for AnsibleTest
-	ContainerImage string `json:"containerImage,omitempty"`
+	ContainerImage string `json:"containerImage"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
