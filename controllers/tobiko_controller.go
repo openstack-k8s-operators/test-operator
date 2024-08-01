@@ -108,7 +108,9 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// The job created by the instance was completed. Release the lock
 		// so that other instances can spawn a job.
 		logging.Info("Job completed")
-		r.ReleaseLock(ctx, instance)
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			return ctrl.Result{}, err
+		}
 	}
 
 	rbacRules := []rbacv1.PolicyRule{
@@ -192,9 +194,10 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// We are about to start job that spawns the pod with tests.
 	// This lock ensures that there is always only one pod running.
-	if !r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel) {
+	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+	if !lockAcquired {
 		logging.Info("Can not acquire lock")
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
 	logging.Info("Lock acquired")
 

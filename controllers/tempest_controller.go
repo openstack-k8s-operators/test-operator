@@ -121,7 +121,9 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// The job created by the instance was completed. Release the lock
 		// so that other instances can spawn a job.
 		logging.Info("Job completed")
-		r.ReleaseLock(ctx, instance)
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Always patch the instance status when exiting this function so we
@@ -232,12 +234,11 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	// We are about to start job that spawns the pod with tests.
 	// This lock ensures that there is always only one pod running.
-	if !r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel) {
+	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+	if !lockAcquired {
 		logging.Info("Can not acquire lock")
 		requeueAfter := time.Second * 60
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	} else {
-		logging.Info("Lock acquired")
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
 
 	if workflowActive {
@@ -306,7 +307,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// Creation of the tempest job was not successfull.
 		// Release the lock and allow other controllers to spawn
 		// a job.
-		r.ReleaseLock(ctx, instance)
+		if lockReleased, lockErr := r.ReleaseLock(ctx, instance); lockReleased {
+			return ctrl.Result{}, lockErr
+		}
+
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.DeploymentReadyCondition,
 			condition.ErrorReason,

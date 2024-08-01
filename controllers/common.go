@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -33,6 +34,9 @@ const (
 	envVarsConfigMapinfix    = "-env-vars-step-"
 	customDataConfigMapinfix = "-custom-data-step-"
 	workflowStepNumInvalid   = -1
+
+	testOperatorLockName       = "test-operator-lock"
+	testOperatorLockOnwerField = "owner"
 )
 
 type Reconciler struct {
@@ -203,45 +207,78 @@ func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) strin
 	}
 }
 
-func (r *Reconciler) AcquireLock(ctx context.Context, instance client.Object, h *helper.Helper, parallel bool) bool {
+func (r *Reconciler) GetLockInfo(ctx context.Context, instance client.Object) (*corev1.ConfigMap, error) {
+	cm := &corev1.ConfigMap{}
+	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: testOperatorLockName}
+	err := r.Client.Get(ctx, objectKey, cm)
+	if err != nil {
+		return cm, err
+	}
+
+	if _, ok := cm.Data[testOperatorLockOnwerField]; !ok {
+		errMsg := fmt.Sprintf(
+			"%s field is missing in the %s config map",
+			testOperatorLockOnwerField, testOperatorLockName,
+		)
+
+		return cm, errors.New(errMsg)
+	}
+
+	return cm, err
+}
+
+func (r *Reconciler) AcquireLock(
+	ctx context.Context,
+	instance client.Object,
+	h *helper.Helper,
+	parallel bool,
+) (bool, error) {
 	// Do not wait for the lock if the user wants the tests to be
 	// executed parallely
 	if parallel {
-		return true
+		return true, nil
 	}
 
-	for {
-		cm := &corev1.ConfigMap{}
-		err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: "test-operator-lock"}, cm)
-		if err != nil {
-			if k8s_errors.IsNotFound(err) {
-				cms := []util.Template{
-					{
-						Name:      "test-operator-lock",
-						Namespace: instance.GetNamespace(),
-					},
-				}
-				configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-				return true
-			} else {
-				return false
-			}
+	_, err := r.GetLockInfo(ctx, instance)
+	if err != nil && k8s_errors.IsNotFound(err) {
+		cm := map[string]string{
+			testOperatorLockOnwerField: string(instance.GetUID()),
 		}
 
-		return false
+		cms := []util.Template{
+			{
+				Name:       testOperatorLockName,
+				Namespace:  instance.GetNamespace(),
+				CustomData: cm,
+			},
+		}
+
+		err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
+		return err == nil, err
 	}
+
+	return false, nil
 }
 
-func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) bool {
-	cm := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: instance.GetNamespace(),
-			Name:      "test-operator-lock",
-		},
+func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (bool, error) {
+	cm, err := r.GetLockInfo(ctx, instance)
+	if err != nil && k8s_errors.IsNotFound(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
 	}
 
-	r.Client.Delete(ctx, &cm)
-	return true
+	// Lock can be only released by the instance that created it
+	if cm.Data[testOperatorLockOnwerField] != string(instance.GetUID()) {
+		return false, nil
+	}
+
+	err = r.Client.Delete(ctx, cm)
+	if err != nil && k8s_errors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return err == nil, err
 }
 
 func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
