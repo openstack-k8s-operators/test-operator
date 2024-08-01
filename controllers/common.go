@@ -65,111 +65,126 @@ func GetCustomDataConfigMapName(instance interface{}, workflowStepNum int) strin
 
 func (r *Reconciler) GetContainerImage(
 	ctx context.Context,
-	helper *helper.Helper,
 	containerImage string,
 	instance interface{},
-) string {
+) (string, error) {
 	cm := &corev1.ConfigMap{}
 	testOperatorConfigMapName := "test-operator-config"
 	if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
 		if len(containerImage) > 0 {
-			return containerImage
+			return containerImage, nil
 		}
 
 		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		r.Client.Get(ctx, objectKey, cm)
+		err := r.Client.Get(ctx, objectKey, cm)
+		if err != nil {
+			return "", err
+		}
+
 		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", "")
+			return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", ""), nil
 
 		}
 
 		if cmImage, exists := cm.Data["tempest-image"]; exists {
-			return cmImage
+			return cmImage, nil
 		}
 
-		return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", "")
+		return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", ""), nil
 	} else if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
 		if len(containerImage) > 0 {
-			return containerImage
+			return containerImage, nil
 		}
 
 		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		r.Client.Get(ctx, objectKey, cm)
+		err := r.Client.Get(ctx, objectKey, cm)
+		if err != nil {
+			return "", err
+		}
+
 		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", "")
+			return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", ""), nil
 
 		}
 
 		if cmImage, exists := cm.Data["tobiko-image"]; exists {
-			return cmImage
+			return cmImage, nil
 		}
 
-		return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", "")
+		return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", ""), nil
 	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
 		if len(containerImage) > 0 {
-			return containerImage
+			return containerImage, nil
 		}
 
 		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		r.Client.Get(ctx, objectKey, cm)
+		err := r.Client.Get(ctx, objectKey, cm)
+		if err != nil {
+			return "", err
+		}
+
 		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", "")
+			return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", ""), nil
 
 		}
 
 		if cmImage, exists := cm.Data["horizontest-image"]; exists {
-			return cmImage
+			return cmImage, nil
 		}
 
-		return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", "")
+		return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", ""), nil
 	} else if typedInstance, ok := instance.(*v1beta1.AnsibleTest); ok {
 		if len(containerImage) > 0 {
-			return containerImage
+			return containerImage, nil
 		}
 
 		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		r.Client.Get(ctx, objectKey, cm)
+		err := r.Client.Get(ctx, objectKey, cm)
+		if err != nil {
+			return "", err
+		}
+
 		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", "")
+			return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", ""), nil
 		}
 
 		if cmImage, exists := cm.Data["ansibletest-image"]; exists {
-			return cmImage
+			return cmImage, nil
 		}
 
-		return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", "")
+		return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", ""), nil
 	}
 
-	return ""
+	return "", nil
 }
 
 func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) string {
 	if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
 			return typedInstance.Name
-		} else {
-			workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
-			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 		}
+
+		workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
 			return typedInstance.Name
-		} else {
-			workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
-			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 		}
+
+		workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
 		return typedInstance.Name
 	} else if typedInstance, ok := instance.(*v1beta1.AnsibleTest); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
 			return typedInstance.Name
-		} else {
-			workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
-			return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 		}
-	} else {
-		return ""
+
+		workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 	}
+
+	return ""
 }
 
 func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
@@ -190,9 +205,9 @@ func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Obje
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: secretName}, secret)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		return false
-	} else {
-		return true
 	}
+
+	return true
 }
 
 func GetStringHash(str string, hashLength int) string {
@@ -267,9 +282,9 @@ func (r *Reconciler) GetScheme() *runtime.Scheme {
 func (r *Reconciler) GetDefaultBool(variable bool) string {
 	if variable {
 		return "true"
-	} else {
-		return "false"
 	}
+
+	return "false"
 }
 
 func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) string {
@@ -277,9 +292,9 @@ func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) strin
 		return strconv.FormatInt(variable, 10)
 	} else if len(defaultValue) > 0 {
 		return defaultValue[0]
-	} else {
-		return ""
 	}
+
+	return ""
 }
 
 func (r *Reconciler) AcquireLock(ctx context.Context, instance client.Object, h *helper.Helper, parallel bool) bool {
@@ -301,9 +316,9 @@ func (r *Reconciler) AcquireLock(ctx context.Context, instance client.Object, h 
 
 		err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
 		return err == nil
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) bool {
@@ -363,7 +378,7 @@ func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance c
 	return err == nil
 }
 
-func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object, h *helper.Helper) int {
+func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object) int {
 	cm := &corev1.ConfigMap{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
 	if err != nil {
@@ -392,12 +407,8 @@ func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Obj
 func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
 	job := &batchv1.Job{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
-	if err != nil {
-		if k8s_errors.IsNotFound(err) {
-			return false
-		} else {
-			return false
-		}
+	if err != nil && k8s_errors.IsNotFound(err) {
+		return false
 	}
 
 	return true
@@ -410,7 +421,6 @@ func (r *Reconciler) setConfigOverwrite(customData map[string]string, configOver
 }
 
 func (r *Reconciler) OverwriteValueWithWorkflow(
-	ctx context.Context,
 	instance v1beta1.TobikoSpec,
 	sectionName string,
 	workflowValueType string,
