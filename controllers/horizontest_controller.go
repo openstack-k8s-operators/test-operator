@@ -159,9 +159,10 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// We are about to start job that spawns the pod with tests.
 	// This lock ensures that there is always only one pod running.
-	if !r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel) {
+	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+	if !lockAcquired {
 		logging.Info("Cannot acquire lock")
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
 	logging.Info("Lock acquired")
 
