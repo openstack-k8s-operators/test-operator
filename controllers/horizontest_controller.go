@@ -20,6 +20,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
@@ -45,6 +46,11 @@ type HorizonTestReconciler struct {
 	Reconciler
 }
 
+// GetLogger returns a logger object with a prefix of "controller.name" and additional controller context fields
+func (r *HorizonTestReconciler) GetLogger(ctx context.Context) logr.Logger {
+	return log.FromContext(ctx).WithName("Controllers").WithName("Tobiko")
+}
+
 //+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests/finalizers,verbs=update;patch
@@ -61,11 +67,11 @@ type HorizonTestReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	Log := r.GetLogger(ctx)
 
 	// How much time should we wait before calling Reconcile loop when there is a failure
 	requeueAfter := time.Second * 60
 
-	logging := log.FromContext(ctx)
 	instance := &testv1beta1.HorizonTest{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
@@ -161,10 +167,10 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// This lock ensures that there is always only one pod running.
 	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
 	if !lockAcquired {
-		logging.Info("Cannot acquire lock")
+		Log.Info("Cannot acquire lock")
 		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
-	logging.Info("Lock acquired")
+	Log.Info("Lock acquired")
 
 	// Prepare HorizonTest env vars
 	envVars := r.PrepareHorizonTestEnvVars(instance)
@@ -213,7 +219,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 	// create Job - end
 
-	r.Log.Info("Reconciled Service successfully")
+	Log.Info("Reconciled Service successfully")
 
 	return ctrl.Result{}, nil
 }
