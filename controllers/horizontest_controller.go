@@ -117,7 +117,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// NOTE(lpiwowar):  This is a workaround since the Horizontest CR does not support
 		//                  workflows. However, the label might be required by automation that
 		//                  consumes the test-operator (e.g., ci-framework).
-		"workflowStep":     "0",
+		"workflowStep": "0",
 	}
 
 	result, err := r.EnsureHorizonTestCloudsYAML(ctx, instance, helper, serviceLabels)
@@ -166,10 +166,14 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	logging.Info("Lock acquired")
 
 	// Prepare HorizonTest env vars
-	envVars := r.PrepareHorizonTestEnvVars(ctx, serviceLabels, instance, helper)
+	envVars := r.PrepareHorizonTestEnvVars(instance)
 	jobName := r.GetJobName(instance, 0)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
-	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
+	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	jobDef := horizontest.Job(
 		instance,
 		serviceLabels,
@@ -236,8 +240,8 @@ func (r *HorizonTestReconciler) EnsureHorizonTestCloudsYAML(ctx context.Context,
 	}
 
 	clouds := result["clouds"].(map[string]interface{})
-	default_value := clouds["default"].(map[string]interface{})
-	auth := default_value["auth"].(map[string]interface{})
+	defaultValue := clouds["default"].(map[string]interface{})
+	auth := defaultValue["auth"].(map[string]interface{})
 
 	if _, ok := auth["password"].(string); !ok {
 		auth["password"] = "12345678"
@@ -267,10 +271,7 @@ func (r *HorizonTestReconciler) EnsureHorizonTestCloudsYAML(ctx context.Context,
 }
 
 func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
-	ctx context.Context,
-	labels map[string]string,
 	instance *testv1beta1.HorizonTest,
-	helper *helper.Helper,
 ) map[string]env.Setter {
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)

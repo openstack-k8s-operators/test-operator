@@ -93,7 +93,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Ensure that there is an external counter and read its value
 	// We use the external counter to keep track of the workflow steps
 	r.WorkflowStepCounterCreate(ctx, instance, helper)
-	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance, helper)
+	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance)
 	if externalWorkflowCounter == -1 {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
@@ -216,7 +216,11 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
-	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
+	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	jobDef := tobiko.Job(
 		instance,
 		serviceLabels,
@@ -304,8 +308,8 @@ func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance 
 	}
 
 	clouds := result["clouds"].(map[string]interface{})
-	default_value := clouds["default"].(map[string]interface{})
-	auth := default_value["auth"].(map[string]interface{})
+	defaultValue := clouds["default"].(map[string]interface{})
+	auth := defaultValue["auth"].(map[string]interface{})
 
 	if _, ok := auth["password"].(string); !ok {
 		auth["password"] = "12345678"
@@ -361,21 +365,21 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
 	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetJobName(instance, step))
 
-	testenv := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "Testenv", "string", step).(string)
+	testenv := r.OverwriteValueWithWorkflow(instance.Spec, "Testenv", "string", step).(string)
 	envVars["TOBIKO_TESTENV"] = env.SetValue(testenv)
 
-	version := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "Version", "string", step).(string)
+	version := r.OverwriteValueWithWorkflow(instance.Spec, "Version", "string", step).(string)
 	envVars["TOBIKO_VERSION"] = env.SetValue(version)
 
-	pytestAddopts := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PytestAddopts", "string", step).(string)
+	pytestAddopts := r.OverwriteValueWithWorkflow(instance.Spec, "PytestAddopts", "string", step).(string)
 	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(pytestAddopts)
 
-	preventCreate := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PreventCreate", "pbool", step).(bool)
+	preventCreate := r.OverwriteValueWithWorkflow(instance.Spec, "PreventCreate", "pbool", step).(bool)
 	if preventCreate {
 		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("True")
 	}
 
-	numProcesses := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "NumProcesses", "puint8", step).(uint8)
+	numProcesses := r.OverwriteValueWithWorkflow(instance.Spec, "NumProcesses", "puint8", step).(uint8)
 	if numProcesses > 0 {
 		envVars["TOX_NUM_PROCESSES"] = env.SetValue(strconv.Itoa(int(numProcesses)))
 	}
@@ -385,15 +389,15 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 
 	// Prepare custom data
 	customData := make(map[string]string)
-	tobikoConf := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "Config", "string", step).(string)
+	tobikoConf := r.OverwriteValueWithWorkflow(instance.Spec, "Config", "string", step).(string)
 	customData["tobiko.conf"] = tobikoConf
 
 	privateKeyData := make(map[string]string)
-	privateKey := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PrivateKey", "string", step).(string)
+	privateKey := r.OverwriteValueWithWorkflow(instance.Spec, "PrivateKey", "string", step).(string)
 	privateKeyData["id_ecdsa"] = privateKey
 
 	publicKeyData := make(map[string]string)
-	publicKey := r.OverwriteValueWithWorkflow(ctx, instance.Spec, "PublicKey", "string", step).(string)
+	publicKey := r.OverwriteValueWithWorkflow(instance.Spec, "PublicKey", "string", step).(string)
 	publicKeyData["id_ecdsa.pub"] = publicKey
 
 	cms := []util.Template{

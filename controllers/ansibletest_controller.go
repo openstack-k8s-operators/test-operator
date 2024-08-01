@@ -99,7 +99,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Ensure that there is an external counter and read its value
 	// We use the external counter to keep track of the workflow steps
 	r.WorkflowStepCounterCreate(ctx, instance, helper)
-	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance, helper)
+	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance)
 	if externalWorkflowCounter == -1 {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
@@ -188,9 +188,8 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		logging.Info("Can not acquire lock")
 		requeueAfter := time.Second * 60
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	} else {
-		logging.Info("Lock acquired")
 	}
+	logging.Info("Lock acquired")
 
 	if workflowActive {
 		r.WorkflowStepCounterIncrease(ctx, instance, helper)
@@ -201,9 +200,13 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Create a new job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
-	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
+	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
-	containerImage := r.GetContainerImage(ctx, helper, workflowOverrideParams["ContainerImage"], instance)
+	containerImage, err := r.GetContainerImage(ctx, workflowOverrideParams["ContainerImage"], instance)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	jobDef := ansibletest.Job(
 		instance,
 		serviceLabels,
@@ -261,7 +264,6 @@ func (r *AnsibleTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *Reconciler) OverwriteAnsibleWithWorkflow(
-	ctx context.Context,
 	instance v1beta1.AnsibleTestSpec,
 	sectionName string,
 	workflowValueType string,
@@ -301,10 +303,7 @@ func (r *Reconciler) OverwriteAnsibleWithWorkflow(
 
 // This function prepares env variables for a single workflow step.
 func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
-	ctx context.Context,
-	labels map[string]string,
 	instance *testv1beta1.AnsibleTest,
-	helper *helper.Helper,
 	step int,
 ) (map[string]env.Setter, map[string]string) {
 	// Prepare env vars
@@ -312,33 +311,33 @@ func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	workflowOverrideParams := make(map[string]string)
 
 	// volumes workflow override
-	workflowOverrideParams["WorkloadSSHKeySecretName"] = r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "WorkloadSSHKeySecretName", "string", step).(string)
-	workflowOverrideParams["ComputesSSHKeySecretName"] = r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "ComputesSSHKeySecretName", "string", step).(string)
-	workflowOverrideParams["ContainerImage"] = r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "ContainerImage", "string", step).(string)
+	workflowOverrideParams["WorkloadSSHKeySecretName"] = r.OverwriteAnsibleWithWorkflow(instance.Spec, "WorkloadSSHKeySecretName", "string", step).(string)
+	workflowOverrideParams["ComputesSSHKeySecretName"] = r.OverwriteAnsibleWithWorkflow(instance.Spec, "ComputesSSHKeySecretName", "string", step).(string)
+	workflowOverrideParams["ContainerImage"] = r.OverwriteAnsibleWithWorkflow(instance.Spec, "ContainerImage", "string", step).(string)
 
 	// bool
-	debug := r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "Debug", "pbool", step).(bool)
+	debug := r.OverwriteAnsibleWithWorkflow(instance.Spec, "Debug", "pbool", step).(bool)
 	if debug {
 		envVars["POD_DEBUG"] = env.SetValue("true")
 	}
 
 	// strings
-	extraVars := r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "AnsibleExtraVars", "string", step).(string)
+	extraVars := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleExtraVars", "string", step).(string)
 	envVars["POD_ANSIBLE_EXTRA_VARS"] = env.SetValue(extraVars)
 
-	extraVarsFile := r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "AnsibleVarFiles", "string", step).(string)
+	extraVarsFile := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleVarFiles", "string", step).(string)
 	envVars["POD_ANSIBLE_FILE_EXTRA_VARS"] = env.SetValue(extraVarsFile)
 
-	inventory := r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "AnsibleInventory", "string", step).(string)
+	inventory := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleInventory", "string", step).(string)
 	envVars["POD_ANSIBLE_INVENTORY"] = env.SetValue(inventory)
 
-	gitRepo := r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "AnsibleGitRepo", "string", step).(string)
+	gitRepo := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleGitRepo", "string", step).(string)
 	envVars["POD_ANSIBLE_GIT_REPO"] = env.SetValue(gitRepo)
 
-	playbookPath := r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "AnsiblePlaybookPath", "string", step).(string)
+	playbookPath := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsiblePlaybookPath", "string", step).(string)
 	envVars["POD_ANSIBLE_PLAYBOOK"] = env.SetValue(playbookPath)
 
-	ansibleCollections := r.OverwriteAnsibleWithWorkflow(ctx, instance.Spec, "AnsibleCollections", "string", step).(string)
+	ansibleCollections := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleCollections", "string", step).(string)
 	envVars["POD_INSTALL_COLLECTIONS"] = env.SetValue(ansibleCollections)
 
 	return envVars, workflowOverrideParams

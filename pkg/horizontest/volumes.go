@@ -10,7 +10,6 @@ func GetVolumes(
 	instance *testv1beta1.HorizonTest,
 	logsPVCName string,
 	mountCerts bool,
-	mountKeys bool,
 	mountKubeconfig bool,
 ) []corev1.Volume {
 

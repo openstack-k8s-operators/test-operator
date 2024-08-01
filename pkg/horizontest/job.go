@@ -67,7 +67,6 @@ func Job(
 						instance,
 						logsPVCName,
 						mountCerts,
-						mountKeys,
 						mountKubeconfig,
 					),
 				},

@@ -102,7 +102,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	// Ensure that there is an external counter and read its value
 	// We use the external counter to keep track of the workflow steps
 	r.WorkflowStepCounterCreate(ctx, instance, helper)
-	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance, helper)
+	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance)
 	if externalWorkflowCounter == -1 {
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
@@ -163,7 +163,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	// Handle service delete
 	if !instance.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, instance, helper)
+		return r.reconcileDelete(instance, helper)
 	}
 
 	// Service account, role, binding
@@ -243,9 +243,8 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		logging.Info("Can not acquire lock")
 		requeueAfter := time.Second * 60
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	} else {
-		logging.Info("Lock acquired")
 	}
+	logging.Info("Lock acquired")
 
 	if workflowActive {
 		r.WorkflowStepCounterIncrease(ctx, instance, helper)
@@ -276,7 +275,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
-	containerImage := r.GetContainerImage(ctx, helper, instance.Spec.ContainerImage, instance)
+	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Note(lpiwowar): Remove all the workflow merge code to webhook once it is done.
 	//                 It will simplify the logic and duplicite code (Tempest vs Tobiko)
@@ -359,7 +361,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 }
 
 func (r *TempestReconciler) reconcileDelete(
-	ctx context.Context,
 	instance *testv1beta1.Tempest,
 	helper *helper.Helper,
 ) (ctrl.Result, error) {
@@ -386,7 +387,6 @@ func (r *TempestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	customData map[string]string,
 	instance *testv1beta1.Tempest,
-	ctx context.Context,
 	workflowStepNum int,
 ) {
 	tRun := instance.Spec.TempestRun
@@ -487,7 +487,6 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 	envVars map[string]string,
 	customData map[string]string,
 	instance *testv1beta1.Tempest,
-	ctx context.Context,
 	workflowStepNum int,
 ) {
 	tcRun := instance.Spec.TempestconfRun
@@ -602,8 +601,8 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	customData := make(map[string]string)
 	envVars := make(map[string]string)
 
-	r.setTempestConfigVars(envVars, customData, instance, ctx, workflowStepNum)
-	r.setTempestconfConfigVars(envVars, customData, instance, ctx, workflowStepNum)
+	r.setTempestConfigVars(envVars, customData, instance, workflowStepNum)
+	r.setTempestconfConfigVars(envVars, customData, instance, workflowStepNum)
 	r.setConfigOverwrite(customData, instance.Spec.ConfigOverwrite)
 
 	envVars["TEMPEST_DEBUG_MODE"] = r.GetDefaultBool(instance.Spec.Debug)
