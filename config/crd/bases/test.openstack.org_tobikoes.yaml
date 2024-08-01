@@ -49,6 +49,14 @@ spec:
                 default: ""
                 description: Container image for tobiko
                 type: string
+              debug:
+                default: false
+                description: Activate debug mode. When debug mode is activated any
+                  error encountered inside the test-pod causes that the pod will be
+                  kept alive indefinitely (stuck in "Running" phase) or until the
+                  corresponding Tobiko CR is deleted. This allows the user to debug
+                  any potential troubles with `oc rsh`.
+                type: boolean
               kubeconfigSecretName:
                 default: ""
                 description: Name of a secret that contains a kubeconfig. The kubeconfig
