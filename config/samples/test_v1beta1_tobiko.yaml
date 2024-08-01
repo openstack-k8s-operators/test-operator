@@ -8,6 +8,7 @@ spec:
   containerImage: ""
   # storageClass: local-storage
   # parallel: false
+  # debug: false
   # privateKey: |
   #   <private-key-value>
   # publicKey: |
