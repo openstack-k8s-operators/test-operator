@@ -367,9 +367,45 @@ type TempestconfRunSpec struct {
 	Timeout int64 `json:"timeout"`
 }
 
+type ContinuousTestingSpec struct {
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default=false
+	// Indicate whether continuous testing is enabled.
+	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default=false
+	// Indicate the maximum number of pods that should be spawned when continuous
+	// testing is enabled. When [maxSpawnedPodsNumber] number of pods is spawned the
+	// continuous testing is ended.
+	MaxSpawnedPodsNumber bool `json:"maxSpawnedPodsNumber"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default=true
+	// Indicate whether the continuous testing should end when a test failure occurs.
+	EndOnFailure bool `json:"endOnFailure"`
+}
+
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type TempestSpec struct {
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// This parameter is used to configure continuous testing. By continuous testing
+	// we mean execution of pods iteratively in sequence one by one either based
+	// on the test configuration from workflow section or test configuration specified
+	// without the use of the workflow feature.
+	// If a workflow section contains definition for three steps A, B and C then
+	// if continuous testing is enabled the pods are going to be spawned in the
+	// following order indefinitely or until end condition is met: A, B, C, A, B, C, ...
+	// Similarily, if we are not using workflow feature and we have test configuration
+	// for a single pod A then the pod is going to be spawned indefinitely or until
+	// the end condition is met.
+	ContinuousTesting ContinuousTestingSpec `json:"continuousTesting,omitempty"`
+
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod.

@@ -74,6 +74,35 @@ spec:
                 description: An URL of a tempest container image that should be used
                   for the execution of tempest tests.
                 type: string
+              continuousTesting:
+                description: 'This parameter is used to configure continuous testing.
+                  By continuous testing we mean execution of pods iteratively in sequence
+                  one by one either based on the test configuration from workflow
+                  section or test configuration specified without the use of the workflow
+                  feature. If a workflow section contains definition for three steps
+                  A, B and C then if continuous testing is enabled the pods are going
+                  to be spawned in the following order indefinitely or until end condition
+                  is met: A, B, C, A, B, C, ... Similarily, if we are not using workflow
+                  feature and we have test configuration for a single pod A then the
+                  pod is going to be spawned indefinitely or until the end condition
+                  is met.'
+                properties:
+                  enabled:
+                    default: false
+                    description: Indicate whether continuous testing is enabled.
+                    type: boolean
+                  endOnFailure:
+                    default: true
+                    description: Indicate whether the continuous testing should end
+                      when a test failure occurs.
+                    type: boolean
+                  maxSpawnedPodsNumber:
+                    default: false
+                    description: Indicate the maximum number of pods that should be
+                      spawned when continuous testing is enabled. When [maxSpawnedPodsNumber]
+                      number of pods is spawned the continuous testing is ended.
+                    type: boolean
+                type: object
               debug:
                 default: false
                 description: Activate debug mode. When debug mode is activated any

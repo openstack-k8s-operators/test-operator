@@ -84,6 +84,12 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
         if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
             return nil, errors.New("Workflow variable must be empty to run debug mode!")
         }
+
+	if r.Spec.ContinuousTestingSpec.Enabled && r.Spec.Parallel {
+		err := errors.New("Parallel testing is not allowed in conjuction with continuous testing")
+		return nil, err
+	}
+
 	return nil, nil
 }
 
