@@ -36,10 +36,8 @@ import (
 	"github.com/openstack-k8s-operators/test-operator/pkg/tempest"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -73,12 +71,8 @@ func (r *TempestReconciler) GetLogger(ctx context.Context) logr.Logger {
 
 // Reconcile - Tempest
 func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
-	Log := r.GetLogger(ctx)
 
-	// How much time should we wait before calling Reconcile loop when there is a failure
-	requeueAfter := time.Second * 60
-
-	// Fetch the Tempest instance
+	// Fetch the Tempest instance - Start
 	instance := &testv1beta1.Tempest{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
@@ -87,13 +81,16 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 		return ctrl.Result{}, err
 	}
+	// Fetch the Tempest instance - End
+	workflowLength := len(instance.Spec.Workflow)
+	r.ReconcilerInit(
+		ctx,
+		instance,
+		instance.Spec.ContinuousTestingSpec,
+		workflowLength,
+	)
 
-	workflowActive := false
-	if len(instance.Spec.Workflow) > 0 {
-		workflowActive = true
-	}
-
-	// Create a helper
+	// Create a helper - Start
 	helper, err := helper.NewHelper(
 		instance,
 		r.Client,
@@ -104,6 +101,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	// Create a helper - End
 
 	// initialize status
 	isNewInstance := instance.Status.Conditions == nil
@@ -164,82 +162,96 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return r.reconcileDelete(ctx, instance, helper)
 	}
 
+	return r.reconcileNormal(ctx, instance, helper)
+}
+
+func (r *TempestReconciler) reconcileNormal(ctx context.Context, instance *testv1beta1.Tempest, helper *helper.Helper) (ctrl.Result, error) {
+	Log := r.GetLogger(ctx)
+	// Reconcile External Counter - Start
 	// Ensure that there is an external counter and read its value
 	// We use the external counter to keep track of the workflow steps
-	r.WorkflowStepCounterCreate(ctx, instance, helper)
-	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance)
-	if externalWorkflowCounter == -1 {
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	_, err := r.WorkflowStepCounterCreate(ctx, instance, helper)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: RequeueAfterSec}, err
 	}
 
-	// Each job that is being executed by the test operator has
-	currentWorkflowStep := 0
-	runningTobikoJob := &batchv1.Job{}
-	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
-	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningTobikoJob)
-	if err == nil {
-		currentWorkflowStep, _ = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
+	externalWorkflowCounter, err := r.WorkflowStepCounterRead(ctx, instance)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: RequeueAfterSec}, err
 	}
 
-	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
-		// The job created by the instance was completed. Release the lock
-		// so that other instances can spawn a job.
-		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
-		Log.Info("Job completed")
-		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			return ctrl.Result{}, err
+	externalWorkflowCounter, err = r.WorkflowStepCounterRead(ctx, instance)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: RequeueAfterSec}, err
+	}
+	// Reconcile External Counter - End
+
+	// Decide next step - Start
+	// TODO(lpiwowar): You have to set DeploymentReadyCondition!!!
+	instanceWorkflowLength := len(instance.Spec.Workflow)
+	nextAction, err := r.GetNextAction(
+		ctx,
+		instance,
+		externalWorkflowCounter,
+		instanceWorkflowLength,
+	)
+
+	switch nextAction {
+	case ActionWait:
+		Log.Info("ActionWait")
+		return ctrl.Result{RequeueAfter: RequeueAfterSec}, err
+	case ActionNone:
+		Log.Info("ActionNone")
+		return ctrl.Result{}, err
+	case ActionNewJob:
+		Log.Info("ActionNewJob")
+	default:
+		Log.Info(InvalidNextActionErrMsg)
+		return ctrl.Result{}, err
+	}
+
+	// r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+	// r.WorkflowStepCounterIncrease(ctx, instance, helper)
+
+	// return ctrl.Result{}, nil
+	// Decide next step - End
+	/*
+		if r.CompletedJobExists(ctx, instance, activeJobWorkflowStep) {
+			// The job created by the instance was completed. Release the lock
+			// so that other instances can spawn a job.
+			instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
+			Log.Info("Job completed")
+			if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+				return ctrl.Result{}, err
+			}
 		}
-	}
+	*/
 
-	// Service account, role, binding
-	rbacRules := []rbacv1.PolicyRule{
-		{
-			APIGroups:     []string{"security.openshift.io"},
-			ResourceNames: []string{"anyuid", "privileged"},
-			Resources:     []string{"securitycontextconstraints"},
-			Verbs:         []string{"use"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"pods"},
-			Verbs:     []string{"create", "get", "list", "watch", "update", "patch", "delete"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"persistentvolumeclaims"},
-			Verbs:     []string{"get", "list", "create", "update", "watch", "patch"},
-		},
-	}
+	// Reconcile Rbac rules - Start
+	rbacRules := GetCommonRbacRules()
 	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
 	if err != nil {
 		return rbacResult, err
 	} else if (rbacResult != ctrl.Result{}) {
 		return rbacResult, nil
 	}
-	// Service account, role, binding - end
+	// Reconcile Rbac rules - End
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tempest.ServiceName,
-		"workflowStep":     strconv.Itoa(externalWorkflowCounter),
-		"instanceName":     instance.Name,
-		"operator":         "test-operator",
+		WorkflowStepLabel:  strconv.Itoa(externalWorkflowCounter),
+		InstanceNameLabel:  instance.Name,
+		OperatorNameLabel:  TestOperatorName,
 	}
 
-	workflowStepNum := 0
-
-	// Create multiple PVCs for parallel execution
-	if instance.Spec.Parallel && externalWorkflowCounter < len(instance.Spec.Workflow) {
-		workflowStepNum = externalWorkflowCounter
-	}
-
-	// Create PersistentVolumeClaim
+	// Create PersistentVolumeClaim for logs - Start
 	ctrlResult, err := r.EnsureLogsPVCExists(
 		ctx,
 		instance,
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		workflowStepNum,
+		externalWorkflowCounter,
 	)
 
 	if err != nil {
@@ -247,33 +259,23 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	} else if (ctrlResult != ctrl.Result{}) {
 		return ctrlResult, nil
 	}
-	// Create PersistentVolumeClaim - end
+	// Create PersistentVolumeClaim for logs - End
 
+	// Create Secret With SSH Keys - Start
 	mountSSHKey := false
 	if instance.Spec.SSHKeySecretName != "" {
 		mountSSHKey = r.CheckSecretExists(ctx, instance, instance.Spec.SSHKeySecretName)
 	}
-
-	// If the current job is executing the last workflow step -> do not create another job
-	if workflowActive && externalWorkflowCounter >= len(instance.Spec.Workflow) {
-		return ctrl.Result{}, nil
-	} else if !workflowActive && r.JobExists(ctx, instance, currentWorkflowStep) {
-		return ctrl.Result{}, nil
-	}
+	// Create Secret With SSH Key - End
 
 	// We are about to start job that spawns the pod with tests.
 	// This lock ensures that there is always only one pod running.
 	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
 	if !lockAcquired {
 		Log.Info("Can not acquire lock")
-		requeueAfter := time.Second * 60
-		return ctrl.Result{RequeueAfter: requeueAfter}, err
+		return ctrl.Result{RequeueAfter: RequeueAfterSec}, err
 	}
 	Log.Info("Lock acquired")
-
-	if workflowActive {
-		r.WorkflowStepCounterIncrease(ctx, instance, helper)
-	}
 
 	// Generate ConfigMaps
 	err = r.generateServiceConfigMaps(ctx, helper, instance, externalWorkflowCounter)
@@ -289,13 +291,13 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
 	// Generate ConfigMaps - end
 
+	// NetworkAttachments - Start
 	serviceAnnotations, err := nad.CreateNetworksAnnotation(instance.Namespace, instance.Spec.NetworkAttachments)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed create network annotation from %s: %w",
 			instance.Spec.NetworkAttachments, err)
 	}
 
-	// NetworkAttachments
 	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -315,14 +317,14 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 		return ctrl.Result{}, err
 	}
-	// NetworkAttachments - end
+	// NetworkAttachments - End
 
 	// Create a new job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	customDataConfigMapName := GetCustomDataConfigMapName(instance, externalWorkflowCounter)
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, externalWorkflowCounter)
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
-	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
+	logsPVCName := r.GetPVCLogsName(instance, externalWorkflowCounter)
 	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -385,6 +387,11 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrlResult, nil
 	}
 	// Create a new job - end
+
+	workflowIncreased, err := r.WorkflowStepCounterIncrease(ctx, instance, helper)
+	if !workflowIncreased {
+		return ctrl.Result{}, err
+	}
 
 	Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil

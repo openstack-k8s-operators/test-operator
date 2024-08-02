@@ -376,17 +376,16 @@ type ContinuousTestingSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
-	// Indicate the maximum number of pods that should be spawned when continuous
-	// testing is enabled. When [maxSpawnedPodsNumber] number of pods is spawned the
-	// continuous testing is ended.
-	MaxSpawnedPodsNumber bool `json:"maxSpawnedPodsNumber"`
+	// +kubebuilder:default=1
+	// Indicate how many pods must fail before the continuous testing is ended.
+	EndOnNumFailure int `json:"endOnNumFailure"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=true
-	// Indicate whether the continuous testing should end when a test failure occurs.
-	EndOnFailure bool `json:"endOnFailure"`
+	// +kubebuilder:default=1
+	// Indicate how many pods must fail continuously before the continuous
+	// testing is ended.
+	EndOnNumContinuousFailure int `json:"endOnNumContinuousFailure"`
 }
 
 // TempestSpec - configuration of execution of tempest. For specific configuration
@@ -404,7 +403,7 @@ type TempestSpec struct {
 	// Similarily, if we are not using workflow feature and we have test configuration
 	// for a single pod A then the pod is going to be spawned indefinitely or until
 	// the end condition is met.
-	ContinuousTesting ContinuousTestingSpec `json:"continuousTesting,omitempty"`
+	ContinuousTestingSpec ContinuousTestingSpec `json:"continuousTesting,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional

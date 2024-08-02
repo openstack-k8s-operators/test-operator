@@ -91,17 +91,16 @@ spec:
                     default: false
                     description: Indicate whether continuous testing is enabled.
                     type: boolean
-                  endOnFailure:
-                    default: true
-                    description: Indicate whether the continuous testing should end
-                      when a test failure occurs.
-                    type: boolean
-                  maxSpawnedPodsNumber:
-                    default: false
-                    description: Indicate the maximum number of pods that should be
-                      spawned when continuous testing is enabled. When [maxSpawnedPodsNumber]
-                      number of pods is spawned the continuous testing is ended.
-                    type: boolean
+                  endOnNumContinuousFailure:
+                    default: 1
+                    description: Indicate how many pods must fail continuously before
+                      the continuous testing is ended.
+                    type: integer
+                  endOnNumFailure:
+                    default: 1
+                    description: Indicate how many pods must fail before the continuous
+                      testing is ended.
+                    type: integer
                 type: object
               debug:
                 default: false

@@ -23,7 +23,7 @@ limitations under the License.
 package v1beta1
 
 import (
-        "errors"
+	"errors"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -31,7 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-        "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // TempestDefaults -
@@ -58,12 +58,12 @@ var _ webhook.Defaulter = &Tempest{}
 func (r *Tempest) Default() {
 	tempestlog.Info("default", "name", r.Name)
 
-        r.Spec.Default()
+	r.Spec.Default()
 }
 
 // Default - set defaults for this Tempest spec.
 func (spec *TempestSpec) Default() {
-        if spec.ContainerImage == "" {
+	if spec.ContainerImage == "" {
 		spec.ContainerImage = tempestDefaults.ContainerImageURL
 	}
 
@@ -81,9 +81,9 @@ var _ webhook.Validator = &Tempest{}
 func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	tempestlog.Info("validate create", "name", r.Name)
 
-        if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-            return nil, errors.New("Workflow variable must be empty to run debug mode!")
-        }
+	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
+		return nil, errors.New("Workflow variable must be empty to run debug mode!")
+	}
 
 	if r.Spec.ContinuousTestingSpec.Enabled && r.Spec.Parallel {
 		err := errors.New("Parallel testing is not allowed in conjuction with continuous testing")
@@ -104,8 +104,8 @@ func (r *Tempest) ValidateUpdate(old runtime.Object) (admission.Warnings, error)
 
 	if !cmp.Equal(oldTempest.Spec, r.Spec) {
 		warnings := admission.Warnings{}
-		warnings = append(warnings, "You are updating an already existing instance of a " +
-					    "Tempest CR! Be aware that changes won't be applied.")
+		warnings = append(warnings, "You are updating an already existing instance of a "+
+			"Tempest CR! Be aware that changes won't be applied.")
 
 		return warnings, errors.New("Updating an existing Tempest CR is not supported!")
 	}
