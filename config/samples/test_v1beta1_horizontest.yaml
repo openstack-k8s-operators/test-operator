@@ -54,4 +54,3 @@ spec:
 
   # The maximum number of retry executions (optional)
   backoffLimit: 0
-

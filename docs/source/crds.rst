@@ -139,4 +139,3 @@ CRs that can use the workflow section:
 * :ref:`tobiko-custom-resource`
 
 * :ref:`ansibletest-custom-resource`
-
