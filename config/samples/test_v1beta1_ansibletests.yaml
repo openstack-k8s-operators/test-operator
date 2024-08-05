@@ -25,4 +25,3 @@ spec:
       ansibleExtraVars: ' -e manual_run=false '
     - stepName: laststep
       ansibleExtraVars: ' -e manual_run=false '
-
