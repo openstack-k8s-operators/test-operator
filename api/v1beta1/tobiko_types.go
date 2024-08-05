@@ -55,7 +55,7 @@ type TobikoSpec struct {
         // inside the test-pod causes that the pod will be kept alive indefinitely
         // (stuck in "Running" phase) or until the corresponding Tobiko CR is deleted.
         // This allows the user to debug any potential troubles with `oc rsh`.
-        Debug bool `json:"debug,omitempty"`
+        Debug bool `json:"debug"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
