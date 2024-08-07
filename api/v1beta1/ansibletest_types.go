@@ -32,7 +32,7 @@ type AnsibleTestSpec struct {
 	ExtraMounts []extraConfigmapsMounts `json:"extraMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="local-storage"
 	// StorageClass used to create PVCs that store the logs
 	StorageClass string `json:"storageClass"`
@@ -88,13 +88,13 @@ type AnsibleTestSpec struct {
 	AnsibleInventory string `json:"ansibleInventory,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=openstack-config
 	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
 	OpenStackConfigMap string `json:"openStackConfigMap"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=openstack-config-secret
 	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
 	OpenStackConfigSecret string `json:"openStackConfigSecret"`
@@ -139,7 +139,7 @@ type AnsibleTestWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// StorageClass used to create PVCs that store the logs
-	StorageClass *string `json:"storageClass"`
+	StorageClass *string `json:"storageClass,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
@@ -187,12 +187,12 @@ type AnsibleTestWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
-	OpenStackConfigMap *string `json:"openStackConfigMap"`
+	OpenStackConfigMap *string `json:"openStackConfigMap,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-	OpenStackConfigSecret *string `json:"openStackConfigSecret"`
+	OpenStackConfigSecret *string `json:"openStackConfigSecret,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional

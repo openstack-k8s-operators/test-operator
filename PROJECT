@@ -33,6 +33,10 @@ resources:
   kind: Tobiko
   path: github.com/openstack-k8s-operators/test-operator/api/v1beta1
   version: v1beta1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
@@ -42,4 +46,21 @@ resources:
   kind: HorizonTest
   path: github.com/openstack-k8s-operators/test-operator/api/v1beta1
   version: v1beta1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openstack.org
+  group: test
+  kind: AnsibleTest
+  path: github.com/openstack-k8s-operators/test-operator/api/v1beta1
+  version: v1beta1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

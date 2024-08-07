@@ -25,26 +25,36 @@ if [ "$SKIP_CERT" = false ] ; then
     -out ${TMPDIR}/tls.crt
 
     cat ${TMPDIR}/tls.crt ${TMPDIR}/tls.key | base64 -w 0 > ${TMPDIR}/bundle.pem
-
 fi
 
 CA_BUNDLE=`cat ${TMPDIR}/bundle.pem`
 
-# Patch the webhook(s)
-cat >> ${TMPDIR}/patch_webhook_configurations.yaml <<EOF_CAT
+create_local_webhook() {
+    # set the resource type
+    RESOURCE_TYPE=$1
+
+    if [[ ${RESOURCE_TYPE} == 'tobiko' ]] ; then
+        RESOURCE_TYPE_S="${RESOURCE_TYPE}es"
+    else
+        RESOURCE_TYPE_S="${RESOURCE_TYPE}s"
+    fi
+
+    # Patch the webhook(s)
+    cat >> ${TMPDIR}/patch_webhook_configurations.yaml <<EOF_CAT
+---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: vtempest.kb.io
+  name: v${RESOURCE_TYPE}.kb.io
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     caBundle: ${CA_BUNDLE}
-    url: https://${CRC_IP}:9443/validate-test-openstack-org-v1beta1-tempest
+    url: https://${CRC_IP}:9443/validate-test-openstack-org-v1beta1-${RESOURCE_TYPE}
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vtempest.kb.io
+  name: v${RESOURCE_TYPE}.kb.io
   objectSelector: {}
   rules:
   - apiGroups:
@@ -55,7 +65,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - tempests
+    - ${RESOURCE_TYPE_S}
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10
@@ -63,16 +73,16 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: mtempest.kb.io
+  name: m${RESOURCE_TYPE}.kb.io
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     caBundle: ${CA_BUNDLE}
-    url: https://${CRC_IP}:9443/mutate-test-openstack-org-v1beta1-tempest
+    url: https://${CRC_IP}:9443/mutate-test-openstack-org-v1beta1-${RESOURCE_TYPE}
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mtempest.kb.io
+  name: m${RESOURCE_TYPE}.kb.io
   objectSelector: {}
   rules:
   - apiGroups:
@@ -83,10 +93,25 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - tempests
+    - ${RESOURCE_TYPE_S}
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10
 EOF_CAT
+}
+
+RESOURCE_TYPES=(tempest tobiko ansibletest horizontest)
+
+if [ $# -eq 0 ]; then
+    for RESOURCE_TYPE in "${RESOURCE_TYPES[@]}" ; do
+        create_local_webhook $RESOURCE_TYPE
+    done
+elif printf "%s\n" "${RESOURCE_TYPES[@]}" | grep -q "^$1\$" ; then
+    # example: ./configure_local_webhook.sh tempest
+    create_local_webhook $1
+else
+    echo "ERROR: No CR matches found! Check your spelling."
+    exit 1
+fi
 
 oc apply -n openstack -f ${TMPDIR}/patch_webhook_configurations.yaml
