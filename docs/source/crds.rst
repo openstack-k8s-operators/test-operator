@@ -44,7 +44,7 @@ HorizonTest Custom Resource
 AnsibleTest Custom Resource
 ===========================
 
-.. literalinclude:: ../../config/samples/test_v1beta1_ansibletests.yaml
+.. literalinclude:: ../../config/samples/test_v1beta1_ansibletest.yaml
    :language: yaml
 
 
