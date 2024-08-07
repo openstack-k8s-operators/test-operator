@@ -64,7 +64,7 @@ func (r *TobikoReconciler) GetLogger(ctx context.Context) logr.Logger {
 // move the current state of the cluster closer to the desired state.
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
 	Log := r.GetLogger(ctx)
 
 	// How much time should we wait before calling Reconcile loop when there is a failure
@@ -96,6 +96,54 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	// initialize status
+	isNewInstance := instance.Status.Conditions == nil
+	if isNewInstance {
+		instance.Status.Conditions = condition.Conditions{}
+	}
+
+	// Save a copy of the condtions so that we can restore the LastTransitionTime
+	// when a condition's state doesn't change.
+	savedConditions := instance.Status.Conditions.DeepCopy()
+
+	// Always patch the instance status when exiting this function so we
+	// can persist any changes.
+	defer func() {
+		// update the overall status condition if service is ready
+		if instance.Status.Conditions.AllSubConditionIsTrue() {
+			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+		}
+		condition.RestoreLastTransitionTimes(&instance.Status.Conditions, savedConditions)
+		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
+			instance.Status.Conditions.Set(
+				instance.Status.Conditions.Mirror(condition.ReadyCondition))
+		}
+		err := helper.PatchInstance(ctx, instance)
+		if err != nil {
+			_err = err
+			return
+		}
+	}()
+
+	if isNewInstance {
+		// Initialize conditions used later as Status=Unknown
+		cl := condition.CreateList(
+			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
+			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
+			condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
+		)
+		instance.Status.Conditions.Init(&cl)
+
+		// Register overall status immediately to have an early feedback
+		// e.g. in the cli
+		return ctrl.Result{}, nil
+
+	}
+
+	if instance.Status.NetworkAttachments == nil {
+		instance.Status.NetworkAttachments = map[string][]string{}
+	}
+
 	// Ensure that there is an external counter and read its value
 	// We use the external counter to keep track of the workflow steps
 	r.WorkflowStepCounterCreate(ctx, instance, helper)
@@ -114,6 +162,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
+		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
 		// The job created by the instance was completed. Release the lock
 		// so that other instances can spawn a job.
 		Log.Info("Job completed")
@@ -142,8 +191,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	} else if (rbacResult != ctrl.Result{}) {
 		return rbacResult, nil
 	}
-
-	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tobiko.ServiceName,
@@ -186,6 +233,29 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, fmt.Errorf("failed create network annotation from %s: %w",
 			instance.Spec.NetworkAttachments, err)
 	}
+
+	// NetworkAttachments
+	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	instance.Status.NetworkAttachments = networkAttachmentStatus
+
+	if networkReady {
+		instance.Status.Conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
+	} else {
+		err := fmt.Errorf("not all pods have interfaces with ips as configured in NetworkAttachments: %s", instance.Spec.NetworkAttachments)
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.NetworkAttachmentsReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.NetworkAttachmentsReadyErrorMessage,
+			err.Error()))
+
+		return ctrl.Result{}, err
+	}
+	// NetworkAttachments - end
+
 	// Create Job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 
@@ -268,27 +338,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrlResult, nil
 	}
 	// create Job - end
-	// NetworkAttachments
-	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	instance.Status.NetworkAttachments = networkAttachmentStatus
-
-	if networkReady {
-		instance.Status.Conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
-	} else {
-		err := fmt.Errorf("not all pods have interfaces with ips as configured in NetworkAttachments: %s", instance.Spec.NetworkAttachments)
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.NetworkAttachmentsReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.NetworkAttachmentsReadyErrorMessage,
-			err.Error()))
-
-		return ctrl.Result{}, err
-	}
-	// NetworkAttachments - end
 
 	Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil

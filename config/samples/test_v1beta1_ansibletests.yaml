@@ -6,7 +6,7 @@ metadata:
   namespace: openstack
 spec:
   extraMounts:
-    - Name: some-configmap
+    - name: some-configmap
       subPath: this.conf
       mountPath: /var/conf
   debug: true
