@@ -126,10 +126,10 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		"workflowStep": "0",
 	}
 
-	result, err := r.EnsureHorizonTestCloudsYAML(ctx, instance, helper, serviceLabels)
+	yamlResult, err := r.EnsureHorizonTestCloudsYAML(ctx, instance, helper, serviceLabels)
 
 	if err != nil {
-		return result, err
+		return yamlResult, err
 	}
 
 	// Create PersistentVolumeClaim

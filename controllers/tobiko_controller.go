@@ -152,10 +152,10 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		"operator":         "test-operator",
 	}
 
-	result, err := r.EnsureTobikoCloudsYAML(ctx, instance, helper, serviceLabels)
+	yamlResult, err := r.EnsureTobikoCloudsYAML(ctx, instance, helper, serviceLabels)
 
 	if err != nil {
-		return result, err
+		return yamlResult, err
 	}
 
 	workflowStepNum := 0
