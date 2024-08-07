@@ -1,4 +1,4 @@
-# test-operator
+# test-operator test
 This is a test operator that automates testing of an OpenStack deployment
 running on a Kubernetes cluster. The operator runs
 [Tempest](https://opendev.org/openstack/tempest) tests.
