@@ -133,20 +133,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup webhooks if requested
-	if strings.ToLower(os.Getenv("ENABLE_WEBHOOKS")) != "false" {
-		if err = (&testv1beta1.Tempest{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Tempest")
-			os.Exit(1)
-		}
-	}
-
 	horizontestReconciler := &controllers.HorizonTestReconciler{}
 	horizontestReconciler.Client = mgr.GetClient()
 	horizontestReconciler.Scheme = mgr.GetScheme()
 	if err = horizontestReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HorizonTest")
 		os.Exit(1)
+	}
+
+	// Setup webhooks if requested
+	if strings.ToLower(os.Getenv("ENABLE_WEBHOOKS")) != "false" {
+		if err = (&testv1beta1.Tempest{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Tempest")
+			os.Exit(1)
+		}
+		if err = (&testv1beta1.Tobiko{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Tobiko")
+			os.Exit(1)
+		}
+		if err = (&testv1beta1.AnsibleTest{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "AnsibleTest")
+			os.Exit(1)
+		}
+		if err = (&testv1beta1.HorizonTest{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "HorizonTest")
+			os.Exit(1)
+		}
 	}
 
 	//+kubebuilder:scaffold:builder
