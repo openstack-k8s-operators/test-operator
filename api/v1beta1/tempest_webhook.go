@@ -66,10 +66,34 @@ func (spec *TempestSpec) Default() {
         if spec.ContainerImage == "" {
 		spec.ContainerImage = tempestDefaults.ContainerImageURL
 	}
-
 	if spec.TempestconfRun == (TempestconfRunSpec{}) {
 		spec.TempestconfRun.Create = true
 	}
+	if len(spec.Workflow) > 0 {
+		for key, _ := range spec.Workflow {
+			spec.mergeTempestRunIntoWorkflow(key)
+		}
+	}
+}
+
+// TODO Merging workflow function
+func (spec *TempestSpec) mergeTempestRunIntoWorkflow(workflowStepNum int) {
+	tRun := spec.TempestRun
+	wtRun := spec.Workflow[workflowStepNum].TempestRun
+
+	value := mergeWorkflow(tRun.WorkerFile, wtRun.WorkerFile)
+	wtRun.WorkerFile = &value
+}
+
+func (spec *TempestSpec) mergeTempestconfRunIntoWorkflow(workflowStepNum int) {
+	tcRun := spec.TempestconfRun
+        wtcRun := spec.Workflow[workflowStepNum].TempestconfRun
+
+	value = mergeWorkflow(tcRun.TestAccounts, wtcRun.TestAccounts)
+        wtcRun.TestAccounts = &value
+
+        value = mergeWorkflow(tcRun.Profile, wtcRun.Profile)
+        wtcRun.Profile = &value
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -112,4 +136,12 @@ func (r *Tempest) ValidateDelete() (admission.Warnings, error) {
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil, nil
+}
+
+// Return the right config values
+func mergeWorkflow[T any](value T, workflowValue *T) T {
+	if workflowValue == nil {
+		return value
+	}
+	return *workflowValue
 }

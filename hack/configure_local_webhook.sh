@@ -1,6 +1,22 @@
 #!/bin/bash
 set -ex
 
+if [ $# -eq 0 ]; then
+    echo "Error: No arguments provided."
+    echo "You need to specify the name of the resource in lowercase, e.g. tempest"
+    exit 1
+fi
+
+# set the resource type
+# example: ./configure_local_webhook.sh tempest
+RESOURCE_TYPE=$1
+
+if [[ ${RESOURCE_TYPE} == 'tobiko' ]]; then
+    RESOURCE_TYPE_S="${RESOURCE_TYPE}es"
+else
+    RESOURCE_TYPE_S="${RESOURCE_TYPE}s"
+fi
+
 TMPDIR=${TMPDIR:-"/tmp/k8s-webhook-server/serving-certs"}
 SKIP_CERT=${SKIP_CERT:-false}
 CRC_IP=${CRC_IP:-$(/sbin/ip -o -4 addr list crc | awk '{print $4}' | cut -d/ -f1)}
@@ -35,16 +51,16 @@ cat >> ${TMPDIR}/patch_webhook_configurations.yaml <<EOF_CAT
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: vtempest.kb.io
+  name: v${RESOURCE_TYPE}.kb.io
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     caBundle: ${CA_BUNDLE}
-    url: https://${CRC_IP}:9443/validate-test-openstack-org-v1beta1-tempest
+    url: https://${CRC_IP}:9443/validate-test-openstack-org-v1beta1-${RESOURCE_TYPE}
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vtempest.kb.io
+  name: v${RESOURCE_TYPE}.kb.io
   objectSelector: {}
   rules:
   - apiGroups:
@@ -55,7 +71,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - tempests
+    - ${RESOURCE_TYPE_S}
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10
@@ -63,16 +79,16 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: mtempest.kb.io
+  name: m${RESOURCE_TYPE}.kb.io
 webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     caBundle: ${CA_BUNDLE}
-    url: https://${CRC_IP}:9443/mutate-test-openstack-org-v1beta1-tempest
+    url: https://${CRC_IP}:9443/mutate-test-openstack-org-v1beta1-${RESOURCE_TYPE}
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mtempest.kb.io
+  name: m${RESOURCE_TYPE}.kb.io
   objectSelector: {}
   rules:
   - apiGroups:
@@ -83,7 +99,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - tempests
+    - ${RESOURCE_TYPE_S}
     scope: '*'
   sideEffects: None
   timeoutSeconds: 10

@@ -228,9 +228,6 @@ spec:
             - ansibleGitRepo
             - ansiblePlaybookPath
             - computeSSHKeySecretName
-            - openStackConfigMap
-            - openStackConfigSecret
-            - storageClass
             - workloadSSHKeySecretName
             type: object
           status:
