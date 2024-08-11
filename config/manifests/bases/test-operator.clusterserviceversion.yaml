@@ -205,6 +205,10 @@ spec:
       - description: How many vcpus should be be allocated when this flavor is used
         displayName: Vcpus
         path: tempestRun.extraImages[0].flavor.vcpus
+      - description: Timeout duration for an image to reach the active state after
+          its creation
+        displayName: Image Creation Timeout
+        path: tempestRun.extraImages[0].imageCreationTimeout
       - description: Cloud that should be used for authentication
         displayName: Os Cloud
         path: tempestRun.extraImages[0].osCloud
@@ -442,6 +446,10 @@ spec:
       - description: How many vcpus should be be allocated when this flavor is used
         displayName: Vcpus
         path: workflow[0].tempestRun.extraImagesType.flavor.vcpus
+      - description: Timeout duration for an image to reach the active state after
+          its creation
+        displayName: Image Creation Timeout
+        path: workflow[0].tempestRun.extraImagesType.imageCreationTimeout
       - description: Cloud that should be used for authentication
         displayName: Os Cloud
         path: workflow[0].tempestRun.extraImagesType.osCloud
@@ -582,9 +590,6 @@ spec:
       - description: Container image for tobiko
         displayName: Container Image
         path: containerImage
-      - description: Run tests in parallel
-        displayName: Debug
-        path: debug
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
@@ -599,7 +604,9 @@ spec:
           0 results in automatic decission
         displayName: Num Processes
         path: numProcesses
-      - description: Container image for tobiko
+      - description: By default test-operator executes the test-pods sequentially
+          if multiple instances of test-operator related CRs exist. To run test-pods
+          in parallel set this option to true.
         displayName: Parallel
         path: parallel
       - description: Boolean specifying whether tobiko tests create new resources
@@ -646,9 +653,6 @@ spec:
       - description: Container image for tobiko
         displayName: Container Image
         path: workflow[0].containerImage
-      - description: Run tests in parallel
-        displayName: Debug
-        path: workflow[0].debug
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
