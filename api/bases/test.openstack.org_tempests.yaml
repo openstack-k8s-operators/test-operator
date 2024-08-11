@@ -240,6 +240,12 @@ spec:
                           - name
                           - vcpus
                           type: object
+                        imageCreationTimeout:
+                          default: 300
+                          description: Timeout duration for an image to reach the
+                            active state after its creation
+                          format: int64
+                          type: integer
                         name:
                           description: Name of the image
                           type: string
@@ -632,6 +638,12 @@ spec:
                                 - name
                                 - vcpus
                                 type: object
+                              imageCreationTimeout:
+                                default: 300
+                                description: Timeout duration for an image to reach
+                                  the active state after its creation
+                                format: int64
+                                type: integer
                               name:
                                 description: Name of the image
                                 type: string

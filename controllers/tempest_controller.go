@@ -492,6 +492,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXTRA_IMAGES_ID"] += extraImageDict.ID + ","
 		envVars["TEMPEST_EXTRA_IMAGES_NAME"] += extraImageDict.Name + ","
 		envVars["TEMPEST_EXTRA_IMAGES_DISK_FORMAT"] += extraImageDict.DiskFormat + ","
+		envVars["TEMPEST_EXTRA_IMAGES_CREATE_TIMEOUT"] += r.GetDefaultInt(extraImageDict.ImageCreationTimeout) + ","
 
 		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_ID"] += extraImageDict.Flavor.ID + ","
 		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_NAME"] += extraImageDict.Flavor.Name + ","
