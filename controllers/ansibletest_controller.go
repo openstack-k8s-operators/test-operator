@@ -22,15 +22,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"reflect"
-
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
-	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/ansibletest"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -129,6 +126,9 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	workflowLength := len(instance.Spec.Workflow)
 	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
+	if nextWorkflowStep < workflowLength {
+		MergeSections(&instance.Spec, instance.Spec.Workflow[nextWorkflowStep])
+	}
 
 	switch nextAction {
 	case Failure:
@@ -206,30 +206,12 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	podName := r.GetPodName(instance, nextWorkflowStep)
-	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance, nextWorkflowStep)
+	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage, err := r.GetContainerImage(ctx, workflowOverrideParams["ContainerImage"], instance)
-	privileged := r.OverwriteAnsibleWithWorkflow(instance.Spec, "Privileged", "pbool", nextWorkflowStep).(bool)
+	privileged := instance.Spec.Privileged
 	if err != nil {
 		return ctrl.Result{}, err
-	}
-
-	if nextWorkflowStep < len(instance.Spec.Workflow) {
-		if instance.Spec.Workflow[nextWorkflowStep].NodeSelector != nil {
-			instance.Spec.NodeSelector = *instance.Spec.Workflow[nextWorkflowStep].NodeSelector
-		}
-
-		if instance.Spec.Workflow[nextWorkflowStep].Tolerations != nil {
-			instance.Spec.Tolerations = *instance.Spec.Workflow[nextWorkflowStep].Tolerations
-		}
-
-		if instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel != nil {
-			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel
-		}
-
-		if instance.Spec.Workflow[nextWorkflowStep].Resources != nil {
-			instance.Spec.Resources = *instance.Spec.Workflow[nextWorkflowStep].Resources
-		}
 	}
 
 	podDef := ansibletest.Pod(
@@ -284,82 +266,32 @@ func (r *AnsibleTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *Reconciler) OverwriteAnsibleWithWorkflow(
-	instance v1beta1.AnsibleTestSpec,
-	sectionName string,
-	workflowValueType string,
-	workflowStepNum int,
-) interface{} {
-	if len(instance.Workflow)-1 < workflowStepNum {
-		reflected := reflect.ValueOf(instance)
-		fieldValue := reflected.FieldByName(sectionName)
-		return fieldValue.Interface()
-	}
-
-	reflected := reflect.ValueOf(instance)
-	SpecValue := reflected.FieldByName(sectionName).Interface()
-
-	reflected = reflect.ValueOf(instance.Workflow[workflowStepNum])
-	WorkflowValue := reflected.FieldByName(sectionName).Interface()
-
-	if workflowValueType == "pbool" {
-		if val, ok := WorkflowValue.(*bool); ok && val != nil {
-			return *(WorkflowValue.(*bool))
-		}
-		return SpecValue.(bool)
-	} else if workflowValueType == "puint8" {
-		if val, ok := WorkflowValue.(*uint8); ok && val != nil {
-			return *(WorkflowValue.(*uint8))
-		}
-		return SpecValue
-	} else if workflowValueType == "string" {
-		if val, ok := WorkflowValue.(string); ok && val != "" {
-			return WorkflowValue
-		}
-		return SpecValue
-	}
-
-	return nil
-}
-
 // This function prepares env variables for a single workflow step.
 func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	instance *testv1beta1.AnsibleTest,
-	step int,
 ) (map[string]env.Setter, map[string]string) {
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
 	workflowOverrideParams := make(map[string]string)
 
 	// volumes workflow override
-	workflowOverrideParams["WorkloadSSHKeySecretName"] = r.OverwriteAnsibleWithWorkflow(instance.Spec, "WorkloadSSHKeySecretName", "string", step).(string)
-	workflowOverrideParams["ComputesSSHKeySecretName"] = r.OverwriteAnsibleWithWorkflow(instance.Spec, "ComputesSSHKeySecretName", "string", step).(string)
-	workflowOverrideParams["ContainerImage"] = r.OverwriteAnsibleWithWorkflow(instance.Spec, "ContainerImage", "string", step).(string)
+	workflowOverrideParams["WorkloadSSHKeySecretName"] = instance.Spec.WorkloadSSHKeySecretName
+	workflowOverrideParams["ComputesSSHKeySecretName"] = instance.Spec.ComputesSSHKeySecretName
+	workflowOverrideParams["ContainerImage"] = instance.Spec.ContainerImage
 
 	// bool
-	debug := r.OverwriteAnsibleWithWorkflow(instance.Spec, "Debug", "pbool", step).(bool)
+	debug := instance.Spec.Debug
 	if debug {
 		envVars["POD_DEBUG"] = env.SetValue("true")
 	}
 
 	// strings
-	extraVars := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleExtraVars", "string", step).(string)
-	envVars["POD_ANSIBLE_EXTRA_VARS"] = env.SetValue(extraVars)
-
-	extraVarsFile := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleVarFiles", "string", step).(string)
-	envVars["POD_ANSIBLE_FILE_EXTRA_VARS"] = env.SetValue(extraVarsFile)
-
-	inventory := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleInventory", "string", step).(string)
-	envVars["POD_ANSIBLE_INVENTORY"] = env.SetValue(inventory)
-
-	gitRepo := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleGitRepo", "string", step).(string)
-	envVars["POD_ANSIBLE_GIT_REPO"] = env.SetValue(gitRepo)
-
-	playbookPath := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsiblePlaybookPath", "string", step).(string)
-	envVars["POD_ANSIBLE_PLAYBOOK"] = env.SetValue(playbookPath)
-
-	ansibleCollections := r.OverwriteAnsibleWithWorkflow(instance.Spec, "AnsibleCollections", "string", step).(string)
-	envVars["POD_INSTALL_COLLECTIONS"] = env.SetValue(ansibleCollections)
+	envVars["POD_ANSIBLE_EXTRA_VARS"] = env.SetValue(instance.Spec.AnsibleExtraVars)
+	envVars["POD_ANSIBLE_FILE_EXTRA_VARS"] = env.SetValue(instance.Spec.AnsibleVarFiles)
+	envVars["POD_ANSIBLE_INVENTORY"] = env.SetValue(instance.Spec.AnsibleInventory)
+	envVars["POD_ANSIBLE_GIT_REPO"] = env.SetValue(instance.Spec.AnsibleGitRepo)
+	envVars["POD_ANSIBLE_PLAYBOOK"] = env.SetValue(instance.Spec.AnsiblePlaybookPath)
+	envVars["POD_INSTALL_COLLECTIONS"] = env.SetValue(instance.Spec.AnsibleCollections)
 
 	return envVars, workflowOverrideParams
 }
