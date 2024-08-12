@@ -414,30 +414,26 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	instance *testv1beta1.Tempest,
 	workflowStepNum int,
 ) {
-	tRun := instance.Spec.TempestRun
-	wtRun := testv1beta1.WorkflowTempestRunSpec{}
-	if workflowStepNum < len(instance.Spec.Workflow) {
-		wtRun = instance.Spec.Workflow[workflowStepNum].TempestRun
-	}
+	tRun := getResourceRun(instance, workflowStepNum)
 
 	testOperatorDir := "/etc/test_operator/"
 
 	// Files
-	value := mergeWithWorkflow(tRun.WorkerFile, wtRun.WorkerFile)
+	value := tRun.WorkerFile
 	if len(value) != 0 {
 		workerFile := "worker_file.yaml"
 		customData[workerFile] = value
 		envVars["TEMPEST_WORKER_FILE"] = testOperatorDir + workerFile
 	}
 
-	value = mergeWithWorkflow(tRun.IncludeList, wtRun.IncludeList)
+	value = tRun.IncludeList
 	if len(value) != 0 {
 		includeListFile := "include.txt"
 		customData[includeListFile] = value
 		envVars["TEMPEST_INCLUDE_LIST"] = testOperatorDir + includeListFile
 	}
 
-	value = mergeWithWorkflow(tRun.ExcludeList, wtRun.ExcludeList)
+	value = tRun.ExcludeList
 	if len(value) != 0 {
 		excludeListFile := "exclude.txt"
 		customData[excludeListFile] = value
@@ -446,9 +442,9 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 
 	// Bool
 	tempestBoolEnvVars := map[string]bool{
-		"TEMPEST_SERIAL":     mergeWithWorkflow(tRun.Serial, wtRun.Serial),
-		"TEMPEST_PARALLEL":   mergeWithWorkflow(tRun.Parallel, wtRun.Parallel),
-		"TEMPEST_SMOKE":      mergeWithWorkflow(tRun.Smoke, wtRun.Smoke),
+		"TEMPEST_SERIAL":     tRun.Serial,
+		"TEMPEST_PARALLEL":   tRun.Parallel,
+		"TEMPEST_SMOKE":      tRun.Smoke,
 		"USE_EXTERNAL_FILES": true,
 	}
 
@@ -457,11 +453,11 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	}
 
 	// Int
-	numValue := mergeWithWorkflow(tRun.Concurrency, wtRun.Concurrency)
+	numValue := tRun.Concurrency
 	envVars["TEMPEST_CONCURRENCY"] = r.GetDefaultInt(numValue)
 
 	// Dictionary
-	dictValue := mergeWithWorkflow(tRun.ExternalPlugin, wtRun.ExternalPlugin)
+	dictValue := tRun.ExternalPlugin
 	for _, externalPluginDictionary := range dictValue {
 		envVars["TEMPEST_EXTERNAL_PLUGIN_GIT_URL"] += externalPluginDictionary.Repository + ","
 
@@ -477,7 +473,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 
 	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetJobName(instance, workflowStepNum)
 
-	extraImages := mergeWithWorkflow(tRun.ExtraImages, wtRun.ExtraImages)
+	extraImages := tRun.ExtraImages
 	for _, extraImageDict := range extraImages {
 		envVars["TEMPEST_EXTRA_IMAGES_URL"] += extraImageDict.URL + ","
 		envVars["TEMPEST_EXTRA_IMAGES_OS_CLOUD"] += extraImageDict.OsCloud + ","
@@ -495,7 +491,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_VCPUS"] += r.GetDefaultInt(extraImageDict.Flavor.Vcpus, "-") + ","
 	}
 
-	extraRPMs := mergeWithWorkflow(tRun.ExtraRPMs, wtRun.ExtraRPMs)
+	extraRPMs := tRun.ExtraRPMs
 	for _, extraRPMURL := range extraRPMs {
 		envVars["TEMPEST_EXTRA_RPMS"] += extraRPMURL + ","
 	}
