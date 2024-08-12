@@ -532,3 +532,40 @@ func (r *Reconciler) OverwriteValueWithWorkflow(
 
 	return nil
 }
+
+// temporary tempest solution
+func getTempestRun(instance *v1beta1.Tempest, workflowStepNum int) v1beta1.TempestRunSpec {
+	if workflowStepNum < len(instance.Spec.Workflow) {
+		// wtRun := instance.Spec.Workflow[workflowStepNum].TempestRun
+		tRun := changeType(instance, workflowStepNum)
+		return tRun
+	}
+	return instance.Spec.TempestRun
+}
+
+// TODO from v1beta1.TempestRunSpec to interface{}
+func changeType(instance interface{}, workflowStepNum int) v1beta1.TempestRunSpec {
+	// TODO other types; else if typedInstance, ok := instance.(*v1beta1.HorizonTest);
+
+	// temporary Tempest solution
+	typedInstance, _ := instance.(*v1beta1.Tempest)
+	wtRun := typedInstance.Spec.Workflow[workflowStepNum].TempestRun
+
+	var tRun v1beta1.TempestRunSpec
+
+	wtReflected := reflect.ValueOf(wtRun)
+	tReflected := reflect.ValueOf(&tRun).Elem()
+
+	for i := 0; i < wtReflected.NumField(); i++ {
+		tName := tReflected.Type().Field(i).Name
+		tValue := tReflected.Field(i)
+
+		wtValue := wtReflected.FieldByName(tName)
+		if !wtValue.IsNil() {
+			wtValue = wtValue.Elem()
+			tValue.Set(wtValue)
+		}
+	}
+	// TODO typedInstance.Spec.TempestRun = tRun
+	return tRun
+}
