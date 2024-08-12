@@ -73,6 +73,12 @@ func (spec *TempestSpec) Default() {
 	if spec.TempestconfRun == (TempestconfRunSpec{}) {
 		spec.TempestconfRun.Create = true
 	}
+
+	if len(spec.Workflow) > 0 {
+		for i := range spec.Workflow {
+			mergeSectionIntoWorkflow(*spec, &spec.Workflow[i])
+		}
+	}
 }
 
 func (r *Tempest) PrivilegedRequired() bool {
