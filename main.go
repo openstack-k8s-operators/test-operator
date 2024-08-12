@@ -24,12 +24,14 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -109,9 +111,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	cfg, err := config.GetConfig()
+	if err != nil {
+		setupLog.Error(err, "")
+		os.Exit(1)
+	}
+
+	kclient, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		setupLog.Error(err, "")
+		os.Exit(1)
+	}
+
 	tempestReconciler := &controllers.TempestReconciler{}
 	tempestReconciler.Client = mgr.GetClient()
 	tempestReconciler.Scheme = mgr.GetScheme()
+	tempestReconciler.Kclient = kclient
 	if err = tempestReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Tempest")
 		os.Exit(1)
@@ -120,6 +135,7 @@ func main() {
 	tobikoReconciler := &controllers.TobikoReconciler{}
 	tobikoReconciler.Client = mgr.GetClient()
 	tobikoReconciler.Scheme = mgr.GetScheme()
+	tobikoReconciler.Kclient = kclient
 	if err = tobikoReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Tobiko")
 		os.Exit(1)
@@ -128,6 +144,7 @@ func main() {
 	ansibleReconciler := &controllers.AnsibleTestReconciler{}
 	ansibleReconciler.Client = mgr.GetClient()
 	ansibleReconciler.Scheme = mgr.GetScheme()
+	ansibleReconciler.Kclient = kclient
 	if err = ansibleReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AnsibleTest")
 		os.Exit(1)
@@ -144,6 +161,7 @@ func main() {
 	horizontestReconciler := &controllers.HorizonTestReconciler{}
 	horizontestReconciler.Client = mgr.GetClient()
 	horizontestReconciler.Scheme = mgr.GetScheme()
+	horizontestReconciler.Kclient = kclient
 	if err = horizontestReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HorizonTest")
 		os.Exit(1)
