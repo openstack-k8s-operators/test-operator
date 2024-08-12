@@ -728,3 +728,40 @@ func EnsureCloudsConfigMapExists(
 
 	return ctrl.Result{}, nil
 }
+
+// TODO make general for all resources
+func getResourceRun(instance *v1beta1.Tempest, workflowStepNum int) v1beta1.TempestRunSpec {
+	if workflowStepNum < len(instance.Spec.Workflow) {
+		newInstance := changeType(instance, workflowStepNum).(*v1beta1.Tempest)
+		return newInstance.Spec.TempestRun
+	}
+	return instance.Spec.TempestRun
+}
+
+func changeType(instance interface{}, workflowStepNum int) interface{} {
+	// TODO add other types
+	switch typedInstance := instance.(type) {
+	case *v1beta1.Tempest:
+		var tRun v1beta1.TempestRunSpec
+	default:
+		fmt.Println("Error, instance has unknown type.")
+	}
+	wtRun := typedInstance.Spec.Workflow[workflowStepNum].TempestRun
+
+	wtReflected := reflect.ValueOf(wtRun)
+	tReflected := reflect.ValueOf(&tRun).Elem()
+
+	for i := 0; i < wtReflected.NumField(); i++ {
+		tName := tReflected.Type().Field(i).Name
+		tValue := tReflected.Field(i)
+
+		wtValue := wtReflected.FieldByName(tName)
+		if !wtValue.IsNil() {
+			wtValue = wtValue.Elem()
+			tValue.Set(wtValue)
+		}
+	}
+	typedInstance.Spec.TempestRun = tRun
+
+	return typedInstance
+}

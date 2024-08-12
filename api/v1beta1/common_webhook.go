@@ -36,32 +36,34 @@ const (
 
 // merge non-workflow section into workflow
 func mergeSectionIntoWorkflow(instance interface{}, workflowStepNum int) {
-        spec, ok := instance.(*TempestSpec)
-        if !ok {
-        fmt.Println("Error, instance is not of type *TempestSpec")
-                return
-        }
+	// TODO add other resources
+	switch spec := instance.(type) {
+	case *TempestSpec:
+		fmt.Println("Instance is type *TempestSpec")
+	default:
+		fmt.Println("Error, instance of unknown type.")
+	}
 
-        tRun := spec.TempestRun
-        wtRun := &spec.Workflow[workflowStepNum].TempestRun
+	tRun := spec.TempestRun
+	wtRun := &spec.Workflow[workflowStepNum].TempestRun
 
-        tRunReflect := reflect.ValueOf(tRun)
-        wtRunReflect := reflect.ValueOf(wtRun).Elem()
+	tRunReflect := reflect.ValueOf(tRun)
+	wtRunReflect := reflect.ValueOf(wtRun).Elem()
 
 	setNonZeroValues(tRunReflect, wtRunReflect, false)
 }
 
-func setNonZeroValues(src reflect.Value, dest reflect.Value, is_struct bool) {
-        for i := 0; i < src.NumField(); i++ {
-                tRunName := src.Type().Field(i).Name
-                tRunValue := src.Field(i)
-                wtRunValue := dest.FieldByName(tRunName)
+func setNonZeroValues(src reflect.Value, dest reflect.Value, isStruct bool) {
+	for i := 0; i < src.NumField(); i++ {
+		tRunName := src.Type().Field(i).Name
+		tRunValue := src.Field(i)
+		wtRunValue := dest.FieldByName(tRunName)
 
-                if wtRunValue.IsZero() && !tRunValue.IsZero() {
+		if wtRunValue.IsNil() && !tRunValue.IsNil() {
 			if tRunValue.Kind() == reflect.Struct {
 				setNonZeroValues(tRunValue, wtRunValue, true)
 			} else {
-				if is_struct {
+				if isStruct {
 					wtRunValue.Set(tRunValue)
 				} else {
 					tRunPtr := reflect.New(tRunValue.Type())
@@ -69,6 +71,6 @@ func setNonZeroValues(src reflect.Value, dest reflect.Value, is_struct bool) {
 					wtRunValue.Set(tRunPtr)
 				}
 			}
-                }
-        }
+		}
+	}
 }
