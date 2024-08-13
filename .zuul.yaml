@@ -70,6 +70,8 @@
             disk: 20
             vcpus: 1
       cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+      cifmw_test_operator_tempest_network_attachments:
+        - ctlplane
 
       cifmw_run_tobiko: true
       cifmw_test_operator_tobiko_workflow:
@@ -78,6 +80,8 @@
           numProcesses: 2
         - stepName: 'sanity'
           testenv: 'sanity'
+      cifmw_test_operator_tobiko_network_attachments:
+        - ctlplane
     required-projects: &rp
       - name: openstack-k8s-operators/install_yamls
         override-checkout: main
