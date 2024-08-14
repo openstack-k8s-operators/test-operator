@@ -66,7 +66,7 @@ func (r *HorizonTestReconciler) GetLogger(ctx context.Context) logr.Logger {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
+func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	Log := r.GetLogger(ctx)
 
 	// How much time should we wait before calling Reconcile loop when there is a failure
@@ -92,59 +92,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	// initialize status
-	isNewInstance := instance.Status.Conditions == nil
-	if isNewInstance {
-		instance.Status.Conditions = condition.Conditions{}
-	}
-
-	// Save a copy of the condtions so that we can restore the LastTransitionTime
-	// when a condition's state doesn't change.
-	savedConditions := instance.Status.Conditions.DeepCopy()
-
-	// Always patch the instance status when exiting this function so we
-	// can persist any changes.
-	defer func() {
-		// update the overall status condition if service is ready
-		if instance.Status.Conditions.AllSubConditionIsTrue() {
-			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
-		}
-		condition.RestoreLastTransitionTimes(&instance.Status.Conditions, savedConditions)
-		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
-			instance.Status.Conditions.Set(
-				instance.Status.Conditions.Mirror(condition.ReadyCondition))
-		}
-		err := helper.PatchInstance(ctx, instance)
-		if err != nil {
-			_err = err
-			return
-		}
-	}()
-
-	if isNewInstance {
-		// Initialize conditions used later as Status=Unknown
-		cl := condition.CreateList(
-			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
-			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
-		)
-		instance.Status.Conditions.Init(&cl)
-
-		// Register overall status immediately to have an early feedback
-		// e.g. in the cli
-		return ctrl.Result{}, nil
-
-	}
-
-	if r.CompletedJobExists(ctx, instance, 0) {
-		// The job created by the instance was completed. Release the lock
-		// so that other instances can spawn a job.
-		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
-		Log.Info("Job completed")
-		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			return ctrl.Result{}, err
-		}
-	}
-
 	rbacRules := []rbacv1.PolicyRule{
 		{
 			APIGroups:     []string{"security.openshift.io"},
@@ -165,6 +112,8 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	} else if (rbacResult != ctrl.Result{}) {
 		return rbacResult, nil
 	}
+
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
 	serviceLabels := map[string]string{
 		common.AppSelector: horizontest.ServiceName,
@@ -271,6 +220,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// create Job - end
 
 	Log.Info("Reconciled Service successfully")
+
 	return ctrl.Result{}, nil
 }
 

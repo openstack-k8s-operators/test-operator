@@ -103,50 +103,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	// initialize status
-	isNewInstance := instance.Status.Conditions == nil
-	if isNewInstance {
-		instance.Status.Conditions = condition.Conditions{}
-	}
-
-	// Save a copy of the condtions so that we can restore the LastTransitionTime
-	// when a condition's state doesn't change.
-	savedConditions := instance.Status.Conditions.DeepCopy()
-
-	// Always patch the instance status when exiting this function so we
-	// can persist any changes.
-	defer func() {
-		// update the overall status condition if service is ready
-		if instance.Status.Conditions.AllSubConditionIsTrue() {
-			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
-		}
-		condition.RestoreLastTransitionTimes(&instance.Status.Conditions, savedConditions)
-		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
-			instance.Status.Conditions.Set(
-				instance.Status.Conditions.Mirror(condition.ReadyCondition))
-		}
-		err := helper.PatchInstance(ctx, instance)
-		if err != nil {
-			_err = err
-			return
-		}
-	}()
-
-	if isNewInstance {
-		// Initialize conditions used later as Status=Unknown
-		cl := condition.CreateList(
-			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
-			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyMessage),
-			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
-		)
-		instance.Status.Conditions.Init(&cl)
-
-		// Register overall status immediately to have an early feedback
-		// e.g. in the cli
-		return ctrl.Result{}, nil
-
-	}
-
 	// Ensure that there is an external counter and read its value
 	// We use the external counter to keep track of the workflow steps
 	r.WorkflowStepCounterCreate(ctx, instance, helper)
@@ -169,7 +125,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
 		// The job created by the instance was completed. Release the lock
 		// so that other instances can spawn a job.
-		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
 		Log.Info("Job completed")
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
 			return ctrl.Result{}, err
@@ -202,6 +157,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return rbacResult, nil
 	}
 
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 	// Service account, role, binding - end
 
 	serviceLabels := map[string]string{

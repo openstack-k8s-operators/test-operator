@@ -15,16 +15,7 @@ spec:
     singular: horizontest
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - description: Status
-      jsonPath: .status.conditions[0].status
-      name: Status
-      type: string
-    - description: Message
-      jsonPath: .status.conditions[0].message
-      name: Message
-      type: string
-    name: v1beta1
+  - name: v1beta1
     schema:
       openAPIV3Schema:
         description: HorizonTest is the Schema for the horizontests API
