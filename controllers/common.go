@@ -351,10 +351,12 @@ func (r *Reconciler) AcquireLock(
 		return err == nil, err
 	}
 
-	return false, nil
+	return false, err
 }
 
 func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (bool, error) {
+	Log := r.GetLogger()
+
 	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		return false, nil
@@ -372,7 +374,20 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 		return false, nil
 	}
 
-	return err == nil, err
+	// Check whether the lock was successfully deleted deleted
+	maxRetries := 10
+	lockDeletionSleepPeriod := 10
+	for i := 0; i < maxRetries; i++ {
+		_, err = r.GetLockInfo(ctx, instance)
+		if err != nil && k8s_errors.IsNotFound(err) {
+			return true, nil
+		}
+
+		time.Sleep(time.Second * time.Duration(lockDeletionSleepPeriod))
+		Log.Info("Waiting for the test-operator-lock deletion!")
+	}
+
+	return false, errors.New("failed to delete test-operator-lock")
 }
 
 func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
@@ -448,7 +463,9 @@ func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Obj
 
 func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
 	job := &batchv1.Job{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
+	jobName := r.GetJobName(instance, workflowStepNum)
+	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: jobName}
+	err := r.Client.Get(ctx, objectKey, job)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		return false
 	}
