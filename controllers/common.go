@@ -19,6 +19,7 @@ import (
 	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -35,9 +37,24 @@ const (
 	envVarsConfigMapinfix    = "-env-vars-step-"
 	customDataConfigMapinfix = "-custom-data-step-"
 	workflowStepNumInvalid   = -1
+	workflowCounterField     = "counter"
 
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOnwerField = "owner"
+)
+
+const (
+	// How much time should we wait before calling Reconcile loop when there is a failure
+	RequeueAfterSec   = time.Minute
+	WorkflowStepLabel = "workflowStep"
+	InstanceNameLabel = "instanceName"
+	OperatorNameLabel = "operator"
+	TestOperatorName  = "test-operator"
+)
+
+const (
+	JobCompletedMsg         = "Job completed!"
+	InvalidNextActionErrMsg = "Invalid Next Action!"
 )
 
 type Reconciler struct {
@@ -45,6 +62,46 @@ type Reconciler struct {
 	Kclient kubernetes.Interface
 	Log     logr.Logger
 	Scheme  *runtime.Scheme
+
+	ContinuousTestingSpec v1beta1.ContinuousTestingSpec
+	WorkflowLength        int
+	Instance              client.Object
+	Ctx                   context.Context
+}
+
+func (r *Reconciler) ReconcilerInit(
+	Context context.Context,
+	Instance client.Object,
+	ContinuousTestingSpec v1beta1.ContinuousTestingSpec,
+	WorkflowLength int,
+) error {
+	r.Ctx = Context
+	r.Instance = Instance
+	r.ContinuousTestingSpec = ContinuousTestingSpec
+	r.WorkflowLength = WorkflowLength
+
+	return nil
+}
+
+func GetCommonRbacRules() []rbacv1.PolicyRule {
+	return []rbacv1.PolicyRule{
+		{
+			APIGroups:     []string{"security.openshift.io"},
+			ResourceNames: []string{"anyuid", "privileged"},
+			Resources:     []string{"securitycontextconstraints"},
+			Verbs:         []string{"use"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"pods"},
+			Verbs:     []string{"create", "get", "list", "watch", "update", "patch", "delete"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"persistentvolumeclaims"},
+			Verbs:     []string{"get", "list", "create", "update", "watch", "patch"},
+		},
+	}
 }
 
 func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {
@@ -162,7 +219,7 @@ func (r *Reconciler) GetContainerImage(
 	return "", nil
 }
 
-func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) string {
+func (r *Reconciler) GetJobName(instance client.Object, workflowStepNum int) string {
 	if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
 			return typedInstance.Name
@@ -191,6 +248,29 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 	return ""
 }
 
+func (r *Reconciler) GetActiveJob(ctx context.Context, externalWorkflowCounter int) (*batchv1.Job, error) {
+	// Each job that is being executed by the test operator has
+	logging := log.FromContext(ctx)
+	activeJobName := r.GetJobName(r.Instance, externalWorkflowCounter)
+	logging.Info(activeJobName)
+	activeJobNamespace := r.Instance.GetNamespace()
+	object := client.ObjectKey{Namespace: activeJobNamespace, Name: activeJobName}
+
+	activeJob := &batchv1.Job{}
+	err := r.Client.Get(r.Ctx, object, activeJob)
+	if err != nil {
+		return &batchv1.Job{}, err
+	}
+
+	if _, ok := activeJob.Labels[WorkflowStepLabel]; !ok {
+		return &batchv1.Job{}, errors.New(
+			"Workflow Config Map doesn't contain workflowStep field!",
+		)
+	}
+
+	return activeJob, nil
+}
+
 func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
 	return instance.GetName() + workflowNameSuffix
 }
@@ -204,9 +284,14 @@ func (r *Reconciler) GetPVCLogsName(instance client.Object, workflowStepNum int)
 	return instanceName + "-" + workflowStep + "-" + nameSuffix
 }
 
-func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Object, secretName string) bool {
+func (r *Reconciler) CheckSecretExists(
+	ctx context.Context,
+	instance client.Object,
+	secretName string,
+) bool {
 	secret := &corev1.Secret{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: secretName}, secret)
+	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: secretName}
+	err := r.Client.Get(ctx, objectKey, secret)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		return false
 	}
@@ -375,11 +460,19 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	return err == nil, err
 }
 
-func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
+func (r *Reconciler) WorkflowStepCounterCreate(
+	ctx context.Context,
+	instance client.Object,
+	h *helper.Helper,
+) (bool, error) {
+	workflowConfigMapName := r.GetWorkflowConfigMapName(instance)
+	instanceNamespace := instance.GetNamespace()
+	object := client.ObjectKey{Namespace: instanceNamespace, Name: workflowConfigMapName}
+
 	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
+	err := r.Client.Get(ctx, object, cm)
 	if err == nil {
-		return true
+		return true, nil
 	}
 
 	counterData := make(map[string]string)
@@ -394,19 +487,24 @@ func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance cli
 	}
 
 	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
+	return err == nil, err
 }
 
-func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance client.Object, h *helper.Helper) bool {
+func (r *Reconciler) WorkflowStepCounterIncrease(
+	ctx context.Context,
+	instance client.Object,
+	h *helper.Helper,
+) (bool, error) {
 	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
+	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}
+	err := r.Client.Get(ctx, objectKey, cm)
 	if err != nil {
-		return false
+		return false, err
 	}
 
-	counterValue, _ := strconv.Atoi(cm.Data["counter"])
+	counterValue, _ := strconv.Atoi(cm.Data[workflowCounterField])
 	newCounterValue := strconv.Itoa(counterValue + 1)
-	cm.Data["counter"] = newCounterValue
+	cm.Data[workflowCounterField] = newCounterValue
 
 	cms := []util.Template{
 		{
@@ -417,33 +515,44 @@ func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance c
 	}
 
 	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
+	return err == nil, err
 }
 
-func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object) int {
+func (r *Reconciler) WorkflowStepCounterRead(
+	ctx context.Context,
+	instance client.Object,
+) (int, error) {
+	instanceNamespace := instance.GetNamespace()
+	workflowConfigMapName := r.GetWorkflowConfigMapName(instance)
+	object := client.ObjectKey{Namespace: instanceNamespace, Name: workflowConfigMapName}
+
 	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
+	err := r.Client.Get(ctx, object, cm)
 	if err != nil {
-		return workflowStepNumInvalid
+		return workflowStepNumInvalid, err
 	}
 
-	counter, _ := strconv.Atoi(cm.Data["counter"])
-	return counter
+	counter, err := strconv.Atoi(cm.Data["counter"])
+	return counter, err
 }
 
-func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
+func (r *Reconciler) CompletedJobExists(
+	ctx context.Context,
+	instance client.Object,
+	workflowStepNum int,
+) (bool, error) {
 	job := &batchv1.Job{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
 
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	if job.Status.Succeeded > 0 || job.Status.Failed > 0 {
-		return true
+		return true, err
 	}
 
-	return false
+	return false, err
 }
 
 func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
@@ -498,4 +607,82 @@ func (r *Reconciler) OverwriteValueWithWorkflow(
 	}
 
 	return nil
+}
+
+type Action int
+
+const (
+	ActionNone = iota
+	ActionWait
+	ActionNewJob
+)
+
+func (r *Reconciler) GetNextAction(
+	ctx context.Context,
+	instance client.Object,
+	externalWorkflowCounter int,
+	instanceWorkflowLength int,
+) (Action, error) {
+	Log := log.FromContext(ctx).WithName("Controllers").WithName("Tempest")
+	lockCM, err := r.GetLockInfo(ctx, instance)
+
+	// ActionWait - We could not obtain information about the log due to unknown
+	//              error (wait until the error gets resolved)
+	if err != nil && !k8s_errors.IsNotFound(err) {
+		Log.Info("A")
+		return ActionWait, err
+	}
+
+	// ActionNewJob - There is no lock we can start creating a new one
+	if err != nil && k8s_errors.IsNotFound(err) {
+		Log.Info("B")
+		return ActionNewJob, nil
+	}
+
+	// ActionWait - There is lock owned by another instance. Wait until the
+	//              the lock gets released
+	if lockCM.Data[testOperatorLockOnwerField] != string(instance.GetUID()) {
+		Log.Info("C")
+		return ActionWait, nil
+	}
+
+	// At this point we know that there is lock that is owned by the current
+	// instance.
+
+	// ActionNone - If there is a lock that is assigned to us but there is no job
+	//              it is probably an issue.
+	activeJob, err := r.GetActiveJob(ctx, externalWorkflowCounter)
+	if err != nil {
+		Log.Info("D")
+		return ActionNone, err
+	}
+
+	// ActionWait - If there is a job that has active pods (Running or Pending)
+	//              then we have to wait until the job gets completed.
+	if activeJob.Status.Active > 0 {
+		Log.Info("E")
+		return ActionWait, nil
+	}
+
+	// NewJob - If all pods associated with the current job finished execution
+	//          (no pods in Running or Pending state) and there are still workflow
+	//          steps that should be executed.
+	activeJobWorkflowCounter, err := strconv.Atoi(activeJob.Labels[WorkflowStepLabel])
+	if err != nil {
+		return ActionNone, err
+	}
+
+	if activeJob.Status.Active == 0 && activeJobWorkflowCounter < instanceWorkflowLength {
+		Log.Info("F")
+		return ActionNewJob, nil
+	}
+
+	// ActionNone - All jobs are completed and there are no other workflow steps that
+	//              should be executed.
+	if activeJobWorkflowCounter >= instanceWorkflowLength {
+		Log.Info("H")
+		return ActionNone, nil
+	}
+
+	return ActionNone, nil
 }

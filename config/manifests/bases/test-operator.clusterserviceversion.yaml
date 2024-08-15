@@ -115,6 +115,29 @@ spec:
           execution of tempest tests.
         displayName: Container Image
         path: containerImage
+      - description: 'This parameter is used to configure continuous testing. By continuous
+          testing we mean execution of pods iteratively in sequence one by one either
+          based on the test configuration from workflow section or test configuration
+          specified without the use of the workflow feature. If a workflow section
+          contains definition for three steps A, B and C then if continuous testing
+          is enabled the pods are going to be spawned in the following order indefinitely
+          or until end condition is met: A, B, C, A, B, C, ... Similarily, if we are
+          not using workflow feature and we have test configuration for a single pod
+          A then the pod is going to be spawned indefinitely or until the end condition
+          is met.'
+        displayName: Continuous Testing Spec
+        path: continuousTesting
+      - description: Indicate whether continuous testing is enabled.
+        displayName: Enabled
+        path: continuousTesting.enabled
+      - description: Indicate how many pods must fail continuously before the continuous
+          testing is ended.
+        displayName: End On Num Continuous Failure
+        path: continuousTesting.endOnNumContinuousFailure
+      - description: Indicate how many pods must fail before the continuous testing
+          is ended.
+        displayName: End On Num Failure
+        path: continuousTesting.endOnNumFailure
       - description: Activate debug mode. When debug mode is activated any error encountered
           inside the test-pod causes that the pod will be kept alive indefinitely
           (stuck in "Running" phase) or until the corresponding Tempest CR is deleted.
@@ -594,9 +617,6 @@ spec:
       - description: Container image for tobiko
         displayName: Container Image
         path: containerImage
-      - description: Run tests in parallel
-        displayName: Debug
-        path: debug
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
@@ -615,7 +635,9 @@ spec:
           0 results in automatic decission
         displayName: Num Processes
         path: numProcesses
-      - description: Container image for tobiko
+      - description: By default test-operator executes the test-pods sequentially
+          if multiple instances of test-operator related CRs exist. To run test-pods
+          in parallel set this option to true.
         displayName: Parallel
         path: parallel
       - description: Boolean specifying whether tobiko tests create new resources
@@ -662,9 +684,6 @@ spec:
       - description: Container image for tobiko
         displayName: Container Image
         path: workflow[0].containerImage
-      - description: Run tests in parallel
-        displayName: Debug
-        path: workflow[0].debug
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
