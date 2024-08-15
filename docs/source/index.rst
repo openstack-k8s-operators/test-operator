@@ -33,10 +33,3 @@ Alternative Ways of Running Tempest Container
 
    tempest_pod.rst
    tempest_podman.rst
-
-For Contributors
-================
-.. toctree::
-   :maxdepth: 1
-
-   contributing.md
