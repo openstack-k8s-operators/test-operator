@@ -62,7 +62,7 @@ func Job(
 							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey, instance),
 							SecurityContext: &corev1.SecurityContext{
 								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"CAP_AUDIT_WRITE"},
+									Add: []corev1.Capability{},
 								},
 							},
 							EnvFrom: []corev1.EnvFromSource{
