@@ -9,7 +9,6 @@ metadata:
     app.kubernetes.io/created-by: test-operator
   name: horizontest-sample
 spec:
-  spec:
   containerImage: ""
 
   # OpenStack admin credentials

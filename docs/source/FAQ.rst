@@ -140,10 +140,14 @@ The issue can be fixed in two steps:
 1. Identify test-operator related PVs on your system
    (e.g., by running :code:`oc get pv | grep "tempest"`)
 
-2. Modify the PVs identified in the first step using the :code:`oc edit` command
+2. Modify the PVs identified in the first step using the following command
    so that value under :code:`ClaimRef` is changed to :code:`null`. This will
    free the PVs and you can continue with the testing but please make sure that
    you can afford to lose the data stored on the PVs you are about the free.
+
+.. code-block:: bash
+
+    $ oc patch pv <PV-name> --type='merge' -p '{"spec":{"claimRef":null}}'
 
 
 **7. How can I build test-operator-index locally?**

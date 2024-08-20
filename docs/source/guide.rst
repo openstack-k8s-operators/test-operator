@@ -105,19 +105,15 @@ might need to uninstall the operator when:
 
 Please make sure that you follow the order of the steps:
 
-1. Remove all instances of the :code:`Tempest` and :code:`Tobiko` CRDs
+1. Remove all instances of the CRDs supported by the test-operator (:code:`Tempest`,
+   :code:`Tobiko`, ...)
 
 .. code-block:: bash
 
-   oc get tempest
-
-   NAME            AGE
-   tempest-tests   3s
-
-.. code-block:: bash
-
-   oc delete tempest/tempest-tests
-   oc delete tobiko/tobiko-tests
+   oc delete tempest --all
+   oc delete tobiko --all
+   oc delete horizontests --all
+   oc delete ansibletests --all
 
 2. Remove the :code:`crd`
 
@@ -125,48 +121,45 @@ Please make sure that you follow the order of the steps:
 
    oc delete crd/tempests.test.openstack.org
    oc delete crd/tobikoes.test.openstack.org
+   oc delete crd/ansibletests.test.openstack.org
+   oc delete crd/horizontests.test.openstack.org
 
 3. Remove the :code:`subscription` you created during
    :ref:`the installation <running-operator-olm>`.
 
 .. code-block:: bash
 
-   oc delete subscription/test-operator
+   oc delete subscription/test-operator -n openstack-operators
 
-4. Remove the :code:`catalog` source you created during
-   :ref:`the installation <running-operator-olm>`.
-
-.. code-block:: bash
-
-   oc delete catalogsource/test-operator-catalog
-
-6. Remove the :code:`operatorgroup` you created during
-   :ref:`the installation <running-operator-olm>`.
+4. Remove the :code:`csv`
 
 .. code-block:: bash
 
-   oc delete operatorgroup/openstack-operatorgroup
+   oc delete clusterserviceversion.operators.coreos.com/test-operator.v0.0.1 -n openstack-operators
 
-7. Remove the :code:`csv`
+5. Remove test-operator related installplan (replace :code:`XXXXX` with value obtained
+   with the first command :code:`oc get installplans`)
 
 .. code-block:: bash
 
-   oc delete csv/test-operator.v0.0.1
+   oc get installplans -n openstack-operators | grep "test-operator"
+   oc delete installplan install-XXXXX -n openstack-operators
 
-8. Remove the :code:`operator`. It is possible that if you executed
+
+6. Remove the :code:`operator`. It is possible that if you executed
    the previous commands too quickly, then you will need to execute this
    command twice.
 
 .. code-block:: bash
 
-   oc delete operator/test-operator.openstack
+   oc delete operator/test-operator.openstack-operators
 
-9. Check that there are no test-operator related resources hanging. This step
+7. Check that there are no test-operator related resources hanging. This step
    is not required.
 
 .. code-block:: bash
 
-   oc get olm
+   oc get olm -n openstack-operators
 
 .. note::
    It might happen that by changing the order of the uninstallation steps,
@@ -188,6 +181,11 @@ resources are being accepted by the test-operator (see
 * :ref:`tempest-custom-resource`
 
 * :ref:`tobiko-custom-resource`
+
+* :ref:`horizontest-custom-resource`
+
+* :ref:`ansibletest-custom-resource`
+
 
 1. Create a manifest for custom resource accepted by the test-operator
    (:ref:`custom-resources-used-by-the-test-operator` section).
