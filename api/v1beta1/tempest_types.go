@@ -79,6 +79,12 @@ type ExtraImagesType struct {
 	ID string `json:"ID"`
 
 	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default=300
+	// Timeout duration for an image to reach the active state after its creation
+	ImageCreationTimeout int64 `json:"imageCreationTimeout"`
+
+	// +kubebuilder:validation:Optional
 	// Information about flavor that should be created together with the image
 	Flavor ExtraImagesFlavorType `json:"flavor"`
 }
