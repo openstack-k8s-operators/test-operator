@@ -18,6 +18,153 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - description: AnsibleTestStatus is the Schema for the AnsibleTestStatus API
+      displayName: Ansible Test
+      kind: AnsibleTest
+      name: ansibletests.test.openstack.org
+      specDescriptors:
+      - description: AnsibleCollections - extra ansible collections to instal in additionn
+          to the ones exist in the requirements.yaml
+        displayName: Ansible Collections
+        path: ansibleCollections
+      - description: AnsibleExtraVars - string to pass parameters to ansible using
+        displayName: Ansible Extra Vars
+        path: ansibleExtraVars
+      - description: AnsibleGitRepo - git repo to clone into container
+        displayName: Ansible Git Repo
+        path: ansibleGitRepo
+      - description: AnsibleInventory - string that contains the inventory file content
+        displayName: Ansible Inventory
+        path: ansibleInventory
+      - description: AnsiblePlaybookPath - path to ansible playbook
+        displayName: Ansible Playbook Path
+        path: ansiblePlaybookPath
+      - description: AnsibleVarFiles - interface to create ansible var files Those
+          get added to the
+        displayName: Ansible Var Files
+        path: ansibleVarFiles
+      - description: BackoffLimimt allows to define the maximum number of retried
+          executions (defaults to 6).
+        displayName: Backoff Limit
+        path: backoffLimit
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: ComputeSSHKeySecretName is the name of the k8s secret that contains
+          an ssh key for computes. The key is mounted to ~/.ssh/id_ecdsa in the ansible
+          pod
+        displayName: Computes SSHKey Secret Name
+        path: computeSSHKeySecretName
+      - description: Container image for AnsibleTest
+        displayName: Container Image
+        path: containerImage
+      - description: Run ansible playbook with -vvvv
+        displayName: Debug
+        path: debug
+      - description: Extra configmaps for mounting in the pod.
+        displayName: Extra Mounts
+        path: extraMounts
+      - description: Path within the container at which the volume should be mounted.
+        displayName: Mount Path
+        path: extraMounts[0].mountPath
+      - description: The name of an existing config map for mounting.
+        displayName: Name
+        path: extraMounts[0].name
+      - description: Config map subpath for mounting, defaults to configmap root.
+        displayName: Sub Path
+        path: extraMounts[0].subPath
+      - description: OpenStackConfigMap is the name of the ConfigMap containing the
+          clouds.yaml
+        displayName: Open Stack Config Map
+        path: openStackConfigMap
+      - description: OpenStackConfigSecret is the name of the Secret containing the
+          secure.yaml
+        displayName: Open Stack Config Secret
+        path: openStackConfigSecret
+      - description: StorageClass used to create PVCs that store the logs
+        displayName: Storage Class
+        path: storageClass
+      - description: A parameter  that contains a workflow definition.
+        displayName: Workflow
+        path: workflow
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: AnsibleCollections - extra ansible collections to instal in additionn
+          to the ones exist in the requirements.yaml
+        displayName: Ansible Collections
+        path: workflow[0].ansibleCollections
+      - description: AnsibleExtraVars - interface to pass parameters to ansible using
+          -e
+        displayName: Ansible Extra Vars
+        path: workflow[0].ansibleExtraVars
+      - description: AnsibleGitRepo - git repo to clone into container
+        displayName: Ansible Git Repo
+        path: workflow[0].ansibleGitRepo
+      - description: AnsibleInventory - string that contains the inventory file content
+        displayName: Ansible Inventory
+        path: workflow[0].ansibleInventory
+      - description: AnsiblePlaybookPath - path to ansible playbook
+        displayName: Ansible Playbook Path
+        path: workflow[0].ansiblePlaybookPath
+      - description: AnsibleVarFiles - interface to create ansible var files Those
+          get added to the service config dir in /etc/test_operator/<file> and passed
+          to the ansible command using -e @/etc/test_operator/<file>
+        displayName: Ansible Var Files
+        path: workflow[0].ansibleVarFiles
+      - description: BackoffLimimt allows to define the maximum number of retried
+          executions (defaults to 6).
+        displayName: Backoff Limit
+        path: workflow[0].backoffLimit
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: ComputeSSHKeySecretName is the name of the k8s secret that contains
+          an ssh key for computes. The key is mounted to ~/.ssh/id_ecdsa in the ansible
+          pod
+        displayName: Computes SSHKey Secret Name
+        path: workflow[0].computeSSHKeySecretName
+      - description: Container image for AnsibleTest
+        displayName: Container Image
+        path: workflow[0].containerImage
+      - description: Run ansible playbook with -vvvv
+        displayName: Debug
+        path: workflow[0].debug
+      - description: Extra configmaps for mounting in the pod
+        displayName: Extra Mounts
+        path: workflow[0].extraMounts
+      - description: Path within the container at which the volume should be mounted.
+        displayName: Mount Path
+        path: workflow[0].extraMounts[0].mountPath
+      - description: The name of an existing config map for mounting.
+        displayName: Name
+        path: workflow[0].extraMounts[0].name
+      - description: Config map subpath for mounting, defaults to configmap root.
+        displayName: Sub Path
+        path: workflow[0].extraMounts[0].subPath
+      - description: OpenStackConfigMap is the name of the ConfigMap containing the
+          clouds.yaml
+        displayName: Open Stack Config Map
+        path: workflow[0].openStackConfigMap
+      - description: OpenStackConfigSecret is the name of the Secret containing the
+          secure.yaml
+        displayName: Open Stack Config Secret
+        path: workflow[0].openStackConfigSecret
+      - description: Name of a workflow step. The step name will be used for example
+          to create a logs directory.
+        displayName: Step Name
+        path: workflow[0].stepName
+      - description: StorageClass used to create PVCs that store the logs
+        displayName: Storage Class
+        path: workflow[0].storageClass
+      - description: WorkloadSSHKeySecretName is the name of the k8s secret that contains
+          an ssh key for the ansible workload. The key is mounted to ~/test_keypair.key
+          in the ansible pod
+        displayName: Workload SSHKey Secret Name
+        path: workflow[0].workloadSSHKeySecretName
+      - description: WorkloadSSHKeySecretName is the name of the k8s secret that contains
+          an ssh key for the ansible workload. The key is mounted to ~/test_keypair.key
+          in the ansible pod
+        displayName: Workload SSHKey Secret Name
+        path: workloadSSHKeySecretName
+      version: v1beta1
     - description: HorizonTest is the Schema for the horizontests API
       displayName: Horizon Test
       kind: HorizonTest

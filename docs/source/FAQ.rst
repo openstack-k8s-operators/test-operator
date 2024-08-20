@@ -174,5 +174,6 @@ directory. Be sure to double-check which image name is required for each step.
 
 .. code-block:: bash
 
+    $ export BUNDLE_IMG=<registry>/<user>/<bundle_image_name>:<tag>
     $ make catalog-build CATALOG_IMG=<registry>/<user>/<index_image_name>:<tag>
     $ make catalog-push CATALOG_IMG=<registry>/<user>/<index_image_name>:<tag>
