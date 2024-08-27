@@ -58,6 +58,12 @@ spec:
                 description: Name of a secret that contains a kubeconfig. The kubeconfig
                   is mounted under /var/lib/tobiko/.kube/config in the test pod.
                 type: string
+              networkAttachments:
+                description: NetworkAttachments is a list of NetworkAttachment resource
+                  names to expose the services to the given network
+                items:
+                  type: string
+                type: array
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -167,6 +173,12 @@ spec:
                         kubeconfig is mounted under /var/lib/tobiko/.kube/config in
                         the test pod.
                       type: string
+                    networkAttachments:
+                      description: NetworkAttachments is a list of NetworkAttachment
+                        resource names to expose the services to the given network
+                      items:
+                        type: string
+                      type: array
                     nodeSelector:
                       additionalProperties:
                         type: string

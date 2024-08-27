@@ -64,6 +64,12 @@ spec:
                 description: This value contains a nodeSelector value that is applied
                   to test pods spawned by the test operator.
                 type: object
+              networkAttachments:
+                description: NetworkAttachments is a list of NetworkAttachment resource
+                  names to expose the services to the given network
+                items:
+                  type: string
+                type: array
               numProcesses:
                 default: 0
                 description: Number of processes/workers used to run tobiko tests
@@ -167,6 +173,12 @@ spec:
                         kubeconfig is mounted under /var/lib/tobiko/.kube/config in
                         the test pod.
                       type: string
+                    networkAttachments:
+                      description: NetworkAttachments is a list of NetworkAttachment
+                        resource names to expose the services to the given network
+                      items:
+                        type: string
+                      type: array
                     nodeSelector:
                       additionalProperties:
                         type: string

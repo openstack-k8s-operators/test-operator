@@ -134,6 +134,12 @@ type TobikoSpec struct {
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
         KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 
+        // +kubebuilder:validation:Optional
+        // +operator-sdk:csv:customresourcedefinitions:type=spec
+        // NetworkAttachments is a list of NetworkAttachment resource names to expose
+        // the services to the given network
+        NetworkAttachments []string `json:"networkAttachments,omitempty"`
+
         // A parameter  that contains a workflow definition.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:validation:Optional
@@ -183,6 +189,12 @@ type TobikoWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
         NumProcesses *uint8 `json:"numProcesses,omitempty"`
+
+        // +kubebuilder:validation:Optional
+        // +operator-sdk:csv:customresourcedefinitions:type=spec
+        // NetworkAttachments is a list of NetworkAttachment resource names to expose
+        // the services to the given network
+        NetworkAttachments []string `json:"networkAttachments,omitempty"`
 
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

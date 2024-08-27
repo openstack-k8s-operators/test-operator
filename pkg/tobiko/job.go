@@ -13,6 +13,7 @@ import (
 func Job(
 	instance *testv1beta1.Tobiko,
 	labels map[string]string,
+    annotations map[string]string,
 	jobName string,
 	logsPVCName string,
 	mountCerts bool,
@@ -40,6 +41,7 @@ func Job(
 			BackoffLimit: instance.Spec.BackoffLimit,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
+					Annotations: annotations,
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
