@@ -121,6 +121,18 @@ spec:
           This allows the user to debug any potential troubles with `oc rsh`.
         displayName: Debug
         path: debug
+      - description: Extra configmaps for mounting in the pod.
+        displayName: Extra Configmaps Mounts
+        path: extraConfigmapsMounts
+      - description: Path within the container at which the volume should be mounted.
+        displayName: Mount Path
+        path: extraConfigmapsMounts[0].mountPath
+      - description: The name of an existing config map for mounting.
+        displayName: Name
+        path: extraConfigmapsMounts[0].name
+      - description: Config map subpath for mounting, defaults to configmap root.
+        displayName: Sub Path
+        path: extraConfigmapsMounts[0].subPath
       - description: NetworkAttachments is a list of NetworkAttachment resource names
           to expose the services to the given network
         displayName: Network Attachments

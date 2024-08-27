@@ -198,7 +198,7 @@ type TempestRunSpec struct {
 	ExternalPlugin []ExternalPluginType `json:"externalPlugin,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec	
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// A list URLs that point to RPMs that should be downloaded and installed
 	// inside the tempest test pod.
 	ExtraRPMs []string `json:"extraRPMs,omitempty"`
@@ -376,6 +376,10 @@ type TempestconfRunSpec struct {
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type TempestSpec struct {
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// Extra configmaps for mounting in the pod.
+	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
