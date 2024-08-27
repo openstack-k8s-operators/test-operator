@@ -23,6 +23,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+
 	"errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -60,10 +62,19 @@ var _ webhook.Validator = &Tobiko{}
 func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 	tobikolog.Info("validate create", "name", r.Name)
 
-	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-		return nil, errors.New("Workflow variable must be empty to run debug mode!")
+	var allWarnings admission.Warnings
+
+	if r.Spec.Privileged {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tobiko"))
+	} else {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOff, "Tobiko"))
 	}
-	return nil, nil
+
+	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
+		return allWarnings, errors.New("Workflow variable must be empty to run debug mode!")
+	}
+
+	return allWarnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type

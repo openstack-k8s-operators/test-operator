@@ -26,6 +26,8 @@ import (
 
 // HorizonTestSpec defines the desired state of HorizonTest
 type HorizonTestSpec struct {
+	CommonParameters `json:",inline"`
+
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="local-storage"
@@ -146,7 +148,6 @@ type HorizonTestStatus struct {
 
 	// NetworkAttachments status of the deployment pods
 	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
-
 }
 
 // +kubebuilder:object:root=true

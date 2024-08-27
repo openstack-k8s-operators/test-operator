@@ -22,22 +22,6 @@ func GetVolumes(
 	//source_type := corev1.HostPathDirectoryOrCreate
 	volumes := []corev1.Volume{
 		{
-			Name: "etc-machine-id",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/etc/machine-id",
-				},
-			},
-		},
-		{
-			Name: "etc-localtime",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/etc/localtime",
-				},
-			},
-		},
-		{
 			Name: "openstack-config",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -145,16 +129,6 @@ func GetVolumes(
 // GetVolumeMounts -
 func GetVolumeMounts(mountCerts bool, instance *testv1beta1.AnsibleTest, externalWorkflowCounter int) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "etc-machine-id",
-			MountPath: "/etc/machine-id",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "etc-localtime",
-			MountPath: "/etc/localtime",
-			ReadOnly:  true,
-		},
 		{
 			Name:      "test-operator-logs",
 			MountPath: "/var/lib/AnsibleTests/external_files",

@@ -37,6 +37,8 @@ type Hash struct {
 
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
+	CommonParameters `json:",inline"`
+
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="local-storage"
@@ -153,6 +155,8 @@ type TobikoSpec struct {
 }
 
 type TobikoWorkflowSpec struct {
+	WorkflowCommonParameters `json:",inline"`
+
         // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // StorageClass used to create PVCs that store the logs

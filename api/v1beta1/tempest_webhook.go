@@ -24,10 +24,13 @@ package v1beta1
 
 import (
         "errors"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
-
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+        "k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -72,6 +75,10 @@ func (spec *TempestSpec) Default() {
 	}
 }
 
+func (r *Tempest) PrivilegedRequired() bool {
+	return len(r.Spec.TempestRun.ExtraImages) > 0
+}
+
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-tempest,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tempests,verbs=create;update,versions=v1beta1,name=vtempest.kb.io,admissionReviewVersions=v1
 
@@ -81,10 +88,35 @@ var _ webhook.Validator = &Tempest{}
 func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	tempestlog.Info("validate create", "name", r.Name)
 
+	var allErrs field.ErrorList
+	var allWarnings admission.Warnings
+
         if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
             return nil, errors.New("Workflow variable must be empty to run debug mode!")
         }
-	return nil, nil
+
+	if !r.Spec.Privileged && r.PrivilegedRequired() {
+		allErrs = append(allErrs, &field.Error{
+				Type:     field.ErrorTypeRequired,
+				BadValue: r.Spec.Privileged,
+				Detail:   fmt.Sprintf(ErrPrivilegedModeRequired, "Tempest"),
+			},
+		)
+	}
+
+	if r.Spec.Privileged {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tempest"))
+	}
+
+        if len(allErrs) > 0 {
+                return allWarnings, apierrors.NewInvalid(
+												schema.GroupKind{
+													Group: GroupVersion.WithKind("Tempest").Group,
+													Kind:  GroupVersion.WithKind("Tempest").Kind,
+												}, r.GetName(), allErrs)
+        }
+
+	return allWarnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
