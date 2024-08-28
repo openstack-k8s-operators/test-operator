@@ -23,6 +23,7 @@ import (
 
 	"reflect"
 
+	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
@@ -45,6 +46,11 @@ type AnsibleTestReconciler struct {
 	Reconciler
 }
 
+// GetLogger returns a logger object with a prefix of "controller.name" and additional controller context fields
+func (r *AnsibleTestReconciler) GetLogger(ctx context.Context) logr.Logger {
+	return log.FromContext(ctx).WithName("Controllers").WithName("Tobiko")
+}
+
 // +kubebuilder:rbac:groups=test.openstack.org,resources=ansibletests,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=test.openstack.org,resources=ansibletests/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=test.openstack.org,resources=ansibletests/finalizers,verbs=update;patch
@@ -65,6 +71,7 @@ type AnsibleTestReconciler struct {
 
 // Reconcile - AnsibleTestReconciler
 func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
+	Log := r.GetLogger(ctx)
 
 	// How much time should we wait before calling Reconcile loop when there is a failure
 	requeueAfter := time.Second * 60
@@ -113,12 +120,13 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		currentWorkflowStep, err = strconv.Atoi(runningAnsibleJob.Labels["workflowStep"])
 	}
 
-	logging := log.FromContext(ctx)
 	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
 		// The job created by the instance was completed. Release the lock
 		// so that other instances can spawn a job.
-		logging.Info("Job completed")
-		r.ReleaseLock(ctx, instance)
+		Log.Info("Job completed")
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Service account, role, binding
@@ -182,13 +190,13 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// We are about to start job that spawns the pod with tests.
 	// This lock ensures that there is always only one pod running.
-	if !r.AcquireLock(ctx, instance, helper, false) {
-		logging.Info("Can not acquire lock")
+	lockAcquired, err := r.AcquireLock(ctx, instance, helper, false)
+	if !lockAcquired {
+		Log.Info("Can not acquire lock")
 		requeueAfter := time.Second * 60
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	} else {
-		logging.Info("Lock acquired")
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
+	Log.Info("Lock acquired")
 
 	if workflowActive {
 		r.WorkflowStepCounterIncrease(ctx, instance, helper)
@@ -224,7 +232,10 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// Creation of the ansibleTests job was not successfull.
 		// Release the lock and allow other controllers to spawn
 		// a job.
-		r.ReleaseLock(ctx, instance)
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			return ctrl.Result{}, err
+		}
+
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.DeploymentReadyCondition,
 			condition.ErrorReason,
@@ -242,7 +253,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 	// Create a new job - end
 
-	r.Log.Info("Reconciled Service successfully")
+	Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil
 }
 

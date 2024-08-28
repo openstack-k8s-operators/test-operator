@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
@@ -48,6 +49,11 @@ type TobikoReconciler struct {
 	Reconciler
 }
 
+// GetLogger returns a logger object with a prefix of "controller.name" and additional controller context fields
+func (r *TobikoReconciler) GetLogger(ctx context.Context) logr.Logger {
+	return log.FromContext(ctx).WithName("Controllers").WithName("Tobiko")
+}
+
 //+kubebuilder:rbac:groups=test.openstack.org,resources=tobikoes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=test.openstack.org,resources=tobikoes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=test.openstack.org,resources=tobikoes/finalizers,verbs=update;patch
@@ -59,11 +65,11 @@ type TobikoReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	Log := r.GetLogger(ctx)
 
 	// How much time should we wait before calling Reconcile loop when there is a failure
 	requeueAfter := time.Second * 60
 
-	logging := log.FromContext(ctx)
 	instance := &testv1beta1.Tobiko{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
@@ -107,8 +113,10 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
 		// The job created by the instance was completed. Release the lock
 		// so that other instances can spawn a job.
-		logging.Info("Job completed")
-		r.ReleaseLock(ctx, instance)
+		Log.Info("Job completed")
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			return ctrl.Result{}, err
+		}
 	}
 
 	rbacRules := []rbacv1.PolicyRule{
@@ -173,7 +181,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	mountKeys := false
 	if (len(instance.Spec.PublicKey) == 0) || (len(instance.Spec.PrivateKey) == 0) {
-		logging.Info("Both values privateKey and publicKey need to be specified. Keys not mounted.")
+		Log.Info("Both values privateKey and publicKey need to be specified. Keys not mounted.")
 	} else {
 		mountKeys = true
 	}
@@ -192,11 +200,12 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// We are about to start job that spawns the pod with tests.
 	// This lock ensures that there is always only one pod running.
-	if !r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel) {
-		logging.Info("Can not acquire lock")
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+	if !lockAcquired {
+		Log.Info("Can not acquire lock")
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
-	logging.Info("Lock acquired")
+	Log.Info("Lock acquired")
 
 	if workflowActive {
 		r.WorkflowStepCounterIncrease(ctx, instance, helper)
@@ -265,7 +274,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	// NetworkAttachments - end
 
-	r.Log.Info("Reconciled Service successfully")
+	Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil
 }
 
