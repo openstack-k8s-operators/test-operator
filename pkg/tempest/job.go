@@ -63,6 +63,9 @@ func Job(
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"CAP_AUDIT_WRITE"},
 								},
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeRuntimeDefault,
+								},
 							},
 							EnvFrom: []corev1.EnvFromSource{
 								{
