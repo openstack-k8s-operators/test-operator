@@ -261,7 +261,6 @@ type WorkflowTempestSpec struct {
 	// test pods that are spawned by the test-operator.
 	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
 
-
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
