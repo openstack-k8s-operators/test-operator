@@ -31,9 +31,12 @@
 
       cifmw_run_test_role: test_operator
 
-      cifmw_run_tempest: true
+      # Test operator
       cifmw_test_operator_concurrency: 4
       cifmw_test_operator_timeout: 7200
+
+      # Tempest
+      cifmw_run_tempest: true
       cifmw_test_operator_tempest_include_list: |
         ^tempest.
       cifmw_test_operator_tempest_exclude_list: |
@@ -74,6 +77,7 @@
       cifmw_test_operator_tempest_network_attachments:
         - ctlplane
 
+      # Tobiko
       cifmw_run_tobiko: true
       cifmw_test_operator_tobiko_workflow:
         - stepName: 'podified-functional'
@@ -83,6 +87,18 @@
           testenv: 'sanity'
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
+
+      # Ansibletest
+      run_ansibletest: true
+      cifmw_test_operator_ansibletest_ansible_git_repo: https://github.com/ansible/test-playbooks
+      cifmw_test_operator_ansibletest_ansible_playbook_path: ./debug.yml
+      cifmw_test_operator_ansibletest_workload_ssh_key_secret_name: test-operator-controller-priv-key
+      cifmw_test_operator_ansibletest_ansible_extra_vars: -e manual_run=false
+      cifmw_test_operator_ansibletest_ansible_inventory: |
+        localhost ansible_connection=local ansible_python_interpreter=python3
+      cifmw_test_operator_ansibletest_ansible_var_files: |
+        ---
+        foo: bar
     required-projects: &rp
       - name: openstack-k8s-operators/install_yamls
         override-checkout: main
