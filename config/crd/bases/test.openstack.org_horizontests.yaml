@@ -59,8 +59,8 @@ spec:
                 type: string
               backoffLimit:
                 default: 0
-                description: BackoffLimimt allows to define the maximum number of
-                  retried executions.
+                description: BackoffLimit allows to define the maximum number of retried
+                  executions.
                 format: int32
                 type: integer
               containerImage:
@@ -89,7 +89,6 @@ spec:
                 description: ImageUrl is the URL to download the Cirros image.
                 type: string
               kubeconfigSecretName:
-                default: ""
                 description: Name of a secret that contains a kubeconfig. The kubeconfig
                   is mounted under /var/lib/horizontest/.kube/config in the test pod.
                 type: string

@@ -33,69 +33,69 @@ type AnsibleTestSpec struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default="local-storage"
+	// +kubebuilder:default:="local-storage"
 	// StorageClass used to create PVCs that store the logs
 	StorageClass string `json:"storageClass"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default="dataplane-ansible-ssh-private-key-secret"
+	// +kubebuilder:default:="dataplane-ansible-ssh-private-key-secret"
 	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
 	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// WorkloadSSHKeySecretName is the name of the k8s secret that contains an ssh key for the ansible workload.
 	// The key is mounted to ~/test_keypair.key in the ansible pod
 	WorkloadSSHKeySecretName string `json:"workloadSSHKeySecretName"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// AnsibleGitRepo - git repo to clone into container
 	AnsibleGitRepo string `json:"ansibleGitRepo"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// AnsiblePlaybookPath - path to ansible playbook
 	AnsiblePlaybookPath string `json:"ansiblePlaybookPath"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// AnsibleCollections - extra ansible collections to instal in additionn to the ones exist in the requirements.yaml
 	AnsibleCollections string `json:"ansibleCollections,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// AnsibleVarFiles - interface to create ansible var files Those get added to the
 	AnsibleVarFiles string `json:"ansibleVarFiles,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// AnsibleExtraVars - string to pass parameters to ansible using
 	AnsibleExtraVars string `json:"ansibleExtraVars,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// AnsibleInventory - string that contains the inventory file content
 	AnsibleInventory string `json:"ansibleInventory,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=openstack-config
+	// +kubebuilder:default:=openstack-config
 	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
 	OpenStackConfigMap string `json:"openStackConfigMap"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=openstack-config-secret
+	// +kubebuilder:default:=openstack-config-secret
 	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
 	OpenStackConfigSecret string `json:"openStackConfigSecret"`
 
@@ -112,13 +112,14 @@ type AnsibleTestSpec struct {
 	ContainerImage string `json:"containerImage"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// A parameter  that contains a workflow definition.
+	// A parameter that contains a workflow definition.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	Workflow []AnsibleTestWorkflowSpec `json:"workflow,omitempty"`
@@ -143,7 +144,7 @@ type AnsibleTestWorkflowSpec struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
+	// ComputesSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
 	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
@@ -205,9 +206,11 @@ type AnsibleTestWorkflowSpec struct {
 	ContainerImage string `json:"containerImage,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+	BackoffLimit *int32 `json:"backoffLimit"`
 }
 
 // AnsibleTestStatus defines the observed state of AnsibleTest

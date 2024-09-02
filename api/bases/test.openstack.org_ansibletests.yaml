@@ -74,8 +74,8 @@ spec:
                 type: string
               backoffLimit:
                 default: 0
-                description: BackoffLimimt allows to define the maximum number of
-                  retried executions (defaults to 6).
+                description: BackoffLimit allows to define the maximum number of retried
+                  executions (defaults to 0).
                 format: int32
                 type: integer
               computeSSHKeySecretName:
@@ -102,9 +102,10 @@ spec:
                       type: string
                     name:
                       description: The name of an existing config map for mounting.
+                      maxLength: 253
                       type: string
                     subPath:
-                      default: ""
+                      default: /
                       description: Config map subpath for mounting, defaults to configmap
                         root.
                       type: string
@@ -129,7 +130,7 @@ spec:
                 description: StorageClass used to create PVCs that store the logs
                 type: string
               workflow:
-                description: A parameter  that contains a workflow definition.
+                description: A parameter that contains a workflow definition.
                 items:
                   properties:
                     ansibleCollections:
@@ -156,12 +157,13 @@ spec:
                         and passed to the ansible command using -e @/etc/test_operator/<file>
                       type: string
                     backoffLimit:
-                      description: BackoffLimimt allows to define the maximum number
-                        of retried executions (defaults to 6).
+                      default: 0
+                      description: BackoffLimit allows to define the maximum number
+                        of retried executions (defaults to 0).
                       format: int32
                       type: integer
                     computeSSHKeySecretName:
-                      description: ComputeSSHKeySecretName is the name of the k8s
+                      description: ComputesSSHKeySecretName is the name of the k8s
                         secret that contains an ssh key for computes. The key is mounted
                         to ~/.ssh/id_ecdsa in the ansible pod
                       type: string
@@ -181,9 +183,10 @@ spec:
                             type: string
                           name:
                             description: The name of an existing config map for mounting.
+                            maxLength: 253
                             type: string
                           subPath:
-                            default: ""
+                            default: /
                             description: Config map subpath for mounting, defaults
                               to configmap root.
                             type: string

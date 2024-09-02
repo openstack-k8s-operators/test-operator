@@ -277,10 +277,12 @@ type WorkflowTempestSpec struct {
 	// the services to the given network
 	NetworkAttachments *[]string `json:"networkAttachments,omitempty"`
 
-	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
+	// +kubebuilder:validation:Optional
+        // +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

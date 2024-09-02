@@ -59,8 +59,8 @@ spec:
                 type: string
               backoffLimit:
                 default: 0
-                description: BackoffLimimt allows to define the maximum number of
-                  retried executions (defaults to 6).
+                description: BackoffLimit allows to define the maximum number of retried
+                  executions (defaults to 0).
                 format: int32
                 type: integer
               configOverwrite:
@@ -92,9 +92,10 @@ spec:
                       type: string
                     name:
                       description: The name of an existing config map for mounting.
+                      maxLength: 253
                       type: string
                     subPath:
-                      default: ""
+                      default: /
                       description: Config map subpath for mounting, defaults to configmap
                         root.
                       type: string
@@ -419,8 +420,6 @@ spec:
                     description: Indicate whether discover-tempest-config should be
                       executed with --verbose
                     type: boolean
-                required:
-                - timeout
                 type: object
               tolerations:
                 description: This value contains a toleration that is applied to pods
@@ -481,8 +480,9 @@ spec:
                         in the tempest pod
                       type: string
                     backoffLimit:
-                      description: BackoffLimimt allows to define the maximum number
-                        of retried executions (defaults to 6).
+                      default: 0
+                      description: BackoffLimit allows to define the maximum number
+                        of retried executions (defaults to 0).
                       format: int32
                       type: integer
                     configOverwrite:

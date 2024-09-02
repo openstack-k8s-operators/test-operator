@@ -19,6 +19,7 @@ package v1beta1
 type extraConfigmapsMounts struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength:=253
 	// The name of an existing config map for mounting.
 	Name string `json:"name"`
 
@@ -29,7 +30,7 @@ type extraConfigmapsMounts struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
-	// +kubebuilder:default=""
+	// +kubebuilder:default:="/"
 	// Config map subpath for mounting, defaults to configmap root.
 	SubPath string `json:"subPath"`
 }

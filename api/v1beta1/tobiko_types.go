@@ -39,7 +39,7 @@ type Hash struct {
 type TobikoSpec struct {
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="local-storage"
+	// +kubebuilder:default:="local-storage"
         // StorageClass used to create PVCs that store the logs
 	StorageClass string `json:"storageClass"`
 
@@ -50,7 +50,7 @@ type TobikoSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// +kubebuilder:validation:Optional
-        // +kubebuilder:default=false
+        // +kubebuilder:default:=false
         // Activate debug mode. When debug mode is activated any error encountered
         // inside the test-pod causes that the pod will be kept alive indefinitely
         // (stuck in "Running" phase) or until the corresponding Tobiko CR is deleted.
@@ -125,16 +125,17 @@ type TobikoSpec struct {
 	// set this option to true.
         Parallel bool `json:"parallel"`
 
-	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+        // +kubebuilder:validation:Optional
         // +kubebuilder:default:=0
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+        BackoffLimit *int32 `json:"backoffLimit"`
 
         // Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
         // in the test pod.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
+        // +kubebuilder:validation:Optional
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
         KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 
@@ -220,12 +221,15 @@ type TobikoWorkflowSpec struct {
         // Container image for tobiko
         ContainerImage string `json:"containerImage,omitempty"`
 
-        // BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
+        // BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
+        // +kubebuilder:validation:Optional
+        // +kubebuilder:default:=0
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+        BackoffLimit *int32 `json:"backoffLimit"`
 
         // Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
         // in the test pod.
+        // +kubebuilder:validation:Optional
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
         KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 
