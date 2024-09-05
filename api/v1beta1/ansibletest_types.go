@@ -29,7 +29,7 @@ type AnsibleTestSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod.
-	ExtraMounts []extraConfigmapsMounts `json:"extraMounts,omitempty"`
+	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"ExtraConfigmapsMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
@@ -129,7 +129,7 @@ type AnsibleTestWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod
-	ExtraMounts []extraConfigmapsMounts `json:"extraMounts,omitempty"`
+	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"ExtraConfigmapsMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required

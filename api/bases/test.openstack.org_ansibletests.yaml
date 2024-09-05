@@ -44,6 +44,29 @@ spec:
           spec:
             description: AnsibleTestSpec defines the desired state of AnsibleTest
             properties:
+              ExtraConfigmapsMounts:
+                description: Extra configmaps for mounting in the pod.
+                items:
+                  properties:
+                    mountPath:
+                      description: Path within the container at which the volume should
+                        be mounted.
+                      type: string
+                    name:
+                      description: The name of an existing config map for mounting.
+                      maxLength: 253
+                      type: string
+                    subPath:
+                      default: /
+                      description: Config map subpath for mounting, defaults to configmap
+                        root.
+                      type: string
+                  required:
+                  - mountPath
+                  - name
+                  - subPath
+                  type: object
+                type: array
               ansibleCollections:
                 default: ""
                 description: AnsibleCollections - extra ansible collections to instal
@@ -92,29 +115,6 @@ spec:
                 default: false
                 description: Run ansible playbook with -vvvv
                 type: boolean
-              extraMounts:
-                description: Extra configmaps for mounting in the pod.
-                items:
-                  properties:
-                    mountPath:
-                      description: Path within the container at which the volume should
-                        be mounted.
-                      type: string
-                    name:
-                      description: The name of an existing config map for mounting.
-                      maxLength: 253
-                      type: string
-                    subPath:
-                      default: /
-                      description: Config map subpath for mounting, defaults to configmap
-                        root.
-                      type: string
-                  required:
-                  - mountPath
-                  - name
-                  - subPath
-                  type: object
-                type: array
               openStackConfigMap:
                 default: openstack-config
                 description: OpenStackConfigMap is the name of the ConfigMap containing
@@ -133,6 +133,29 @@ spec:
                 description: A parameter that contains a workflow definition.
                 items:
                   properties:
+                    ExtraConfigmapsMounts:
+                      description: Extra configmaps for mounting in the pod
+                      items:
+                        properties:
+                          mountPath:
+                            description: Path within the container at which the volume
+                              should be mounted.
+                            type: string
+                          name:
+                            description: The name of an existing config map for mounting.
+                            maxLength: 253
+                            type: string
+                          subPath:
+                            default: /
+                            description: Config map subpath for mounting, defaults
+                              to configmap root.
+                            type: string
+                        required:
+                        - mountPath
+                        - name
+                        - subPath
+                        type: object
+                      type: array
                     ansibleCollections:
                       description: AnsibleCollections - extra ansible collections
                         to instal in additionn to the ones exist in the requirements.yaml
@@ -173,29 +196,6 @@ spec:
                     debug:
                       description: Run ansible playbook with -vvvv
                       type: boolean
-                    extraMounts:
-                      description: Extra configmaps for mounting in the pod
-                      items:
-                        properties:
-                          mountPath:
-                            description: Path within the container at which the volume
-                              should be mounted.
-                            type: string
-                          name:
-                            description: The name of an existing config map for mounting.
-                            maxLength: 253
-                            type: string
-                          subPath:
-                            default: /
-                            description: Config map subpath for mounting, defaults
-                              to configmap root.
-                            type: string
-                        required:
-                        - mountPath
-                        - name
-                        - subPath
-                        type: object
-                      type: array
                     openStackConfigMap:
                       description: OpenStackConfigMap is the name of the ConfigMap
                         containing the clouds.yaml
