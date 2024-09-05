@@ -60,7 +60,7 @@ spec:
               backoffLimit:
                 default: 0
                 description: BackoffLimit allows to define the maximum number of retried
-                  executions.
+                  executions (defaults to 0).
                 format: int32
                 type: integer
               containerImage:

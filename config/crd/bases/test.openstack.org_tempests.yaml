@@ -95,7 +95,7 @@ spec:
                       maxLength: 253
                       type: string
                     subPath:
-                      default: /
+                      default: ""
                       description: Config map subpath for mounting, defaults to configmap
                         root.
                       type: string
@@ -526,6 +526,7 @@ spec:
                     stepName:
                       description: Name of a workflow step. The step name will be
                         used for example to create a logs directory.
+                      maxLength: 100
                       pattern: ^[a-z0-9]
                       type: string
                     storageClass:

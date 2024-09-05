@@ -223,6 +223,7 @@ type WorkflowTempestconfRunSpec struct {
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type WorkflowTempestSpec struct {
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength:=100
 	// +kubebuilder:validation:Pattern:=^[a-z0-9]
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Name of a workflow step. The step name will be used for example to create
@@ -278,11 +279,10 @@ type WorkflowTempestSpec struct {
 	NetworkAttachments *[]string `json:"networkAttachments,omitempty"`
 
 	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-	// +kubebuilder:validation:Optional
         // +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit"`
+	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

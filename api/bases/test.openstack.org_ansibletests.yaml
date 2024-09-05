@@ -44,29 +44,6 @@ spec:
           spec:
             description: AnsibleTestSpec defines the desired state of AnsibleTest
             properties:
-              ExtraConfigmapsMounts:
-                description: Extra configmaps for mounting in the pod.
-                items:
-                  properties:
-                    mountPath:
-                      description: Path within the container at which the volume should
-                        be mounted.
-                      type: string
-                    name:
-                      description: The name of an existing config map for mounting.
-                      maxLength: 253
-                      type: string
-                    subPath:
-                      default: /
-                      description: Config map subpath for mounting, defaults to configmap
-                        root.
-                      type: string
-                  required:
-                  - mountPath
-                  - name
-                  - subPath
-                  type: object
-                type: array
               ansibleCollections:
                 default: ""
                 description: AnsibleCollections - extra ansible collections to instal
@@ -115,6 +92,29 @@ spec:
                 default: false
                 description: Run ansible playbook with -vvvv
                 type: boolean
+              extraConfigmapsMounts:
+                description: Extra configmaps for mounting in the pod.
+                items:
+                  properties:
+                    mountPath:
+                      description: Path within the container at which the volume should
+                        be mounted.
+                      type: string
+                    name:
+                      description: The name of an existing config map for mounting.
+                      maxLength: 253
+                      type: string
+                    subPath:
+                      default: ""
+                      description: Config map subpath for mounting, defaults to configmap
+                        root.
+                      type: string
+                  required:
+                  - mountPath
+                  - name
+                  - subPath
+                  type: object
+                type: array
               openStackConfigMap:
                 default: openstack-config
                 description: OpenStackConfigMap is the name of the ConfigMap containing
@@ -133,29 +133,6 @@ spec:
                 description: A parameter that contains a workflow definition.
                 items:
                   properties:
-                    ExtraConfigmapsMounts:
-                      description: Extra configmaps for mounting in the pod
-                      items:
-                        properties:
-                          mountPath:
-                            description: Path within the container at which the volume
-                              should be mounted.
-                            type: string
-                          name:
-                            description: The name of an existing config map for mounting.
-                            maxLength: 253
-                            type: string
-                          subPath:
-                            default: /
-                            description: Config map subpath for mounting, defaults
-                              to configmap root.
-                            type: string
-                        required:
-                        - mountPath
-                        - name
-                        - subPath
-                        type: object
-                      type: array
                     ansibleCollections:
                       description: AnsibleCollections - extra ansible collections
                         to instal in additionn to the ones exist in the requirements.yaml
@@ -180,7 +157,6 @@ spec:
                         and passed to the ansible command using -e @/etc/test_operator/<file>
                       type: string
                     backoffLimit:
-                      default: 0
                       description: BackoffLimit allows to define the maximum number
                         of retried executions (defaults to 0).
                       format: int32
@@ -196,6 +172,29 @@ spec:
                     debug:
                       description: Run ansible playbook with -vvvv
                       type: boolean
+                    extraConfigmapsMounts:
+                      description: Extra configmaps for mounting in the pod
+                      items:
+                        properties:
+                          mountPath:
+                            description: Path within the container at which the volume
+                              should be mounted.
+                            type: string
+                          name:
+                            description: The name of an existing config map for mounting.
+                            maxLength: 253
+                            type: string
+                          subPath:
+                            default: ""
+                            description: Config map subpath for mounting, defaults
+                              to configmap root.
+                            type: string
+                        required:
+                        - mountPath
+                        - name
+                        - subPath
+                        type: object
+                      type: array
                     openStackConfigMap:
                       description: OpenStackConfigMap is the name of the ConfigMap
                         containing the clouds.yaml
@@ -207,6 +206,7 @@ spec:
                     stepName:
                       description: Name of a workflow step. The step name will be
                         used for example to create a logs directory.
+                      maxLength: 100
                       type: string
                     storageClass:
                       description: StorageClass used to create PVCs that store the
@@ -230,8 +230,6 @@ spec:
             required:
             - ansibleGitRepo
             - ansiblePlaybookPath
-            - computeSSHKeySecretName
-            - workloadSSHKeySecretName
             type: object
           status:
             description: AnsibleTestStatus defines the observed state of AnsibleTest

@@ -219,6 +219,7 @@ spec:
                       default: ""
                       description: A parameter that contains a definition of a single
                         workflow step.
+                      maxLength: 100
                       type: string
                     storageClass:
                       description: StorageClass used to create PVCs that store the

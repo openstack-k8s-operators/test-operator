@@ -30,7 +30,7 @@ type extraConfigmapsMounts struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
-	// +kubebuilder:default:="/"
+	// +kubebuilder:default:=""
 	// Config map subpath for mounting, defaults to configmap root.
 	SubPath string `json:"subPath"`
 }

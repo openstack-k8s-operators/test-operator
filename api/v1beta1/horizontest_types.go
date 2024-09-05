@@ -120,7 +120,7 @@ type HorizonTestSpec struct {
 	// Parallel
 	Parallel bool `json:"parallel"`
 
-	// BackoffLimit allows to define the maximum number of retried executions.
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}

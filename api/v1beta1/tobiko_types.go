@@ -222,10 +222,9 @@ type TobikoWorkflowSpec struct {
         ContainerImage string `json:"containerImage,omitempty"`
 
         // BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-        // +kubebuilder:validation:Optional
         // +kubebuilder:default:=0
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        BackoffLimit *int32 `json:"backoffLimit"`
+        BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
         // Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
         // in the test pod.
@@ -235,6 +234,7 @@ type TobikoWorkflowSpec struct {
 
         // A parameter that contains a definition of a single workflow step.
         // +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength:=100
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
         // +kubebuilder:default:=""
         // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}

@@ -29,7 +29,7 @@ type AnsibleTestSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod.
-	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"ExtraConfigmapsMounts,omitempty"`
+	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
@@ -38,14 +38,14 @@ type AnsibleTestSpec struct {
 	StorageClass string `json:"storageClass"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:="dataplane-ansible-ssh-private-key-secret"
 	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
 	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=""
 	// WorkloadSSHKeySecretName is the name of the k8s secret that contains an ssh key for the ansible workload.
 	// The key is mounted to ~/test_keypair.key in the ansible pod
@@ -129,10 +129,11 @@ type AnsibleTestWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod
-	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"ExtraConfigmapsMounts,omitempty"`
+	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength:=100
 	// Name of a workflow step. The step name will be used for example to create
 	// a logs directory.
 	StepName string `json:"stepName"`
@@ -208,9 +209,8 @@ type AnsibleTestWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit"`
+	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 }
 
 // AnsibleTestStatus defines the observed state of AnsibleTest
