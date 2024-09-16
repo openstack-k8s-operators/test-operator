@@ -15,7 +15,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
-
 	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,9 +34,14 @@ const (
 	envVarsConfigMapinfix    = "-env-vars-step-"
 	customDataConfigMapinfix = "-custom-data-step-"
 	workflowStepNumInvalid   = -1
+	workflowStepNameInvalid  = "no-step-name"
 
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOnwerField = "owner"
+)
+
+const (
+	ErrNetworkAttachments = "not all pods have interfaces with ips as configured in NetworkAttachments: %s"
 )
 
 type Reconciler struct {
@@ -168,14 +172,22 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			return typedInstance.Name
 		}
 
-		workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+		workflowStepName := workflowStepNameInvalid
+		if workflowStepNum < len(typedInstance.Spec.Workflow) {
+			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
+		}
+
 		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
 			return typedInstance.Name
 		}
 
-		workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+		workflowStepName := workflowStepNameInvalid
+		if workflowStepNum < len(typedInstance.Spec.Workflow) {
+			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
+		}
+
 		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
 		return typedInstance.Name
@@ -184,11 +196,15 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			return typedInstance.Name
 		}
 
-		workflowStepName := typedInstance.Spec.Workflow[workflowStepNum].StepName
+		workflowStepName := workflowStepNameInvalid
+		if workflowStepNum < len(typedInstance.Spec.Workflow) {
+			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
+		}
+
 		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
 	}
 
-	return ""
+	return workflowStepNameInvalid
 }
 
 func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
