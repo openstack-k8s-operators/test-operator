@@ -18,6 +18,7 @@ func GetVolumes(
 	//var privateKeyMode int32 = 0600
 	//var publicKeyMode int32 = 0644
 	var tlsCertificateMode int32 = 0444
+	var publicInfoMode int32 = 0744
 
 	volumes := []corev1.Volume{
 		{
@@ -94,12 +95,27 @@ func GetVolumes(
 
 		volumes = append(volumes, kubeconfigVolume)
 	}
+	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
+		extraVol := corev1.Volume{
+			Name: vol.Name,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					DefaultMode: &publicInfoMode,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: vol.Name,
+					},
+				},
+			},
+		}
+
+		volumes = append(volumes, extraVol)
+	}
 
 	return volumes
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool) []corev1.VolumeMount {
+func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool, instance *testv1beta1.HorizonTest) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "test-operator-logs",
@@ -175,6 +191,18 @@ func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool) []co
 		}
 
 		volumeMounts = append(volumeMounts, kubeconfigMount)
+	}
+
+	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
+
+		extraMounts := corev1.VolumeMount{
+			Name:      vol.Name,
+			MountPath: vol.MountPath,
+			SubPath:   vol.SubPath,
+			ReadOnly:  true,
+		}
+
+		volumeMounts = append(volumeMounts, extraMounts)
 	}
 
 	return volumeMounts
