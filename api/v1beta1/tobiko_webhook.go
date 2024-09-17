@@ -71,7 +71,7 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-		return allWarnings, errors.New("Workflow variable must be empty to run debug mode!")
+		return allWarnings, errors.New("workflow variable must be empty to run debug mode")
 	}
 
 	return allWarnings, nil

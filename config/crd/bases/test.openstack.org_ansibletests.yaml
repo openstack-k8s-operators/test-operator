@@ -27,7 +27,6 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: AnsibleTestStatus is the Schema for the AnsibleTestStatus API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

@@ -157,7 +157,6 @@ type AnsibleTestWorkflowSpec struct {
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
 //+kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
 
-// AnsibleTestStatus is the Schema for the AnsibleTestStatus API
 type AnsibleTest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

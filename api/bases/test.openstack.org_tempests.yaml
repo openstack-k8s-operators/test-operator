@@ -27,7 +27,6 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Tempest is the Schema for the tempests API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

@@ -26,7 +26,7 @@ import (
 
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
-	CommonOptions              `json:",inline"`
+	CommonOptions `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
@@ -181,7 +181,6 @@ type TobikoWorkflowSpec struct {
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
 //+kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
 
-// Tobiko is the Schema for the tobikoes API
 type Tobiko struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
