@@ -107,7 +107,7 @@ func GetVolumes(
 	}
 
 	if len(instance.Spec.Workflow) > 0 {
-		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
+		for _, vol := range *instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
 			extraWorkflowVol := corev1.Volume{
 				Name: vol.Name,
 				VolumeSource: corev1.VolumeSource{
@@ -205,7 +205,7 @@ func GetVolumeMounts(mountCerts bool, instance *testv1beta1.AnsibleTest, externa
 	}
 
 	if len(instance.Spec.Workflow) > 0 {
-		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
+		for _, vol := range *instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
 
 			extraConfigmapsMounts := corev1.VolumeMount{
 				Name:      vol.Name,

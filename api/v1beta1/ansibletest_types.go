@@ -26,18 +26,8 @@ import (
 
 // AnsibleTestSpec defines the desired state of AnsibleTest
 type AnsibleTestSpec struct {
-	CommonParameters `json:",inline"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// Extra configmaps for mounting in the pod.
-	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="local-storage"
-	// StorageClass used to create PVCs that store the logs
-	StorageClass string `json:"storageClass"`
+	CommonOptions         `json:",inline"`
+	CommonOpenstackConfig `json:",inline"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
@@ -91,34 +81,9 @@ type AnsibleTestSpec struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=openstack-config
-	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
-	OpenStackConfigMap string `json:"openStackConfigMap"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=openstack-config-secret
-	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-	OpenStackConfigSecret string `json:"openStackConfigSecret"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=false
 	// Run ansible playbook with -vvvv
 	Debug bool `json:"debug"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=""
-	// Container image for AnsibleTest
-	ContainerImage string `json:"containerImage"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// A parameter that contains a workflow definition.
@@ -129,11 +94,7 @@ type AnsibleTestSpec struct {
 
 type AnsibleTestWorkflowSpec struct {
 	WorkflowCommonParameters `json:",inline"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// Extra configmaps for mounting in the pod
-	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
+	CommonOpenstackConfig `json:",inline"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
@@ -144,12 +105,7 @@ type AnsibleTestWorkflowSpec struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// StorageClass used to create PVCs that store the logs
-	StorageClass *string `json:"storageClass,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// ComputesSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
+	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
 	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
@@ -192,44 +148,8 @@ type AnsibleTestWorkflowSpec struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
-	OpenStackConfigMap *string `json:"openStackConfigMap,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-	OpenStackConfigSecret *string `json:"openStackConfigSecret,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
 	// Run ansible playbook with -vvvv
 	Debug bool `json:"debug,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// Container image for AnsibleTest
-	ContainerImage string `json:"containerImage,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
-}
-
-// AnsibleTestStatus defines the observed state of AnsibleTest
-type AnsibleTestStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Map of hashes to track e.g. job status
-	Hash map[string]string `json:"hash,omitempty"`
-
-	// Conditions
-	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
-
-	// NetworkAttachments status of the deployment pods
-	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -242,8 +162,8 @@ type AnsibleTest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AnsibleTestSpec   `json:"spec,omitempty"`
-	Status AnsibleTestStatus `json:"status,omitempty"`
+	Spec   AnsibleTestSpec  `json:"spec,omitempty"`
+	Status CommonTestStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true

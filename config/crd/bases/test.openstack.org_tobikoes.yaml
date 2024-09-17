@@ -56,7 +56,8 @@ spec:
                 type: string
               containerImage:
                 default: ""
-                description: Container image for tobiko
+                description: A URL of a container image that should be used by the
+                  test-operator for tests execution.
                 type: string
               debug:
                 default: false
@@ -66,6 +67,29 @@ spec:
                   corresponding Tobiko CR is deleted. This allows the user to debug
                   any potential troubles with `oc rsh`.
                 type: boolean
+              extraConfigmapsMounts:
+                description: Extra configmaps for mounting inside the pod
+                items:
+                  properties:
+                    mountPath:
+                      description: Path within the container at which the volume should
+                        be mounted.
+                      type: string
+                    name:
+                      description: The name of an existing config map for mounting.
+                      maxLength: 253
+                      type: string
+                    subPath:
+                      default: ""
+                      description: Config map subpath for mounting, defaults to configmap
+                        root.
+                      type: string
+                  required:
+                  - mountPath
+                  - name
+                  - subPath
+                  type: object
+                type: array
               kubeconfigSecretName:
                 description: Name of a secret that contains a kubeconfig. The kubeconfig
                   is mounted under /var/lib/tobiko/.kube/config in the test pod.
@@ -123,7 +147,8 @@ spec:
                 type: string
               storageClass:
                 default: local-storage
-                description: StorageClass used to create PVCs that store the logs
+                description: StorageClass used to create any test-operator related
+                  PVCs.
                 type: string
               testenv:
                 default: py3
@@ -188,8 +213,33 @@ spec:
                       description: tobiko.conf
                       type: string
                     containerImage:
-                      description: Container image for tobiko
+                      default: ""
+                      description: A URL of a container image that should be used
+                        by the test-operator for tests execution.
                       type: string
+                    extraConfigmapsMounts:
+                      description: Extra configmaps for mounting inside the pod
+                      items:
+                        properties:
+                          mountPath:
+                            description: Path within the container at which the volume
+                              should be mounted.
+                            type: string
+                          name:
+                            description: The name of an existing config map for mounting.
+                            maxLength: 253
+                            type: string
+                          subPath:
+                            default: ""
+                            description: Config map subpath for mounting, defaults
+                              to configmap root.
+                            type: string
+                        required:
+                        - mountPath
+                        - name
+                        - subPath
+                        type: object
+                      type: array
                     kubeconfigSecretName:
                       description: Name of a secret that contains a kubeconfig. The
                         kubeconfig is mounted under /var/lib/tobiko/.kube/config in
@@ -241,8 +291,9 @@ spec:
                       maxLength: 100
                       type: string
                     storageClass:
-                      description: StorageClass used to create PVCs that store the
-                        logs
+                      default: local-storage
+                      description: StorageClass used to create any test-operator related
+                        PVCs.
                       type: string
                     testenv:
                       description: Test environment
@@ -297,11 +348,9 @@ spec:
                   - stepName
                   type: object
                 type: array
-            required:
-            - storageClass
             type: object
           status:
-            description: TobikoStatus defines the observed state of Tobiko
+            description: CommonTestStatus defines the observed state of the controller
             properties:
               conditions:
                 description: Conditions
