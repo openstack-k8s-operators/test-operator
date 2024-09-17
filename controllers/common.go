@@ -266,7 +266,7 @@ func (r *Reconciler) EnsureLogsPVCExists(
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: pvcAccessMode,
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: k8sresource.MustParse("1Gi"),
 				},
