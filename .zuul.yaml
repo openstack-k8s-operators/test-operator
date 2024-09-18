@@ -37,6 +37,10 @@
       cifmw_test_operator_tempest_include_list: |
         ^tempest.
       cifmw_test_operator_tempest_exclude_list: |
+        # Note (lpiwowar): Unskip test_verify_hostname_allows_fqdn once the
+        #                  Details: Timeout while verifying metadata on server
+        #                  error is resolved.
+        tempest.api.compute.servers.test_create_server.ServersV294TestFqdnHostnames.test_verify_hostname_allows_fqdn
         tempest.api.compute.admin.test_live_migration.LiveMigrationTest.test_live_migration_with_trunk
         tempest.api.compute.admin.test_auto_allocate_network.AutoAllocateNetworkTest.test_server_multi_create_auto_allocate
         tempest.api.compute.servers.test_server_rescue.ServerStableDeviceRescueTestIDE

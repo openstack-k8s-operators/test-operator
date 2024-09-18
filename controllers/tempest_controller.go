@@ -296,24 +296,35 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 
 	// NetworkAttachments
-	networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(ctx, helper, instance.Spec.NetworkAttachments, serviceLabels, 1)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	instance.Status.NetworkAttachments = networkAttachmentStatus
+	if r.JobExists(ctx, instance, externalWorkflowCounter) {
+		networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(
+			ctx,
+			helper,
+			instance.Spec.NetworkAttachments,
+			serviceLabels,
+			1,
+		)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 
-	if networkReady {
-		instance.Status.Conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
-	} else if r.JobExists(ctx, instance, externalWorkflowCounter) {
-		err := fmt.Errorf("not all pods have interfaces with ips as configured in NetworkAttachments: %s", instance.Spec.NetworkAttachments)
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.NetworkAttachmentsReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.NetworkAttachmentsReadyErrorMessage,
-			err.Error()))
+		instance.Status.NetworkAttachments = networkAttachmentStatus
 
-		return ctrl.Result{}, err
+		if networkReady {
+			instance.Status.Conditions.MarkTrue(
+				condition.NetworkAttachmentsReadyCondition,
+				condition.NetworkAttachmentsReadyMessage)
+		} else {
+			err := fmt.Errorf(ErrNetworkAttachments, instance.Spec.NetworkAttachments)
+			instance.Status.Conditions.Set(condition.FalseCondition(
+				condition.NetworkAttachmentsReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityWarning,
+				condition.NetworkAttachmentsReadyErrorMessage,
+				err.Error()))
+
+			return ctrl.Result{}, err
+		}
 	}
 	// NetworkAttachments - end
 
