@@ -106,7 +106,7 @@ func GetVolumes(
 
 	volumes = append(volumes, keysVolume)
 
-	for _, vol := range instance.Spec.ExtraMounts {
+	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
 		extraVol := corev1.Volume{
 			Name: vol.Name,
 			VolumeSource: corev1.VolumeSource{
@@ -123,7 +123,7 @@ func GetVolumes(
 	}
 
 	if len(instance.Spec.Workflow) > 0 {
-		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraMounts {
+		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
 			extraWorkflowVol := corev1.Volume{
 				Name: vol.Name,
 				VolumeSource: corev1.VolumeSource{
@@ -218,29 +218,29 @@ func GetVolumeMounts(mountCerts bool, instance *testv1beta1.AnsibleTest, externa
 
 	volumeMounts = append(volumeMounts, computeSSHKeyMount)
 
-	for _, vol := range instance.Spec.ExtraMounts {
+	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
 
-		extraMounts := corev1.VolumeMount{
+		extraConfigmapsMounts := corev1.VolumeMount{
 			Name:      vol.Name,
 			MountPath: vol.MountPath,
 			SubPath:   vol.SubPath,
 			ReadOnly:  true,
 		}
 
-		volumeMounts = append(volumeMounts, extraMounts)
+		volumeMounts = append(volumeMounts, extraConfigmapsMounts)
 	}
 
 	if len(instance.Spec.Workflow) > 0 {
-		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraMounts {
+		for _, vol := range instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
 
-			extraMounts := corev1.VolumeMount{
+			extraConfigmapsMounts := corev1.VolumeMount{
 				Name:      vol.Name,
 				MountPath: vol.MountPath,
 				SubPath:   vol.SubPath,
 				ReadOnly:  true,
 			}
 
-			volumeMounts = append(volumeMounts, extraMounts)
+			volumeMounts = append(volumeMounts, extraConfigmapsMounts)
 		}
 	}
 	return volumeMounts

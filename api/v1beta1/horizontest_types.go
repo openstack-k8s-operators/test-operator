@@ -28,20 +28,20 @@ import (
 type HorizonTestSpec struct {
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="local-storage"
+	// +kubebuilder:default:="local-storage"
 	// StorageClass used to create PVCs that store the logs
 	StorageClass string `json:"storageClass"`
 
 	// AdminUsername is the username for the OpenStack admin user.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="admin"
+	// +kubebuilder:default:="admin"
 	AdminUsername string `json:"adminUsername"`
 
 	// AdminPassword is the password for the OpenStack admin user.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="admin"
+	// +kubebuilder:default:="admin"
 	AdminPassword string `json:"adminPassword"`
 
 	// DashboardUrl is the URL of the Horizon dashboard.
@@ -57,55 +57,55 @@ type HorizonTestSpec struct {
 	// RepoUrl is the URL of the Horizon repository.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="https://review.opendev.org/openstack/horizon"
+	// +kubebuilder:default:="https://review.opendev.org/openstack/horizon"
 	RepoUrl string `json:"repoUrl"`
 
 	// HorizonRepoBranch is the branch of the Horizon repository to checkout.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="master"
+	// +kubebuilder:default:="master"
 	HorizonRepoBranch string `json:"horizonRepoBranch"`
 
 	// ImageUrl is the URL to download the Cirros image.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
+	// +kubebuilder:default:="http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
 	ImageUrl string `json:"imageUrl"`
 
 	// ProjectName is the name of the OpenStack project for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="horizontest"
+	// +kubebuilder:default:="horizontest"
 	ProjectName string `json:"projectName"`
 
 	// User is the username under which the Horizon tests will run.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="horizontest"
+	// +kubebuilder:default:="horizontest"
 	User string `json:"user"`
 
 	// Password is the password for the user running the Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="horizontest"
+	// +kubebuilder:default:="horizontest"
 	Password string `json:"password"`
 
 	// FlavorName is the name of the OpenStack flavor to create for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="m1.tiny"
+	// +kubebuilder:default:="m1.tiny"
 	FlavorName string `json:"flavorName"`
 
 	// LogsDirectoryName is the name of the directory to store test logs.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="horizon"
+	// +kubebuilder:default:="horizon"
 	LogsDirectoryName string `json:"logsDirectoryName"`
 
 	// HorizonTestDir is the directory path for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="/var/lib/horizontest"
+	// +kubebuilder:default:="/var/lib/horizontest"
 	HorizonTestDir string `json:"horizonTestDir"`
 
 	// +kubebuilder:validation:Optional
@@ -120,14 +120,15 @@ type HorizonTestSpec struct {
 	// Parallel
 	Parallel bool `json:"parallel"`
 
-	// BackoffLimimt allows to define the maximum number of retried executions.
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/horizontest/.kube/config
 	// in the test pod.
-	// +kubebuilder:default:=""
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 }

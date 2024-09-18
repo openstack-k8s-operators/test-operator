@@ -56,31 +56,31 @@ type ExtraImagesType struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="-"
+	// +kubebuilder:default:="-"
 	// Cloud that should be used for authentication
 	OsCloud string `json:"osCloud"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="-"
+	// +kubebuilder:default:="-"
 	// Image container format
 	ContainerFormat string `json:"containerFormat"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="-"
+	// +kubebuilder:default:="-"
 	// Image disk format
 	DiskFormat string `json:"diskFormat"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="-"
+	// +kubebuilder:default:="-"
 	// ID that should be assigned to the newly created image
 	ID string `json:"ID"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=300
+	// +kubebuilder:default:=300
 	// Timeout duration for an image to reach the active state after its creation
 	ImageCreationTimeout int64 `json:"imageCreationTimeout"`
 
@@ -112,13 +112,13 @@ type ExtraImagesFlavorType struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="-"
+	// +kubebuilder:default:="-"
 	// ID that should be assigned to the newly created flavor
 	ID string `json:"ID"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="-"
+	// +kubebuilder:default:="-"
 	// Cloud that should be used for authentication
 	OsCloud string `json:"osCloud"`
 }
@@ -151,7 +151,7 @@ type ExternalPluginType struct {
 type TempestRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="tempest.api.identity.v3"
+	// +kubebuilder:default:="tempest.api.identity.v3"
 	// A content of include.txt file that is passed to tempest via --include-list
 	IncludeList string `json:"includeList"`
 
@@ -216,158 +216,159 @@ type TempestRunSpec struct {
 type TempestconfRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=true
+	// +kubebuilder:default:=true
 	// Indicate whether discover-tempest-config should be executed with --create
 	Create bool `json:"create"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with
 	// --collect-timing
 	CollectTiming bool `json:"collectTiming"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with --insecure
 	Insecure bool `json:"insecure"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with
 	// --no-default-deployer
 	NoDefaultDeployer bool `json:"noDefaultDeployer"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with --debug
 	Debug bool `json:"debug"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with --verbose
 	Verbose bool `json:"verbose"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with --non-admin
 	NonAdmin bool `json:"nonAdmin"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with --retry-image
 	RetryImage bool `json:"retryImage"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Indicate whether discover-tempest-config should be executed with
 	// --convert-to-raw
 	ConvertToRaw bool `json:"convertToRaw"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// the --out parameter
 	Out string `json:"out"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// A content of deployer_input.ini that is passed to tempest via --deployer-input
 	DeployerInput string `json:"deployerInput"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// A content of accounts.yaml that is passed to tempest via --test-acounts
 	TestAccounts string `json:"testAccounts"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// the --create-accounts-file
 	CreateAccountsFile string `json:"createAccountsFile"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// A content of profile.yaml that is passed to tempest via --profile
 	Profile string `json:"profile"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// --generate-profile
 	GenerateProfile string `json:"generateProfile"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// --image-disk-format
 	ImageDiskFormat string `json:"imageDiskFormat"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// --image
 	Image string `json:"image"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=0
+	// +kubebuilder:default:=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-mem
 	FlavorMinMem int64 `json:"flavorMinMem"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=0
+	// +kubebuilder:default:=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-disk
 	FlavorMinDisk int64 `json:"flavorMinDisk"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// --network-id
 	NetworkID string `json:"networkID"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// --append
 	Append string `json:"append"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// The content of this variable will be passed to discover-tempest-config via
 	// --remove
 	Remove string `json:"remove"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="identity.v3_endpoint_type public"
+	// +kubebuilder:default:="identity.v3_endpoint_type public"
 	// The content of this variable will be appended at the end of the command
 	// that executes discover-tempest-config (override values).
 	Overrides string `json:"overrides"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=0
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --timeout
 	Timeout int64 `json:"timeout"`
@@ -383,13 +384,13 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="s0:c478,c978"
+	// +kubebuilder:default:="s0:c478,c978"
 	// A SELinuxLevel that is used for all the tempest test pods.
 	SELinuxLevel string `json:"SELinuxLevel"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="local-storage"
+	// +kubebuilder:default:="local-storage"
 	// Name of a storage class that is used to create PVCs for logs storage. Required
 	// if default storage class does not exist.
 	StorageClass string `json:"storageClass"`
@@ -402,7 +403,7 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// By default test-operator executes the test-pods sequentially if multiple
 	// instances of test-operator related CRs exist. If you want to turn off this
 	// behaviour then set this option to true.
@@ -416,7 +417,7 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=false
+	// +kubebuilder:default:=false
 	// Activate debug mode. When debug mode is activated any error encountered
 	// inside the test-pod causes that the pod will be kept alive indefinitely
 	// (stuck in "Running" phase) or until the corresponding Tempest CR is deleted.
@@ -431,13 +432,13 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=openstack-config
+	// +kubebuilder:default:=openstack-config
 	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
 	OpenStackConfigMap string `json:"openStackConfigMap"`
 
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=openstack-config-secret
+	// +kubebuilder:default:=openstack-config-secret
 	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
 	OpenStackConfigSecret string `json:"openStackConfigSecret"`
 
@@ -447,11 +448,12 @@ type TempestSpec struct {
 	// the services to the given network
 	NetworkAttachments []string `json:"networkAttachments,omitempty"`
 
-	// BackoffLimimt allows to define the maximum number of retried executions (defaults to 6).
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -463,7 +465,7 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default=""
+	// +kubebuilder:default:=""
 	// SSHKeySecretName is the name of the k8s secret that contains an ssh key.
 	// The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
 	SSHKeySecretName string `json:"SSHKeySecretName"`

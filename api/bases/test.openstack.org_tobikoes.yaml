@@ -46,8 +46,8 @@ spec:
             properties:
               backoffLimit:
                 default: 0
-                description: BackoffLimimt allows to define the maximum number of
-                  retried executions (defaults to 6).
+                description: BackoffLimit allows to define the maximum number of retried
+                  executions (defaults to 0).
                 format: int32
                 type: integer
               config:
@@ -67,7 +67,6 @@ spec:
                   any potential troubles with `oc rsh`.
                 type: boolean
               kubeconfigSecretName:
-                default: ""
                 description: Name of a secret that contains a kubeconfig. The kubeconfig
                   is mounted under /var/lib/tobiko/.kube/config in the test pod.
                 type: string
@@ -170,8 +169,9 @@ spec:
                 items:
                   properties:
                     backoffLimit:
-                      description: BackoffLimimt allows to define the maximum number
-                        of retried executions (defaults to 6).
+                      default: 0
+                      description: BackoffLimit allows to define the maximum number
+                        of retried executions (defaults to 0).
                       format: int32
                       type: integer
                     config:
@@ -219,6 +219,7 @@ spec:
                       default: ""
                       description: A parameter that contains a definition of a single
                         workflow step.
+                      maxLength: 100
                       type: string
                     storageClass:
                       description: StorageClass used to create PVCs that store the
