@@ -62,6 +62,9 @@ func Job(
 							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts:    GetVolumeMounts(mountCerts, instance, externalWorkflowCounter),
 							SecurityContext: &securityContext,
+							Resources: corev1.ResourceRequirements{
+								Limits: util.GetResourceLimits(),
+							},
 						},
 					},
 					Volumes: GetVolumes(
