@@ -4,6 +4,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
+	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +27,7 @@ func Job(
 	envVars := map[string]env.Setter{}
 	runAsUser := int64(42480)
 	runAsGroup := int64(42480)
+	securityContext := util.GetSecurityContext(runAsUser, []corev1.Capability{}, instance.Spec.Privileged)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -55,19 +57,12 @@ func Job(
 					NodeSelector: instance.Spec.NodeSelector,
 					Containers: []corev1.Container{
 						{
-							Name:         instance.Name + "-tests-runner",
-							Image:        containerImage,
-							Args:         []string{},
-							Env:          env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts: GetVolumeMounts(mountCerts, mountSSHKey, instance),
-							SecurityContext: &corev1.SecurityContext{
-								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"CAP_AUDIT_WRITE"},
-								},
-								SeccompProfile: &corev1.SeccompProfile{
-									Type: corev1.SeccompProfileTypeRuntimeDefault,
-								},
-							},
+							Name:            instance.Name + "-tests-runner",
+							Image:           containerImage,
+							Args:            []string{},
+							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
+							VolumeMounts:    GetVolumeMounts(mountCerts, mountSSHKey, instance),
+							SecurityContext: &securityContext,
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{

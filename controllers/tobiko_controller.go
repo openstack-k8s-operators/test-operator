@@ -307,6 +307,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	jobName := r.GetJobName(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
 	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	privileged := r.OverwriteValueWithWorkflow(instance.Spec, "Privileged", "pbool", externalWorkflowCounter).(bool)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -322,6 +323,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		mountKubeconfig,
 		envVars,
 		containerImage,
+		privileged,
 	)
 	tobikoJob := job.NewJob(
 		jobDef,

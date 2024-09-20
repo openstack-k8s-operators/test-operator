@@ -23,6 +23,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -59,8 +61,13 @@ var _ webhook.Validator = &HorizonTest{}
 func (r *HorizonTest) ValidateCreate() (admission.Warnings, error) {
 	horizontestlog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
-	return nil, nil
+	var allWarnings admission.Warnings
+
+	if r.Spec.Privileged {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "HorizonTest"))
+	}
+
+	return allWarnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type

@@ -16,6 +16,33 @@ limitations under the License.
 
 package v1beta1
 
+type CommonParameters struct {
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:optional
+	// +kubebuilder:default=false
+	// +optional
+	// Use with caution! This parameter specifies whether test-operator should spawn test
+	// pods with allowedPrivilegedEscalation: true and the default capabilities on
+	// top of capabilities that are usually needed by the test pods (NET_ADMIN, NET_RAW).
+	// This parameter is deemed insecure but it is needed for certain test-operator
+	// functionalities to work properly (e.g.: extraRPMs in Tempest CR, or certain set
+	// of tobiko tests).
+	Privileged bool `json:"privileged"`
+}
+
+type WorkflowCommonParameters struct {
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:optional
+	// +optional
+	// Use with caution! This parameter specifies whether test-operator should spawn test
+	// pods with allowedPrivilegedEscalation: true and the default capabilities on
+	// top of capabilities that are usually needed by the test pods (NET_ADMIN, NET_RAW).
+	// This parameter is deemed insecure but it is needed for certain test-operator
+	// functionalities to work properly (e.g.: extraRPMs in Tempest CR, or certain set
+	// of tobiko tests).
+	Privileged *bool `json:"privileged,omitempty"`
+}
+
 type extraConfigmapsMounts struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required

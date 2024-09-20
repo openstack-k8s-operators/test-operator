@@ -26,6 +26,8 @@ import (
 
 // AnsibleTestSpec defines the desired state of AnsibleTest
 type AnsibleTestSpec struct {
+	CommonParameters `json:",inline"`
+
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod.
@@ -126,6 +128,8 @@ type AnsibleTestSpec struct {
 }
 
 type AnsibleTestWorkflowSpec struct {
+	WorkflowCommonParameters `json:",inline"`
+
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting in the pod

@@ -256,6 +256,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance, externalWorkflowCounter)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage, err := r.GetContainerImage(ctx, workflowOverrideParams["ContainerImage"], instance)
+	privileged := r.OverwriteAnsibleWithWorkflow(instance.Spec, "Privileged", "pbool", externalWorkflowCounter).(bool)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -270,6 +271,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		workflowOverrideParams,
 		externalWorkflowCounter,
 		containerImage,
+		privileged,
 	)
 	ansibleTestsJob := job.NewJob(
 		jobDef,

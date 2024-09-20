@@ -37,25 +37,27 @@ type Hash struct {
 
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
+	CommonParameters `json:",inline"`
+
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="local-storage"
-        // StorageClass used to create PVCs that store the logs
+	// +kubebuilder:default="local-storage"
+	// StorageClass used to create PVCs that store the logs
 	StorageClass string `json:"storageClass"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// This value contains a nodeSelector value that is applied to test pods
 	// spawned by the test operator.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// +kubebuilder:validation:Optional
-        // +kubebuilder:default:=false
-        // Activate debug mode. When debug mode is activated any error encountered
-        // inside the test-pod causes that the pod will be kept alive indefinitely
-        // (stuck in "Running" phase) or until the corresponding Tobiko CR is deleted.
-        // This allows the user to debug any potential troubles with `oc rsh`.
-        Debug bool `json:"debug"`
+	// +kubebuilder:default=false
+	// Activate debug mode. When debug mode is activated any error encountered
+	// inside the test-pod causes that the pod will be kept alive indefinitely
+	// (stuck in "Running" phase) or until the corresponding Tobiko CR is deleted.
+	// This allows the user to debug any potential troubles with `oc rsh`.
+	Debug bool `json:"debug"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -65,100 +67,102 @@ type TobikoSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:="py3"
-        // Test environment
-        Testenv string `json:"testenv"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
-        // String including any options to pass to pytest when it runs tobiko tests
-        PytestAddopts string `json:"pytestAddopts"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=false
-        // Boolean specifying whether tobiko tests create new resources or re-use those previously created
-        PreventCreate bool `json:"preventCreate"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=0
-        // Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
-        NumProcesses uint8 `json:"numProcesses"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
-        // Tobiko version
-        Version string `json:"version"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
-        // tobiko.conf
-        Config string `json:"config"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
-        // Private Key
-        PrivateKey string `json:"privateKey"`
-
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
-        // Public Key
-        PublicKey string `json:"publicKey"`
+	// +kubebuilder:default:="py3"
+	// Test environment
+	Testenv string `json:"testenv"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
-        // Container image for tobiko
-        ContainerImage string `json:"containerImage"`
+	// +kubebuilder:default:=""
+	// String including any options to pass to pytest when it runs tobiko tests
+	PytestAddopts string `json:"pytestAddopts"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=false
+	// +kubebuilder:default:=false
+	// Boolean specifying whether tobiko tests create new resources or re-use those previously created
+	PreventCreate bool `json:"preventCreate"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=0
+	// Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
+	NumProcesses uint8 `json:"numProcesses"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=""
+	// Tobiko version
+	Version string `json:"version"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=""
+	// tobiko.conf
+	Config string `json:"config"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=""
+	// Private Key
+	PrivateKey string `json:"privateKey"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=""
+	// Public Key
+	PublicKey string `json:"publicKey"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=""
+	// Container image for tobiko
+	ContainerImage string `json:"containerImage"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=false
 	// By default test-operator executes the test-pods sequentially if multiple
 	// instances of test-operator related CRs exist. To run test-pods in parallel
 	// set this option to true.
-        Parallel bool `json:"parallel"`
+	Parallel bool `json:"parallel"`
 
 	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:validation:Optional
-        // +kubebuilder:default:=0
-        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        BackoffLimit *int32 `json:"backoffLimit"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	BackoffLimit *int32 `json:"backoffLimit"`
 
-        // Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
-        // in the test pod.
+	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
+	// in the test pod.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:validation:Optional
-        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 
-        // +kubebuilder:validation:Optional
-        // +operator-sdk:csv:customresourcedefinitions:type=spec
-        // NetworkAttachments is a list of NetworkAttachment resource names to expose
-        // the services to the given network
-        NetworkAttachments []string `json:"networkAttachments,omitempty"`
-
-        // A parameter  that contains a workflow definition.
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:validation:Optional
-        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        Workflow []TobikoWorkflowSpec `json:"workflow,omitempty"`
+	// NetworkAttachments is a list of NetworkAttachment resource names to expose
+	// the services to the given network
+	NetworkAttachments []string `json:"networkAttachments,omitempty"`
+
+	// A parameter  that contains a workflow definition.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	Workflow []TobikoWorkflowSpec `json:"workflow,omitempty"`
 }
 
 type TobikoWorkflowSpec struct {
-        // +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // StorageClass used to create PVCs that store the logs
-        StorageClass string `json:"storageClass,omitempty"`
+	WorkflowCommonParameters `json:",inline"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// StorageClass used to create PVCs that store the logs
+	StorageClass string `json:"storageClass,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// This value contains a nodeSelector value that is applied to test pods
 	// spawned by the test operator.
@@ -170,75 +174,74 @@ type TobikoWorkflowSpec struct {
 	// test pods that are spawned by the test-operator.
 	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Test environment
-        Testenv string `json:"testenv,omitempty"`
+	// Test environment
+	Testenv string `json:"testenv,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // String including any options to pass to pytest when it runs tobiko tests
-        PytestAddopts string `json:"pytestAddopts,omitempty"`
+	// String including any options to pass to pytest when it runs tobiko tests
+	PytestAddopts string `json:"pytestAddopts,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Boolean specifying whether tobiko tests create new resources or re-use those previously created
-        PreventCreate *bool `json:"preventCreate,omitempty"`
+	// Boolean specifying whether tobiko tests create new resources or re-use those previously created
+	PreventCreate *bool `json:"preventCreate,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
-        NumProcesses *uint8 `json:"numProcesses,omitempty"`
+	// Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
+	NumProcesses *uint8 `json:"numProcesses,omitempty"`
 
-        // +kubebuilder:validation:Optional
-        // +operator-sdk:csv:customresourcedefinitions:type=spec
-        // NetworkAttachments is a list of NetworkAttachment resource names to expose
-        // the services to the given network
-        NetworkAttachments []string `json:"networkAttachments,omitempty"`
-
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Tobiko version
-        Version string `json:"version,omitempty"`
+	// NetworkAttachments is a list of NetworkAttachment resource names to expose
+	// the services to the given network
+	NetworkAttachments []string `json:"networkAttachments,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // tobiko.conf
-        Config string `json:"config,omitempty"`
+	// Tobiko version
+	Version string `json:"version,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Private Key
-        PrivateKey string `json:"privateKey,omitempty"`
+	// tobiko.conf
+	Config string `json:"config,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Public Key
-        PublicKey string `json:"publicKey,omitempty"`
+	// Private Key
+	PrivateKey string `json:"privateKey,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // Container image for tobiko
-        ContainerImage string `json:"containerImage,omitempty"`
+	// Public Key
+	PublicKey string `json:"publicKey,omitempty"`
 
-        // BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-        // +kubebuilder:default:=0
-        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// Container image for tobiko
+	ContainerImage string `json:"containerImage,omitempty"`
 
-        // Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
-        // in the test pod.
-        // +kubebuilder:validation:Optional
-        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
+	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
+	// +kubebuilder:default:=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
-        // A parameter that contains a definition of a single workflow step.
-        // +kubebuilder:validation:Required
+	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
+	// in the test pod.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
+
+	// A parameter that contains a definition of a single workflow step.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MaxLength:=100
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-        // +kubebuilder:default:=""
-        // +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-        StepName string `json:"stepName"`
+	// +kubebuilder:default:=""
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	StepName string `json:"stepName"`
 }
 
 // TobikoStatus defines the observed state of Tobiko

@@ -23,15 +23,18 @@ limitations under the License.
 package v1beta1
 
 import (
-        "errors"
+	"errors"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
-
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-        "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // TempestDefaults -
@@ -58,18 +61,22 @@ var _ webhook.Defaulter = &Tempest{}
 func (r *Tempest) Default() {
 	tempestlog.Info("default", "name", r.Name)
 
-        r.Spec.Default()
+	r.Spec.Default()
 }
 
 // Default - set defaults for this Tempest spec.
 func (spec *TempestSpec) Default() {
-        if spec.ContainerImage == "" {
+	if spec.ContainerImage == "" {
 		spec.ContainerImage = tempestDefaults.ContainerImageURL
 	}
 
 	if spec.TempestconfRun == (TempestconfRunSpec{}) {
 		spec.TempestconfRun.Create = true
 	}
+}
+
+func (r *Tempest) PrivilegedRequired() bool {
+	return len(r.Spec.TempestRun.ExtraImages) > 0
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -81,10 +88,35 @@ var _ webhook.Validator = &Tempest{}
 func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	tempestlog.Info("validate create", "name", r.Name)
 
-        if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-            return nil, errors.New("Workflow variable must be empty to run debug mode!")
-        }
-	return nil, nil
+	var allErrs field.ErrorList
+	var allWarnings admission.Warnings
+
+	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
+		return nil, errors.New("Workflow variable must be empty to run debug mode!")
+	}
+
+	if !r.Spec.Privileged && r.PrivilegedRequired() {
+		allErrs = append(allErrs, &field.Error{
+			Type:     field.ErrorTypeRequired,
+			BadValue: r.Spec.Privileged,
+			Detail:   fmt.Sprintf(ErrPrivilegedModeRequired, "Tempest"),
+		},
+		)
+	}
+
+	if r.Spec.Privileged {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tempest"))
+	}
+
+	if len(allErrs) > 0 {
+		return allWarnings, apierrors.NewInvalid(
+			schema.GroupKind{
+				Group: GroupVersion.WithKind("Tempest").Group,
+				Kind:  GroupVersion.WithKind("Tempest").Kind,
+			}, r.GetName(), allErrs)
+	}
+
+	return allWarnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -98,8 +130,8 @@ func (r *Tempest) ValidateUpdate(old runtime.Object) (admission.Warnings, error)
 
 	if !cmp.Equal(oldTempest.Spec, r.Spec) {
 		warnings := admission.Warnings{}
-		warnings = append(warnings, "You are updating an already existing instance of a " +
-					    "Tempest CR! Be aware that changes won't be applied.")
+		warnings = append(warnings, "You are updating an already existing instance of a "+
+			"Tempest CR! Be aware that changes won't be applied.")
 
 		return warnings, errors.New("Updating an existing Tempest CR is not supported!")
 	}
