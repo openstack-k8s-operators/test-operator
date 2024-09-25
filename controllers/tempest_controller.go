@@ -650,6 +650,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	r.setConfigOverwrite(customData, instance.Spec.ConfigOverwrite)
 
 	envVars["TEMPEST_DEBUG_MODE"] = r.GetDefaultBool(instance.Spec.Debug)
+	envVars["TEMPEST_CLEANUP"] = r.GetDefaultBool(instance.Spec.Cleanup)
 
 	cms := []util.Template{
 		// ConfigMap

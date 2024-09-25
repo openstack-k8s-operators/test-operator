@@ -62,6 +62,12 @@ spec:
                   executions (defaults to 0).
                 format: int32
                 type: integer
+              cleanup:
+                default: false
+                description: Activate tempest cleanup. When activated, tempest will
+                  run tempest cleanup after test execution is complete to delete any
+                  resources created by tempest that may have been left out.
+                type: boolean
               configOverwrite:
                 additionalProperties:
                   type: string
