@@ -25,7 +25,6 @@ package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,14 +32,6 @@ const (
 	// ConfigHash - TempestConfigHash key
 	ConfigHash = "TempestConfigHash"
 )
-
-// Hash - struct to add hashes to status
-type Hash struct {
-	// Name of hash referencing the parameter
-	Name string `json:"name,omitempty"`
-	// Hash
-	Hash string `json:"hash,omitempty"`
-}
 
 // ExtraImagesType - is used to specify extra images that should be downloaded
 // inside the test pod and uploaded to openstack
@@ -377,12 +368,8 @@ type TempestconfRunSpec struct {
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type TempestSpec struct {
-	CommonParameters `json:",inline"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// Extra configmaps for mounting in the pod.
-	ExtraConfigmapsMounts []extraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
+	CommonOptions              `json:",inline"`
+	CommonOpenstackConfig      `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -392,30 +379,11 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="local-storage"
-	// Name of a storage class that is used to create PVCs for logs storage. Required
-	// if default storage class does not exist.
-	StorageClass string `json:"storageClass"`
-
-	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// An URL of a tempest container image that should be used for the execution
-	// of tempest tests.
-	ContainerImage string `json:"containerImage"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// By default test-operator executes the test-pods sequentially if multiple
 	// instances of test-operator related CRs exist. If you want to turn off this
 	// behaviour then set this option to true.
 	Parallel bool `json:"parallel"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a nodeSelector value that is applied to test pods
-	// spawned by the test operator.
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -428,34 +396,9 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a toleration that is applied to pods spawned by the
-	// test pods that are spawned by the test-operator.
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-
-	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=openstack-config
-	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
-	OpenStackConfigMap string `json:"openStackConfigMap"`
-
-	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=openstack-config-secret
-	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-	OpenStackConfigSecret string `json:"openStackConfigSecret"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
 	// the services to the given network
 	NetworkAttachments []string `json:"networkAttachments,omitempty"`
-
-	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -490,31 +433,17 @@ type TempestSpec struct {
 	Workflow []WorkflowTempestSpec `json:"workflow,omitempty"`
 }
 
-// TempestStatus defines the observed state of Tempest
-type TempestStatus struct {
-
-	// Map of hashes to track e.g. job status
-	Hash map[string]string `json:"hash,omitempty"`
-
-	// Conditions
-	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
-
-	// NetworkAttachments status of the deployment pods
-	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
-}
-
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
 //+kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
 
-// Tempest is the Schema for the tempests API
 type Tempest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   TempestSpec   `json:"spec,omitempty"`
-	Status TempestStatus `json:"status,omitempty"`
+	Spec   TempestSpec      `json:"spec,omitempty"`
+	Status CommonTestStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true

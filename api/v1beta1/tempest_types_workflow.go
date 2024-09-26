@@ -16,10 +16,6 @@ limitations under the License.
 
 package v1beta1
 
-import (
-	corev1 "k8s.io/api/core/v1"
-)
-
 // TempestRunSpec - is used to configure execution of tempest. Please refer to
 // Please refer to https://docs.openstack.org/tempest/latest/ for the further
 // explanation of the CLI parameters.
@@ -222,6 +218,9 @@ type WorkflowTempestconfRunSpec struct {
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type WorkflowTempestSpec struct {
+	WorkflowCommonParameters              `json:",inline"`
+	CommonOpenstackConfig      `json:",inline"`
+
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MaxLength:=100
 	// +kubebuilder:validation:Pattern:=^[a-z0-9]
@@ -232,18 +231,6 @@ type WorkflowTempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// Name of a storage class that is used to create PVCs for logs storage. Required
-	// if default storage class does not exist.
-	StorageClass *string `json:"storageClass,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// An URL of a tempest container image that should be used for the execution
-	// of tempest tests.
-	ContainerImage *string `json:"containerImage,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// By default test-operator executes the test-pods sequentially if multiple
 	// instances of test-operator related CRs exist. If you want to turn off this
 	// behaviour then set this option to true.
@@ -251,37 +238,9 @@ type WorkflowTempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a nodeSelector value that is applied to test pods
-	// spawned by the test operator.
-	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a toleration that is applied to pods spawned by the
-	// test pods that are spawned by the test-operator.
-	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// OpenStackConfigMap is the name of the ConfigMap containing the clouds.yaml
-	OpenStackConfigMap *string `json:"openStackConfigMap,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// OpenStackConfigSecret is the name of the Secret containing the secure.yaml
-	OpenStackConfigSecret *string `json:"openStackConfigSecret,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
 	// the services to the given network
 	NetworkAttachments *[]string `json:"networkAttachments,omitempty"`
-
-	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-        // +kubebuilder:default:=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

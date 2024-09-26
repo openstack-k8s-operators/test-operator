@@ -261,6 +261,16 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
+	if externalWorkflowCounter < len(instance.Spec.Workflow) {
+		if instance.Spec.Workflow[externalWorkflowCounter].NodeSelector != nil {
+			instance.Spec.NodeSelector = *instance.Spec.Workflow[externalWorkflowCounter].NodeSelector
+		}
+
+		if instance.Spec.Workflow[externalWorkflowCounter].Tolerations != nil {
+			instance.Spec.Tolerations = *instance.Spec.Workflow[externalWorkflowCounter].Tolerations
+		}
+	}
+
 	jobDef := ansibletest.Job(
 		instance,
 		serviceLabels,

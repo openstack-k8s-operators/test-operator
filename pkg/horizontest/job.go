@@ -53,13 +53,15 @@ func Job(
 						RunAsGroup: &runAsGroup,
 						FSGroup:    &runAsGroup,
 					},
+					Tolerations:  instance.Spec.Tolerations,
+					NodeSelector: instance.Spec.NodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:            instance.Name,
 							Image:           containerImage,
 							Args:            []string{},
 							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts:    GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig),
+							VolumeMounts:    GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig, instance),
 							SecurityContext: &securityContext,
 							Resources: corev1.ResourceRequirements{
 								Limits: util.GetResourceLimits(),

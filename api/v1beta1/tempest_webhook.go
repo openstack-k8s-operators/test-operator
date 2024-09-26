@@ -92,7 +92,7 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	var allWarnings admission.Warnings
 
 	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-		return nil, errors.New("Workflow variable must be empty to run debug mode!")
+		return nil, errors.New("workflow variable must be empty to run debug mode")
 	}
 
 	if !r.Spec.Privileged && r.PrivilegedRequired() {
@@ -125,7 +125,7 @@ func (r *Tempest) ValidateUpdate(old runtime.Object) (admission.Warnings, error)
 
 	oldTempest, ok := old.(*Tempest)
 	if !ok || oldTempest == nil {
-		return nil, errors.New("Unable to convert existing object")
+		return nil, errors.New("unable to convert existing object")
 	}
 
 	if !cmp.Equal(oldTempest.Spec, r.Spec) {
@@ -133,7 +133,7 @@ func (r *Tempest) ValidateUpdate(old runtime.Object) (admission.Warnings, error)
 		warnings = append(warnings, "You are updating an already existing instance of a "+
 			"Tempest CR! Be aware that changes won't be applied.")
 
-		return warnings, errors.New("Updating an existing Tempest CR is not supported!")
+		return warnings, errors.New("updating an existing Tempest CR is not supported")
 	}
 	return nil, nil
 }

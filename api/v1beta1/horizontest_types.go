@@ -26,13 +26,7 @@ import (
 
 // HorizonTestSpec defines the desired state of HorizonTest
 type HorizonTestSpec struct {
-	CommonParameters `json:",inline"`
-
-	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="local-storage"
-	// StorageClass used to create PVCs that store the logs
-	StorageClass string `json:"storageClass"`
+	CommonOptions `json:",inline"`
 
 	// AdminUsername is the username for the OpenStack admin user.
 	// +kubebuilder:validation:Required
@@ -112,21 +106,9 @@ type HorizonTestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=""
-	// Container image for horizontest
-	ContainerImage string `json:"containerImage"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// Parallel
 	Parallel bool `json:"parallel"`
-
-	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/horizontest/.kube/config
 	// in the test pod.
@@ -135,33 +117,17 @@ type HorizonTestSpec struct {
 	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 }
 
-// HorizonTestStatus defines the observed state of HorizonTest
-type HorizonTestStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Map of hashes to track e.g. job status
-	Hash map[string]string `json:"hash,omitempty"`
-
-	// Conditions
-	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
-
-	// NetworkAttachments status of the deployment pods
-	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
-}
-
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
 //+kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
 
-// HorizonTest is the Schema for the horizontests API
 type HorizonTest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   HorizonTestSpec   `json:"spec,omitempty"`
-	Status HorizonTestStatus `json:"status,omitempty"`
+	Spec   HorizonTestSpec  `json:"spec,omitempty"`
+	Status CommonTestStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

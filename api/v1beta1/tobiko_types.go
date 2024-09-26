@@ -18,38 +18,15 @@ package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// Hash - struct to add hashes to status
-/*
-type Hash struct {
-	// Name of hash referencing the parameter
-	Name string `json:"name,omitempty"`
-	// Hash
-	Hash string `json:"hash,omitempty"`
-}
-*/
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
-	CommonParameters `json:",inline"`
-
-	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default="local-storage"
-	// StorageClass used to create PVCs that store the logs
-	StorageClass string `json:"storageClass"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a nodeSelector value that is applied to test pods
-	// spawned by the test operator.
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	CommonOptions `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
@@ -58,12 +35,6 @@ type TobikoSpec struct {
 	// (stuck in "Running" phase) or until the corresponding Tobiko CR is deleted.
 	// This allows the user to debug any potential troubles with `oc rsh`.
 	Debug bool `json:"debug"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a toleration that is applied to pods spawned by the
-	// test pods that are spawned by the test-operator.
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -115,24 +86,11 @@ type TobikoSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=""
-	// Container image for tobiko
-	ContainerImage string `json:"containerImage"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// By default test-operator executes the test-pods sequentially if multiple
 	// instances of test-operator related CRs exist. To run test-pods in parallel
 	// set this option to true.
 	Parallel bool `json:"parallel"`
-
-	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit"`
 
 	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
 	// in the test pod.
@@ -156,23 +114,6 @@ type TobikoSpec struct {
 
 type TobikoWorkflowSpec struct {
 	WorkflowCommonParameters `json:",inline"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// StorageClass used to create PVCs that store the logs
-	StorageClass string `json:"storageClass,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a nodeSelector value that is applied to test pods
-	// spawned by the test operator.
-	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// This value contains a toleration that is applied to pods spawned by the
-	// test pods that are spawned by the test-operator.
-	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -220,16 +161,6 @@ type TobikoWorkflowSpec struct {
 	// Public Key
 	PublicKey string `json:"publicKey,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// Container image for tobiko
-	ContainerImage string `json:"containerImage,omitempty"`
-
-	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
-	// +kubebuilder:default:=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
-
 	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
 	// in the test pod.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
@@ -244,33 +175,18 @@ type TobikoWorkflowSpec struct {
 	StepName string `json:"stepName"`
 }
 
-// TobikoStatus defines the observed state of Tobiko
-type TobikoStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Map of hashes to track e.g. job status
-	Hash map[string]string `json:"hash,omitempty"`
-
-	// Conditions
-	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
-
-	// NetworkAttachments status of the deployment pods
-	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
-}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[0].status",description="Status"
 //+kubebuilder:printcolumn:name="Message",type="string",JSONPath=".status.conditions[0].message",description="Message"
 
-// Tobiko is the Schema for the tobikoes API
 type Tobiko struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   TobikoSpec   `json:"spec,omitempty"`
-	Status TobikoStatus `json:"status,omitempty"`
+	Spec   TobikoSpec       `json:"spec,omitempty"`
+	Status CommonTestStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
