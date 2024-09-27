@@ -70,6 +70,14 @@ spec:
               dashboardUrl:
                 description: DashboardUrl is the URL of the Horizon dashboard.
                 type: string
+              debug:
+                default: false
+                description: Activate debug mode. When debug mode is activated any
+                  error encountered inside the test-pod causes that the pod will be
+                  kept alive indefinitely (stuck in "Running" phase) or until the
+                  corresponding HorizonTest CR is deleted. This allows the user to
+                  debug any potential troubles with `oc rsh`.
+                type: boolean
               extraConfigmapsMounts:
                 description: Extra configmaps for mounting inside the pod
                 items:

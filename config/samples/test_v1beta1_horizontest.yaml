@@ -10,6 +10,7 @@ metadata:
   name: horizontest-sample
 spec:
   containerImage: ""
+  # debug: false
 
   # OpenStack admin credentials
   adminUsername: "admin"
