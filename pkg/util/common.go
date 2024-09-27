@@ -17,9 +17,7 @@ func GetSecurityContext(
 		RunAsUser:                &runAsUser,
 		RunAsGroup:               &runAsUser,
 		AllowPrivilegeEscalation: &falseVar,
-		Capabilities: &corev1.Capabilities{
-			Add: addCapabilities,
-		},
+		Capabilities:             &corev1.Capabilities{},
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
@@ -29,6 +27,7 @@ func GetSecurityContext(
 		// We need to run pods with AllowPrivilegedEscalation: true to remove
 		// nosuid from the pod (in order to be able to run sudo)
 		securityContext.AllowPrivilegeEscalation = &trueVar
+		securityContext.Capabilities.Add = addCapabilities
 	}
 
 	if !privileged {
