@@ -396,6 +396,14 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=false
+	// Activate tempest cleanup. When activated, tempest will run tempest cleanup
+	// after test execution is complete to delete any resources created by tempest
+	// that may have been left out.
+	Cleanup bool `json:"cleanup"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
 	// the services to the given network
 	NetworkAttachments []string `json:"networkAttachments,omitempty"`
