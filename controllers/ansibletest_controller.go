@@ -48,7 +48,7 @@ type AnsibleTestReconciler struct {
 
 // GetLogger returns a logger object with a prefix of "controller.name" and additional controller context fields
 func (r *AnsibleTestReconciler) GetLogger(ctx context.Context) logr.Logger {
-	return log.FromContext(ctx).WithName("Controllers").WithName("Tobiko")
+	return log.FromContext(ctx).WithName("Controllers").WithName("AnsibleTest")
 }
 
 // +kubebuilder:rbac:groups=test.openstack.org,resources=ansibletests,verbs=get;list;watch;create;update;patch;delete
