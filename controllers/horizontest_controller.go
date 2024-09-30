@@ -48,7 +48,7 @@ type HorizonTestReconciler struct {
 
 // GetLogger returns a logger object with a prefix of "controller.name" and additional controller context fields
 func (r *HorizonTestReconciler) GetLogger(ctx context.Context) logr.Logger {
-	return log.FromContext(ctx).WithName("Controllers").WithName("Tobiko")
+	return log.FromContext(ctx).WithName("Controllers").WithName("HorizonTest")
 }
 
 //+kubebuilder:rbac:groups=test.openstack.org,resources=horizontests,verbs=get;list;watch;create;update;patch;delete
