@@ -28,6 +28,14 @@ import (
 type HorizonTestSpec struct {
 	CommonOptions `json:",inline"`
 
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	// Activate debug mode. When debug mode is activated any error encountered
+	// inside the test-pod causes that the pod will be kept alive indefinitely
+	// (stuck in "Running" phase) or until the corresponding HorizonTest CR is deleted.
+	// This allows the user to debug any potential troubles with `oc rsh`.
+	Debug bool `json:"debug"`
+
 	// AdminUsername is the username for the OpenStack admin user.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
