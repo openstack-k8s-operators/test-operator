@@ -31,7 +31,7 @@
 
       cifmw_run_test_role: test_operator
 
-      # Test operator
+      # Test operator - (TEST)
       cifmw_test_operator_concurrency: 4
       cifmw_test_operator_timeout: 7200
 
