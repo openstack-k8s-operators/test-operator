@@ -18,6 +18,7 @@ import (
 	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -531,4 +532,21 @@ func (r *Reconciler) OverwriteValueWithWorkflow(
 	}
 
 	return nil
+}
+
+func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
+	rbacPolicyRule := rbacv1.PolicyRule{
+		APIGroups:     []string{"security.openshift.io"},
+		ResourceNames: []string{"nonroot", "nonroot-v2"},
+		Resources:     []string{"securitycontextconstraints"},
+		Verbs:         []string{"use"},
+	}
+
+	if privileged {
+		rbacPolicyRule.ResourceNames = append(
+			rbacPolicyRule.ResourceNames,
+			[]string{"anyuid", "privileged"}...)
+	}
+
+	return []rbacv1.PolicyRule{rbacPolicyRule}
 }
