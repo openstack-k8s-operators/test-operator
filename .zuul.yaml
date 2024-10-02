@@ -37,6 +37,7 @@
 
       # Tempest
       cifmw_run_tempest: true
+      cifmw_test_operator_tempest_cleanup: true
       cifmw_test_operator_tempest_include_list: |
         ^tempest.
       cifmw_test_operator_tempest_exclude_list: |
