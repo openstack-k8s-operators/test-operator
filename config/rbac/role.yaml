@@ -8,9 +8,22 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - persistentvolumeclaims
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
@@ -27,6 +40,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - ""
@@ -43,37 +64,6 @@ rules:
   - batch
   resources:
   - jobs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - ""
-  resources:
-  - secrets
   verbs:
   - create
   - delete
@@ -116,6 +106,8 @@ rules:
   - security.openshift.io
   resourceNames:
   - anyuid
+  - nonroot
+  - nonroot-v2
   - privileged
   resources:
   - securitycontextconstraints

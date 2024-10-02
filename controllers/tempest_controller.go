@@ -36,7 +36,6 @@ import (
 	"github.com/openstack-k8s-operators/test-operator/pkg/tempest"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,20 +55,16 @@ func (r *TempestReconciler) GetLogger(ctx context.Context) logr.Logger {
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests/finalizers,verbs=update;patch
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete;
-// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete;
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;patch;update;delete;
 // +kubebuilder:rbac:groups=k8s.cni.cncf.io,resources=network-attachment-definitions,verbs=get;list;watch
-
-// service account, role, rolebinding
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch
-// service account permissions that are needed to grant permission to the above
-// +kubebuilder:rbac:groups="security.openshift.io",resourceNames=anyuid;privileged,resources=securitycontextconstraints,verbs=use
+// +kubebuilder:rbac:groups="security.openshift.io",resourceNames=anyuid;privileged;nonroot;nonroot-v2,resources=securitycontextconstraints,verbs=use
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete;
 // +kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch
-// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;create;update;watch;patch
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;create;update;watch;patch;delete
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch
 
 // Reconcile - Tempest
 func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
@@ -191,33 +186,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 	}
 
-	// Service account, role, binding
-	rbacRules := []rbacv1.PolicyRule{
-		{
-			APIGroups:     []string{"security.openshift.io"},
-			ResourceNames: []string{"anyuid", "privileged"},
-			Resources:     []string{"securitycontextconstraints"},
-			Verbs:         []string{"use"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"pods"},
-			Verbs:     []string{"create", "get", "list", "watch", "update", "patch", "delete"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"persistentvolumeclaims"},
-			Verbs:     []string{"get", "list", "create", "update", "watch", "patch"},
-		},
-	}
-	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
-	if err != nil {
-		return rbacResult, err
-	} else if (rbacResult != ctrl.Result{}) {
-		return rbacResult, nil
-	}
-	// Service account, role, binding - end
-
 	serviceLabels := map[string]string{
 		common.AppSelector: tempest.ServiceName,
 		"workflowStep":     strconv.Itoa(externalWorkflowCounter),
@@ -338,6 +306,16 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	// Service account, role, binding
+	rbacRules := GetCommonRbacRules(instance.Spec.Privileged)
+	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
+	if err != nil {
+		return rbacResult, err
+	} else if (rbacResult != ctrl.Result{}) {
+		return rbacResult, nil
+	}
+	// Service account, role, binding - end
 
 	// Note(lpiwowar): Remove all the workflow merge code to webhook once it is done.
 	//                 It will simplify the logic and duplicite code (Tempest vs Tobiko)
