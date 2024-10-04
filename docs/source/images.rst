@@ -53,3 +53,12 @@ Tobiko Image
 
   An image that installs tobiko directly from the source code downloaded from
   `x/tobiko <https://opendev.org/x/tobiko.git>`_ repository.
+
+HorizonTest Image
+-----------------
+
+* `openstack-horizontest <https://quay.io/repository/podified-antelope-centos9/openstack-horizontest?tab=tags&tag=current-podified>`_
+
+  An image that installs horizon directly from the source code downloaded from
+  `x/horizon <https://opendev.org/openstack/horizon.git>`_ repository and prepares
+  the enviroment for selenium tests to run
