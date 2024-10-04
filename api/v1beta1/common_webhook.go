@@ -4,6 +4,9 @@ const (
 	// ErrPrivilegedModeRequired
 	ErrPrivilegedModeRequired = "%s.Spec.Privileged is requied in order to successfully " +
 		"execute tests with the provided configuration."
+
+	// ErrDebug
+	ErrDebug = "%s.Spec.Workflow parameter must be empty to run debug mode"
 )
 
 const (
