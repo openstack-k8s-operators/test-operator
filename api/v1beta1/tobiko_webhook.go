@@ -25,8 +25,10 @@ package v1beta1
 import (
 	"fmt"
 
-	"errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -62,7 +64,16 @@ var _ webhook.Validator = &Tobiko{}
 func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 	tobikolog.Info("validate create", "name", r.Name)
 
+	var allErrs field.ErrorList
 	var allWarnings admission.Warnings
+
+	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
+		allErrs = append(allErrs, &field.Error{
+			Type:     field.ErrorTypeForbidden,
+			BadValue: r.Spec.Workflow,
+			Detail:   fmt.Sprintf(ErrDebug, "Tobiko"),
+		})
+	}
 
 	if r.Spec.Privileged {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tobiko"))
@@ -70,8 +81,12 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOff, "Tobiko"))
 	}
 
-	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-		return allWarnings, errors.New("workflow variable must be empty to run debug mode")
+	if len(allErrs) > 0 {
+		return allWarnings, apierrors.NewInvalid(
+			schema.GroupKind{
+				Group: GroupVersion.WithKind("Tobiko").Group,
+				Kind:  GroupVersion.WithKind("Tobiko").Kind,
+			}, r.GetName(), allErrs)
 	}
 
 	return allWarnings, nil
