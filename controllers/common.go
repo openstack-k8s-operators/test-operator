@@ -36,6 +36,7 @@ const (
 	customDataConfigMapinfix = "-custom-data-step-"
 	workflowStepNumInvalid   = -1
 	workflowStepNameInvalid  = "no-step-name"
+	workflowStepLabel        = "workflowStep"
 
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOnwerField = "owner"
@@ -405,77 +406,6 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	}
 
 	return false, errors.New("failed to delete test-operator-lock")
-}
-
-func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err == nil {
-		return true
-	}
-
-	counterData := make(map[string]string)
-	counterData["counter"] = "0"
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: counterData,
-		},
-	}
-
-	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
-}
-
-func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return false
-	}
-
-	counterValue, _ := strconv.Atoi(cm.Data["counter"])
-	newCounterValue := strconv.Itoa(counterValue + 1)
-	cm.Data["counter"] = newCounterValue
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: cm.Data,
-		},
-	}
-
-	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
-}
-
-func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object) int {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return workflowStepNumInvalid
-	}
-
-	counter, _ := strconv.Atoi(cm.Data["counter"])
-	return counter
-}
-
-func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
-	job := &batchv1.Job{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
-
-	if err != nil {
-		return false
-	}
-
-	if job.Status.Succeeded > 0 || job.Status.Failed > 0 {
-		return true
-	}
-
-	return false
 }
 
 func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
