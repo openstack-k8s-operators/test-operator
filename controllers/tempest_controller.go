@@ -27,7 +27,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
@@ -51,6 +50,43 @@ type TempestReconciler struct {
 // GetLogger returns a logger object with a prefix of "controller.name" and additional controller context fields
 func (r *TempestReconciler) GetLogger(ctx context.Context) logr.Logger {
 	return log.FromContext(ctx).WithName("Controllers").WithName("Tempest")
+}
+
+func (r *Reconciler) GetJobsWithLabel(
+	ctx context.Context,
+	instance client.Object,
+	labels map[string]string,
+) ([]batchv1.Job, error) {
+	jobList := &batchv1.JobList{}
+
+	namespaceListOpt := client.InNamespace(instance.GetNamespace())
+	labelsListOpt := client.MatchingLabels(labels)
+
+	err := r.Client.List(ctx, jobList, namespaceListOpt, labelsListOpt)
+	if err != nil {
+		return []batchv1.Job{}, err
+	}
+
+	return jobList.Items, nil
+}
+
+func (r *Reconciler) GetlastJob(jobList []batchv1.Job) (batchv1.Job, error) {
+	var maxJob batchv1.Job
+	maxJobWorkflowStep := 0
+
+	for _, job := range jobList {
+		workflowStep, err := strconv.Atoi(job.Labels[workflowStepLabel])
+		if err != nil {
+			return batchv1.Job{}, err
+		}
+
+		if workflowStep > maxJobWorkflowStep {
+			maxJobWorkflowStep = workflowStep
+			maxJob = job
+		}
+	}
+
+	return maxJob, nil
 }
 
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests,verbs=get;list;watch;create;update;patch;delete
@@ -164,31 +200,37 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return r.reconcileDelete(ctx, instance, helper)
 	}
 
-	// Ensure that there is an external counter and read its value
-	// We use the external counter to keep track of the workflow steps
-	r.WorkflowStepCounterCreate(ctx, instance, helper)
-	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance)
-	if externalWorkflowCounter == -1 {
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	}
-
 	// Each job that is being executed by the test operator has
-	currentWorkflowStep := 0
-	runningTobikoJob := &batchv1.Job{}
-	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
-	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningTobikoJob)
-	if err == nil {
-		currentWorkflowStep, _ = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
+	labels := map[string]string{workflowStepLabel: instance.Name}
+	jobs, err := r.GetJobsWithLabel(ctx, instance, labels)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
-	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
-		// The job created by the instance was completed. Release the lock
-		// so that other instances can spawn a job.
-		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
-		Log.Info("Job completed")
-		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			return ctrl.Result{}, err
-		}
+	job, err := r.GetLastJob(jobs)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if len(jobs) > 0 && job.Active == true {
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
+	}
+
+	lastJobworkflowStep, err := strconv.Atoi(job.Labels[workflowStepLabel])
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	nextWorkflowStep := lastJobworkflowStep + 1
+
+	// The job created by the instance was completed. Release the lock
+	// so that other instances can spawn a job.
+	instance.Status.Conditions.MarkTrue(
+		condition.DeploymentReadyCondition,
+		condition.DeploymentReadyMessage)
+
+	Log.Info("Job completed")
+	if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+		return ctrl.Result{}, err
 	}
 
 	// Service account, role, binding
