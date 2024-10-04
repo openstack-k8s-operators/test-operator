@@ -92,7 +92,11 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	var allWarnings admission.Warnings
 
 	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-		return nil, errors.New("workflow variable must be empty to run debug mode")
+		allErrs = append(allErrs, &field.Error{
+			Type:     field.ErrorTypeForbidden,
+			BadValue: r.Spec.Workflow,
+			Detail:   fmt.Sprintf(ErrDebug, "Tempest"),
+		})
 	}
 
 	if !r.Spec.Privileged && r.PrivilegedRequired() {
