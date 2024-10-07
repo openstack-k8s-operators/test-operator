@@ -5,11 +5,15 @@ CRs Used By the test-operator
 =============================
 
 This file contains definitions of all custom resources (CRs) that are accepted by
-the test-operator. Currently, there are two CRs accepted by the test-operator:
+the test-operator. Currently, there are four CRs accepted by the test-operator:
 
 * :ref:`tempest-custom-resource`
 
 * :ref:`tobiko-custom-resource`
+
+* :ref:`horizontest-custom-resource`
+
+* :ref:`ansibletest-custom-resource`
 
 
 .. _tempest-custom-resource:

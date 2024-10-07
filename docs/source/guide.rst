@@ -174,7 +174,7 @@ Executing Tests
 ---------------
 
 Once you have the test operator running, then you can apply a custom resource accepted
-by the test-operator to start the testing. Currently, two types of custom
+by the test-operator to start the testing. Currently, four types of custom
 resources are being accepted by the test-operator (see
 :ref:`custom-resources-used-by-the-test-operator` section):
 
