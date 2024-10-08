@@ -42,6 +42,6 @@ func GetSecurityContext(
 func GetResourceLimits() corev1.ResourceList {
 	return corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("2000m"),
-		corev1.ResourceMemory: resource.MustParse("4Gi"),
+		corev1.ResourceMemory: resource.MustParse("8Gi"),
 	}
 }
