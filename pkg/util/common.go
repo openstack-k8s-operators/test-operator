@@ -2,7 +2,6 @@ package util
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func GetSecurityContext(
@@ -37,11 +36,4 @@ func GetSecurityContext(
 	}
 
 	return securityContext
-}
-
-func GetResourceLimits() corev1.ResourceList {
-	return corev1.ResourceList{
-		corev1.ResourceCPU:    resource.MustParse("2000m"),
-		corev1.ResourceMemory: resource.MustParse("8Gi"),
-	}
 }

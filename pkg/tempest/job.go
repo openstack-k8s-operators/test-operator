@@ -79,9 +79,6 @@ func Job(
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: util.GetResourceLimits(),
-							},
 						},
 					},
 					Volumes: GetVolumes(
