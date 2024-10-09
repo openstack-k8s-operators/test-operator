@@ -63,9 +63,6 @@ func Job(
 							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts:    GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig, instance),
 							SecurityContext: &securityContext,
-							Resources: corev1.ResourceRequirements{
-								Limits: util.GetResourceLimits(),
-							},
 						},
 					},
 					Volumes: GetVolumes(
