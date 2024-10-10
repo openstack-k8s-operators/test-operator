@@ -11,6 +11,7 @@ metadata:
 spec:
   containerImage: ""
   # debug: false
+  storageClass: "local-storage"
 
   # OpenStack admin credentials
   adminUsername: "admin"
