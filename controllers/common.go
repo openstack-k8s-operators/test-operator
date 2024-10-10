@@ -537,15 +537,15 @@ func (r *Reconciler) OverwriteValueWithWorkflow(
 func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
 	rbacPolicyRule := rbacv1.PolicyRule{
 		APIGroups:     []string{"security.openshift.io"},
-		ResourceNames: []string{"anyuid", "privileged"},
+		ResourceNames: []string{"nonroot", "nonroot-v2"},
 		Resources:     []string{"securitycontextconstraints"},
 		Verbs:         []string{"use"},
 	}
 
 	if privileged {
-		rbacPolicyRule.ResourceNames = []string{"anyuid", "privileged"}
-	} else {
-		rbacPolicyRule.ResourceNames = []string{"nonroot", "nonroot-v2"}
+		rbacPolicyRule.ResourceNames = append(
+			rbacPolicyRule.ResourceNames,
+			[]string{"anyuid", "privileged"}...)
 	}
 
 	return []rbacv1.PolicyRule{rbacPolicyRule}

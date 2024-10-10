@@ -43,6 +43,27 @@ spec:
           spec:
             description: TobikoSpec defines the desired state of Tobiko
             properties:
+              SELinuxOptions:
+                description: A SELinuxOptions that should be used for test pods spawned
+                  by the test operator.
+                properties:
+                  level:
+                    description: Level is SELinux level label that applies to the
+                      container.
+                    type: string
+                  role:
+                    description: Role is a SELinux role label that applies to the
+                      container.
+                    type: string
+                  type:
+                    description: Type is a SELinux type label that applies to the
+                      container.
+                    type: string
+                  user:
+                    description: User is a SELinux user label that applies to the
+                      container.
+                    type: string
+                type: object
               backoffLimit:
                 default: 0
                 description: BackoffLimit allows to define the maximum number of retried
@@ -202,6 +223,27 @@ spec:
                 description: A parameter  that contains a workflow definition.
                 items:
                   properties:
+                    SELinuxOptions:
+                      description: A SELinuxOptions that should be used for test pods
+                        spawned by the test operator.
+                      properties:
+                        level:
+                          description: Level is SELinux level label that applies to
+                            the container.
+                          type: string
+                        role:
+                          description: Role is a SELinux role label that applies to
+                            the container.
+                          type: string
+                        type:
+                          description: Type is a SELinux type label that applies to
+                            the container.
+                          type: string
+                        user:
+                          description: User is a SELinux user label that applies to
+                            the container.
+                          type: string
+                      type: object
                     backoffLimit:
                       default: 0
                       description: BackoffLimit allows to define the maximum number

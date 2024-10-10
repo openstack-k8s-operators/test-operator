@@ -54,9 +54,10 @@ func Job(
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: instance.RbacResourceName(),
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser:  &runAsUser,
-						RunAsGroup: &runAsGroup,
-						FSGroup:    &runAsGroup,
+						RunAsUser:      &runAsUser,
+						RunAsGroup:     &runAsGroup,
+						FSGroup:        &runAsGroup,
+						SELinuxOptions: &instance.Spec.SELinuxOptions,
 					},
 					Tolerations:  instance.Spec.Tolerations,
 					NodeSelector: instance.Spec.NodeSelector,
