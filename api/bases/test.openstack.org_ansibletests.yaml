@@ -43,6 +43,27 @@ spec:
           spec:
             description: AnsibleTestSpec defines the desired state of AnsibleTest
             properties:
+              SELinuxOptions:
+                description: A SELinuxOptions that should be used for test pods spawned
+                  by the test operator.
+                properties:
+                  level:
+                    description: Level is SELinux level label that applies to the
+                      container.
+                    type: string
+                  role:
+                    description: Role is a SELinux role label that applies to the
+                      container.
+                    type: string
+                  type:
+                    description: Type is a SELinux type label that applies to the
+                      container.
+                    type: string
+                  user:
+                    description: User is a SELinux user label that applies to the
+                      container.
+                    type: string
+                type: object
               ansibleCollections:
                 default: ""
                 description: AnsibleCollections - extra ansible collections to instal
@@ -191,6 +212,27 @@ spec:
                 description: A parameter that contains a workflow definition.
                 items:
                   properties:
+                    SELinuxOptions:
+                      description: A SELinuxOptions that should be used for test pods
+                        spawned by the test operator.
+                      properties:
+                        level:
+                          description: Level is SELinux level label that applies to
+                            the container.
+                          type: string
+                        role:
+                          description: Role is a SELinux role label that applies to
+                            the container.
+                          type: string
+                        type:
+                          description: Type is a SELinux type label that applies to
+                            the container.
+                          type: string
+                        user:
+                          description: User is a SELinux user label that applies to
+                            the container.
+                          type: string
+                      type: object
                     ansibleCollections:
                       description: AnsibleCollections - extra ansible collections
                         to instal in additionn to the ones exist in the requirements.yaml

@@ -45,11 +45,27 @@ spec:
               specific configuration of tempest see TempestRunSpec and for discover-tempest-config
               see TempestconfRunSpec.
             properties:
-              SELinuxLevel:
-                default: s0:c478,c978
-                description: A SELinuxLevel that is used for all the tempest test
-                  pods.
-                type: string
+              SELinuxOptions:
+                description: A SELinuxOptions that should be used for test pods spawned
+                  by the test operator.
+                properties:
+                  level:
+                    description: Level is SELinux level label that applies to the
+                      container.
+                    type: string
+                  role:
+                    description: Role is a SELinux role label that applies to the
+                      container.
+                    type: string
+                  type:
+                    description: Type is a SELinux type label that applies to the
+                      container.
+                    type: string
+                  user:
+                    description: User is a SELinux user label that applies to the
+                      container.
+                    type: string
+                type: object
               SSHKeySecretName:
                 default: ""
                 description: SSHKeySecretName is the name of the k8s secret that contains
@@ -490,6 +506,27 @@ spec:
                     For specific configuration of tempest see TempestRunSpec and for
                     discover-tempest-config see TempestconfRunSpec.
                   properties:
+                    SELinuxOptions:
+                      description: A SELinuxOptions that should be used for test pods
+                        spawned by the test operator.
+                      properties:
+                        level:
+                          description: Level is SELinux level label that applies to
+                            the container.
+                          type: string
+                        role:
+                          description: Role is a SELinux role label that applies to
+                            the container.
+                          type: string
+                        type:
+                          description: Type is a SELinux type label that applies to
+                            the container.
+                          type: string
+                        user:
+                          description: User is a SELinux user label that applies to
+                            the container.
+                          type: string
+                      type: object
                     SSHKeySecretName:
                       description: SSHKeySecretName is the name of the k8s secret
                         that contains an ssh key. The key is mounted to ~/.ssh/id_ecdsa

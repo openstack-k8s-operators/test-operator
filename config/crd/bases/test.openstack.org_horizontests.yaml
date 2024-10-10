@@ -43,6 +43,27 @@ spec:
           spec:
             description: HorizonTestSpec defines the desired state of HorizonTest
             properties:
+              SELinuxOptions:
+                description: A SELinuxOptions that should be used for test pods spawned
+                  by the test operator.
+                properties:
+                  level:
+                    description: Level is SELinux level label that applies to the
+                      container.
+                    type: string
+                  role:
+                    description: Role is a SELinux role label that applies to the
+                      container.
+                    type: string
+                  type:
+                    description: Type is a SELinux type label that applies to the
+                      container.
+                    type: string
+                  user:
+                    description: User is a SELinux user label that applies to the
+                      container.
+                    type: string
+                type: object
               adminPassword:
                 default: admin
                 description: AdminPassword is the password for the OpenStack admin
