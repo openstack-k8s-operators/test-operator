@@ -112,6 +112,10 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tempest"))
 	}
 
+	if r.Spec.Privileged && len(r.Spec.Workflow) > 0 && len(r.Spec.SELinuxLevel) == 0 {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnSELinuxLevel, r.Kind))
+	}
+
 	if len(allErrs) > 0 {
 		return allWarnings, apierrors.NewInvalid(
 			schema.GroupKind{

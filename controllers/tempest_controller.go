@@ -327,6 +327,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		if instance.Spec.Workflow[externalWorkflowCounter].Tolerations != nil {
 			instance.Spec.Tolerations = *instance.Spec.Workflow[externalWorkflowCounter].Tolerations
 		}
+
+		if instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel != nil {
+			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel
+		}
 	}
 
 	jobDef := tempest.Job(

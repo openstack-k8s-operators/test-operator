@@ -236,6 +236,10 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if instance.Spec.Workflow[externalWorkflowCounter].Tolerations != nil {
 			instance.Spec.Tolerations = *instance.Spec.Workflow[externalWorkflowCounter].Tolerations
 		}
+
+		if instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel != nil {
+			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel
+		}
 	}
 
 	// Service account, role, binding
