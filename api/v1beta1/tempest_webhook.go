@@ -75,10 +75,6 @@ func (spec *TempestSpec) Default() {
 	}
 }
 
-func (r *Tempest) PrivilegedRequired() bool {
-	return len(r.Spec.TempestRun.ExtraImages) > 0
-}
-
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-tempest,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tempests,verbs=create;update,versions=v1beta1,name=vtempest.kb.io,admissionReviewVersions=v1
 
@@ -95,7 +91,16 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 		return nil, errors.New("workflow variable must be empty to run debug mode")
 	}
 
-	if !r.Spec.Privileged && r.PrivilegedRequired() {
+	privilegedValues := []string{
+		"User",
+		"Role",
+		"Type",
+		"Level",
+		"ExtraImages",
+		"ExtraRPMs",
+	}
+
+	if !r.Spec.Privileged && PrivilegedRequired(r.Spec, privilegedValues) {
 		allErrs = append(allErrs, &field.Error{
 			Type:     field.ErrorTypeRequired,
 			BadValue: r.Spec.Privileged,
