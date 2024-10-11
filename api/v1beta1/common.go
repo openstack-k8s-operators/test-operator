@@ -62,6 +62,14 @@ type CommonOptions struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=""
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// A SELinuxLevel that should be used for test pods spawned by the test
+	// operator.
+	SELinuxLevel string `json:"SELinuxLevel"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=""
 	// A URL of a container image that should be used by the test-operator for tests execution.
 	ContainerImage string `json:"containerImage"`
 
@@ -135,6 +143,13 @@ type WorkflowCommonParameters struct {
 	// +kubebuilder:default:="local-storage"
 	// StorageClass used to create any test-operator related PVCs.
 	StorageClass *string `json:"storageClass"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// +optional
+	// A SELinuxLevel that should be used for test pods spawned by the test
+	// operator.
+	SELinuxLevel *string `json:"SELinuxLevel,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional

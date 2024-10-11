@@ -422,6 +422,10 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 		if instance.Spec.Workflow[step].Tolerations != nil {
 			instance.Spec.Tolerations = *instance.Spec.Workflow[step].Tolerations
 		}
+
+		if instance.Spec.Workflow[step].SELinuxLevel != nil {
+			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[step].SELinuxLevel
+		}
 	}
 
 	// Prepare env vars

@@ -43,6 +43,11 @@ spec:
           spec:
             description: TobikoSpec defines the desired state of Tobiko
             properties:
+              SELinuxLevel:
+                default: ""
+                description: A SELinuxLevel that should be used for test pods spawned
+                  by the test operator.
+                type: string
               backoffLimit:
                 default: 0
                 description: BackoffLimit allows to define the maximum number of retried
@@ -202,6 +207,10 @@ spec:
                 description: A parameter  that contains a workflow definition.
                 items:
                   properties:
+                    SELinuxLevel:
+                      description: A SELinuxLevel that should be used for test pods
+                        spawned by the test operator.
+                      type: string
                     backoffLimit:
                       default: 0
                       description: BackoffLimit allows to define the maximum number

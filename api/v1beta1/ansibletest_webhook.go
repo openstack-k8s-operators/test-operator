@@ -67,6 +67,10 @@ func (r *AnsibleTest) ValidateCreate() (admission.Warnings, error) {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "AnsibleTest"))
 	}
 
+	if r.Spec.Privileged && len(r.Spec.Workflow) > 0 && len(r.Spec.SELinuxLevel) == 0 {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnSELinuxLevel, r.Kind))
+	}
+
 	return allWarnings, nil
 }
 
