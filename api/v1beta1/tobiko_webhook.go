@@ -89,6 +89,10 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 			}, r.GetName(), allErrs)
 	}
 
+	if r.Spec.Privileged && len(r.Spec.Workflow) > 0 && len(r.Spec.SELinuxLevel) == 0 {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnSELinuxLevel, r.Kind))
+	}
+
 	return allWarnings, nil
 }
 

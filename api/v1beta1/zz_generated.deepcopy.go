@@ -649,6 +649,11 @@ func (in *WorkflowCommonParameters) DeepCopyInto(out *WorkflowCommonParameters) 
 		*out = new(string)
 		**out = **in
 	}
+	if in.SELinuxLevel != nil {
+		in, out := &in.SELinuxLevel, &out.SELinuxLevel
+		*out = new(string)
+		**out = **in
+	}
 	if in.BackoffLimit != nil {
 		in, out := &in.BackoffLimit, &out.BackoffLimit
 		*out = new(int32)
