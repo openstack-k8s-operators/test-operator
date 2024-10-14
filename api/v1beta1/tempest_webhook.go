@@ -69,9 +69,13 @@ func (spec *TempestSpec) Default() {
 	if spec.ContainerImage == "" {
 		spec.ContainerImage = tempestDefaults.ContainerImageURL
 	}
-
 	if spec.TempestconfRun == (TempestconfRunSpec{}) {
 		spec.TempestconfRun.Create = true
+	}
+	if len(spec.Workflow) > 0 {
+		for key, _ := range spec.Workflow {
+			mergeSectionIntoWorkflow(spec, key)
+		}
 	}
 }
 
