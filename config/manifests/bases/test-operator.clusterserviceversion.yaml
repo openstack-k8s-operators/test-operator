@@ -43,8 +43,8 @@ spec:
           get added to the
         displayName: Ansible Var Files
         path: ansibleVarFiles
-      - description: BackoffLimimt allows to define the maximum number of retried
-          executions (defaults to 6).
+      - description: BackoffLimit allows to define the maximum number of retried executions
+          (defaults to 0).
         displayName: Backoff Limit
         path: backoffLimit
         x-descriptors:
@@ -61,17 +61,17 @@ spec:
         displayName: Debug
         path: debug
       - description: Extra configmaps for mounting in the pod.
-        displayName: Extra Mounts
-        path: extraMounts
+        displayName: Extra Configmaps Mounts
+        path: extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
         displayName: Mount Path
-        path: extraMounts[0].mountPath
+        path: extraConfigmapsMounts[0].mountPath
       - description: The name of an existing config map for mounting.
         displayName: Name
-        path: extraMounts[0].name
+        path: extraConfigmapsMounts[0].name
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
-        path: extraMounts[0].subPath
+        path: extraConfigmapsMounts[0].subPath
       - description: OpenStackConfigMap is the name of the ConfigMap containing the
           clouds.yaml
         displayName: Open Stack Config Map
@@ -80,10 +80,18 @@ spec:
           secure.yaml
         displayName: Open Stack Config Secret
         path: openStackConfigSecret
+      - description: 'Use with caution! This parameter specifies whether test-operator
+          should spawn test pods with allowedPrivilegedEscalation: true and the default
+          capabilities on top of capabilities that are usually needed by the test
+          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
+          for certain test-operator functionalities to work properly (e.g.: extraRPMs
+          in Tempest CR, or certain set of tobiko tests).'
+        displayName: Privileged
+        path: privileged
       - description: StorageClass used to create PVCs that store the logs
         displayName: Storage Class
         path: storageClass
-      - description: A parameter  that contains a workflow definition.
+      - description: A parameter that contains a workflow definition.
         displayName: Workflow
         path: workflow
         x-descriptors:
@@ -110,13 +118,13 @@ spec:
           to the ansible command using -e @/etc/test_operator/<file>
         displayName: Ansible Var Files
         path: workflow[0].ansibleVarFiles
-      - description: BackoffLimimt allows to define the maximum number of retried
-          executions (defaults to 6).
+      - description: BackoffLimit allows to define the maximum number of retried executions
+          (defaults to 0).
         displayName: Backoff Limit
         path: workflow[0].backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: ComputeSSHKeySecretName is the name of the k8s secret that contains
+      - description: ComputesSSHKeySecretName is the name of the k8s secret that contains
           an ssh key for computes. The key is mounted to ~/.ssh/id_ecdsa in the ansible
           pod
         displayName: Computes SSHKey Secret Name
@@ -128,17 +136,17 @@ spec:
         displayName: Debug
         path: workflow[0].debug
       - description: Extra configmaps for mounting in the pod
-        displayName: Extra Mounts
-        path: workflow[0].extraMounts
+        displayName: Extra Configmaps Mounts
+        path: workflow[0].extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
         displayName: Mount Path
-        path: workflow[0].extraMounts[0].mountPath
+        path: workflow[0].extraConfigmapsMounts[0].mountPath
       - description: The name of an existing config map for mounting.
         displayName: Name
-        path: workflow[0].extraMounts[0].name
+        path: workflow[0].extraConfigmapsMounts[0].name
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
-        path: workflow[0].extraMounts[0].subPath
+        path: workflow[0].extraConfigmapsMounts[0].subPath
       - description: OpenStackConfigMap is the name of the ConfigMap containing the
           clouds.yaml
         displayName: Open Stack Config Map
@@ -147,6 +155,14 @@ spec:
           secure.yaml
         displayName: Open Stack Config Secret
         path: workflow[0].openStackConfigSecret
+      - description: 'Use with caution! This parameter specifies whether test-operator
+          should spawn test pods with allowedPrivilegedEscalation: true and the default
+          capabilities on top of capabilities that are usually needed by the test
+          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
+          for certain test-operator functionalities to work properly (e.g.: extraRPMs
+          in Tempest CR, or certain set of tobiko tests).'
+        displayName: Privileged
+        path: workflow[0].privileged
       - description: Name of a workflow step. The step name will be used for example
           to create a logs directory.
         displayName: Step Name
@@ -179,8 +195,8 @@ spec:
       - description: AuthUrl is the authentication URL for OpenStack.
         displayName: Auth Url
         path: authUrl
-      - description: BackoffLimimt allows to define the maximum number of retried
-          executions.
+      - description: BackoffLimit allows to define the maximum number of retried executions
+          (defaults to 0).
         displayName: Backoff Limit
         path: backoffLimit
         x-descriptors:
@@ -221,6 +237,14 @@ spec:
       - description: Password is the password for the user running the Horizon tests.
         displayName: Password
         path: password
+      - description: 'Use with caution! This parameter specifies whether test-operator
+          should spawn test pods with allowedPrivilegedEscalation: true and the default
+          capabilities on top of capabilities that are usually needed by the test
+          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
+          for certain test-operator functionalities to work properly (e.g.: extraRPMs
+          in Tempest CR, or certain set of tobiko tests).'
+        displayName: Privileged
+        path: privileged
       - description: ProjectName is the name of the OpenStack project for Horizon
           tests.
         displayName: Project Name
@@ -247,8 +271,8 @@ spec:
           an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
         displayName: SSHKey Secret Name
         path: SSHKeySecretName
-      - description: BackoffLimimt allows to define the maximum number of retried
-          executions (defaults to 6).
+      - description: BackoffLimit allows to define the maximum number of retried executions
+          (defaults to 0).
         displayName: Backoff Limit
         path: backoffLimit
         x-descriptors:
@@ -301,6 +325,14 @@ spec:
           turn off this behaviour then set this option to true.
         displayName: Parallel
         path: parallel
+      - description: 'Use with caution! This parameter specifies whether test-operator
+          should spawn test pods with allowedPrivilegedEscalation: true and the default
+          capabilities on top of capabilities that are usually needed by the test
+          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
+          for certain test-operator functionalities to work properly (e.g.: extraRPMs
+          in Tempest CR, or certain set of tobiko tests).'
+        displayName: Privileged
+        path: privileged
       - description: Name of a storage class that is used to create PVCs for logs
           storage. Required if default storage class does not exist.
         displayName: Storage Class
@@ -502,8 +534,8 @@ spec:
           an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
         displayName: SSHKey Secret Name
         path: workflow[0].SSHKeySecretName
-      - description: BackoffLimimt allows to define the maximum number of retried
-          executions (defaults to 6).
+      - description: BackoffLimit allows to define the maximum number of retried executions
+          (defaults to 0).
         displayName: Backoff Limit
         path: workflow[0].backoffLimit
         x-descriptors:
@@ -737,8 +769,8 @@ spec:
       kind: Tobiko
       name: tobikos.test.openstack.org
       specDescriptors:
-      - description: BackoffLimimt allows to define the maximum number of retried
-          executions (defaults to 6).
+      - description: BackoffLimit allows to define the maximum number of retried executions
+          (defaults to 0).
         displayName: Backoff Limit
         path: backoffLimit
         x-descriptors:
@@ -779,6 +811,14 @@ spec:
       - description: Private Key
         displayName: Private Key
         path: privateKey
+      - description: 'Use with caution! This parameter specifies whether test-operator
+          should spawn test pods with allowedPrivilegedEscalation: true and the default
+          capabilities on top of capabilities that are usually needed by the test
+          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
+          for certain test-operator functionalities to work properly (e.g.: extraRPMs
+          in Tempest CR, or certain set of tobiko tests).'
+        displayName: Privileged
+        path: privileged
       - description: Public Key
         displayName: Public Key
         path: publicKey
@@ -804,8 +844,8 @@ spec:
         path: workflow
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: BackoffLimimt allows to define the maximum number of retried
-          executions (defaults to 6).
+      - description: BackoffLimit allows to define the maximum number of retried executions
+          (defaults to 0).
         displayName: Backoff Limit
         path: workflow[0].backoffLimit
         x-descriptors:
@@ -841,6 +881,14 @@ spec:
       - description: Private Key
         displayName: Private Key
         path: workflow[0].privateKey
+      - description: 'Use with caution! This parameter specifies whether test-operator
+          should spawn test pods with allowedPrivilegedEscalation: true and the default
+          capabilities on top of capabilities that are usually needed by the test
+          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
+          for certain test-operator functionalities to work properly (e.g.: extraRPMs
+          in Tempest CR, or certain set of tobiko tests).'
+        displayName: Privileged
+        path: workflow[0].privileged
       - description: Public Key
         displayName: Public Key
         path: workflow[0].publicKey
