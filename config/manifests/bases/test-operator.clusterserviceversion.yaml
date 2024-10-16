@@ -18,11 +18,14 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: AnsibleTestStatus is the Schema for the AnsibleTestStatus API
-      displayName: Ansible Test
+    - displayName: Ansible Test
       kind: AnsibleTest
       name: ansibletests.test.openstack.org
       specDescriptors:
+      - description: A SELinuxLevel that should be used for test pods spawned by the
+          test operator.
+        displayName: SELinux Level
+        path: SELinuxLevel
       - description: AnsibleCollections - extra ansible collections to instal in additionn
           to the ones exist in the requirements.yaml
         displayName: Ansible Collections
@@ -54,13 +57,14 @@ spec:
           pod
         displayName: Computes SSHKey Secret Name
         path: computeSSHKeySecretName
-      - description: Container image for AnsibleTest
+      - description: A URL of a container image that should be used by the test-operator
+          for tests execution.
         displayName: Container Image
         path: containerImage
       - description: Run ansible playbook with -vvvv
         displayName: Debug
         path: debug
-      - description: Extra configmaps for mounting in the pod.
+      - description: Extra configmaps for mounting inside the pod
         displayName: Extra Configmaps Mounts
         path: extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -72,6 +76,10 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: extraConfigmapsMounts[0].subPath
+      - description: This value contains a nodeSelector value that is applied to test
+          pods spawned by the test operator.
+        displayName: Node Selector
+        path: nodeSelector
       - description: OpenStackConfigMap is the name of the ConfigMap containing the
           clouds.yaml
         displayName: Open Stack Config Map
@@ -88,14 +96,22 @@ spec:
           in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
-      - description: StorageClass used to create PVCs that store the logs
+      - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: storageClass
+      - description: This value contains a toleration that is applied to pods spawned
+          by the test pods that are spawned by the test-operator.
+        displayName: Tolerations
+        path: tolerations
       - description: A parameter that contains a workflow definition.
         displayName: Workflow
         path: workflow
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: A SELinuxLevel that should be used for test pods spawned by the
+          test operator.
+        displayName: SELinux Level
+        path: workflow[0].SELinuxLevel
       - description: AnsibleCollections - extra ansible collections to instal in additionn
           to the ones exist in the requirements.yaml
         displayName: Ansible Collections
@@ -124,29 +140,34 @@ spec:
         path: workflow[0].backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: ComputesSSHKeySecretName is the name of the k8s secret that contains
+      - description: ComputeSSHKeySecretName is the name of the k8s secret that contains
           an ssh key for computes. The key is mounted to ~/.ssh/id_ecdsa in the ansible
           pod
         displayName: Computes SSHKey Secret Name
         path: workflow[0].computeSSHKeySecretName
-      - description: Container image for AnsibleTest
+      - description: A URL of a container image that should be used by the test-operator
+          for tests execution.
         displayName: Container Image
         path: workflow[0].containerImage
       - description: Run ansible playbook with -vvvv
         displayName: Debug
         path: workflow[0].debug
-      - description: Extra configmaps for mounting in the pod
+      - description: Extra configmaps for mounting inside the pod
         displayName: Extra Configmaps Mounts
         path: workflow[0].extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
         displayName: Mount Path
-        path: workflow[0].extraConfigmapsMounts[0].mountPath
+        path: workflow[0].extraConfigmapsMounts.mountPath
       - description: The name of an existing config map for mounting.
         displayName: Name
-        path: workflow[0].extraConfigmapsMounts[0].name
+        path: workflow[0].extraConfigmapsMounts.name
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
-        path: workflow[0].extraConfigmapsMounts[0].subPath
+        path: workflow[0].extraConfigmapsMounts.subPath
+      - description: This value contains a nodeSelector value that is applied to test
+          pods spawned by the test operator.
+        displayName: Node Selector
+        path: workflow[0].nodeSelector
       - description: OpenStackConfigMap is the name of the ConfigMap containing the
           clouds.yaml
         displayName: Open Stack Config Map
@@ -167,9 +188,13 @@ spec:
           to create a logs directory.
         displayName: Step Name
         path: workflow[0].stepName
-      - description: StorageClass used to create PVCs that store the logs
+      - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: workflow[0].storageClass
+      - description: This value contains a toleration that is applied to pods spawned
+          by the test pods that are spawned by the test-operator.
+        displayName: Tolerations
+        path: workflow[0].tolerations
       - description: WorkloadSSHKeySecretName is the name of the k8s secret that contains
           an ssh key for the ansible workload. The key is mounted to ~/test_keypair.key
           in the ansible pod
@@ -181,11 +206,14 @@ spec:
         displayName: Workload SSHKey Secret Name
         path: workloadSSHKeySecretName
       version: v1beta1
-    - description: HorizonTest is the Schema for the horizontests API
-      displayName: Horizon Test
+    - displayName: Horizon Test
       kind: HorizonTest
       name: horizontests.test.openstack.org
       specDescriptors:
+      - description: A SELinuxLevel that should be used for test pods spawned by the
+          test operator.
+        displayName: SELinux Level
+        path: SELinuxLevel
       - description: AdminPassword is the password for the OpenStack admin user.
         displayName: Admin Password
         path: adminPassword
@@ -201,12 +229,25 @@ spec:
         path: backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: Container image for horizontest
+      - description: A URL of a container image that should be used by the test-operator
+          for tests execution.
         displayName: Container Image
         path: containerImage
       - description: DashboardUrl is the URL of the Horizon dashboard.
         displayName: Dashboard Url
         path: dashboardUrl
+      - description: Extra configmaps for mounting inside the pod
+        displayName: Extra Configmaps Mounts
+        path: extraConfigmapsMounts
+      - description: Path within the container at which the volume should be mounted.
+        displayName: Mount Path
+        path: extraConfigmapsMounts[0].mountPath
+      - description: The name of an existing config map for mounting.
+        displayName: Name
+        path: extraConfigmapsMounts[0].name
+      - description: Config map subpath for mounting, defaults to configmap root.
+        displayName: Sub Path
+        path: extraConfigmapsMounts[0].subPath
       - description: FlavorName is the name of the OpenStack flavor to create for
           Horizon tests.
         displayName: Flavor Name
@@ -231,6 +272,10 @@ spec:
           logs.
         displayName: Logs Directory Name
         path: logsDirectoryName
+      - description: This value contains a nodeSelector value that is applied to test
+          pods spawned by the test operator.
+        displayName: Node Selector
+        path: nodeSelector
       - description: Parallel
         displayName: Parallel
         path: parallel
@@ -252,19 +297,23 @@ spec:
       - description: RepoUrl is the URL of the Horizon repository.
         displayName: Repo Url
         path: repoUrl
-      - description: StorageClass used to create PVCs that store the logs
+      - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: storageClass
+      - description: This value contains a toleration that is applied to pods spawned
+          by the test pods that are spawned by the test-operator.
+        displayName: Tolerations
+        path: tolerations
       - description: User is the username under which the Horizon tests will run.
         displayName: User
         path: user
       version: v1beta1
-    - description: Tempest is the Schema for the tempests API
-      displayName: Tempest
+    - displayName: Tempest
       kind: Tempest
       name: tempests.test.openstack.org
       specDescriptors:
-      - description: A SELinuxLevel that is used for all the tempest test pods.
+      - description: A SELinuxLevel that should be used for test pods spawned by the
+          test operator.
         displayName: SELinux Level
         path: SELinuxLevel
       - description: SSHKeySecretName is the name of the k8s secret that contains
@@ -277,13 +326,18 @@ spec:
         path: backoffLimit
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Activate tempest cleanup. When activated, tempest will run tempest
+          cleanup after test execution is complete to delete any resources created
+          by tempest that may have been left out.
+        displayName: Cleanup
+        path: cleanup
       - description: ConfigOverwrite - interface to overwrite default config files
           like e.g. logging.conf But can also be used to add additional files. Those
           get added to the service config dir in /etc/test_operator/<file>
         displayName: Config Overwrite
         path: configOverwrite
-      - description: An URL of a tempest container image that should be used for the
-          execution of tempest tests.
+      - description: A URL of a container image that should be used by the test-operator
+          for tests execution.
         displayName: Container Image
         path: containerImage
       - description: Activate debug mode. When debug mode is activated any error encountered
@@ -292,7 +346,7 @@ spec:
           This allows the user to debug any potential troubles with `oc rsh`.
         displayName: Debug
         path: debug
-      - description: Extra configmaps for mounting in the pod.
+      - description: Extra configmaps for mounting inside the pod
         displayName: Extra Configmaps Mounts
         path: extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -333,8 +387,7 @@ spec:
           in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
-      - description: Name of a storage class that is used to create PVCs for logs
-          storage. Required if default storage class does not exist.
+      - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: storageClass
       - displayName: Tempest Run
@@ -530,6 +583,10 @@ spec:
           CR hierarchy.
         displayName: Workflow
         path: workflow
+      - description: A SELinuxLevel that should be used for test pods spawned by the
+          test operator.
+        displayName: SELinux Level
+        path: workflow[0].SELinuxLevel
       - description: SSHKeySecretName is the name of the k8s secret that contains
           an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
         displayName: SSHKey Secret Name
@@ -545,10 +602,22 @@ spec:
           get added to the service config dir in /etc/test_operator/<file>
         displayName: Config Overwrite
         path: workflow[0].configOverwrite
-      - description: An URL of a tempest container image that should be used for the
-          execution of tempest tests.
+      - description: A URL of a container image that should be used by the test-operator
+          for tests execution.
         displayName: Container Image
         path: workflow[0].containerImage
+      - description: Extra configmaps for mounting inside the pod
+        displayName: Extra Configmaps Mounts
+        path: workflow[0].extraConfigmapsMounts
+      - description: Path within the container at which the volume should be mounted.
+        displayName: Mount Path
+        path: workflow[0].extraConfigmapsMounts.mountPath
+      - description: The name of an existing config map for mounting.
+        displayName: Name
+        path: workflow[0].extraConfigmapsMounts.name
+      - description: Config map subpath for mounting, defaults to configmap root.
+        displayName: Sub Path
+        path: workflow[0].extraConfigmapsMounts.subPath
       - description: NetworkAttachments is a list of NetworkAttachment resource names
           to expose the services to the given network
         displayName: Network Attachments
@@ -570,12 +639,19 @@ spec:
           turn off this behaviour then set this option to true.
         displayName: Parallel
         path: workflow[0].parallel
+      - description: 'Use with caution! This parameter specifies whether test-operator
+          should spawn test pods with allowedPrivilegedEscalation: true and the default
+          capabilities on top of capabilities that are usually needed by the test
+          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
+          for certain test-operator functionalities to work properly (e.g.: extraRPMs
+          in Tempest CR, or certain set of tobiko tests).'
+        displayName: Privileged
+        path: workflow[0].privileged
       - description: Name of a workflow step. The step name will be used for example
           to create a logs directory.
         displayName: Step Name
         path: workflow[0].stepName
-      - description: Name of a storage class that is used to create PVCs for logs
-          storage. Required if default storage class does not exist.
+      - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: workflow[0].storageClass
       - displayName: Tempest Run
@@ -764,11 +840,14 @@ spec:
         displayName: Tolerations
         path: workflow[0].tolerations
       version: v1beta1
-    - description: Tobiko is the Schema for the tobikoes API
-      displayName: Tobiko
+    - displayName: Tobiko
       kind: Tobiko
       name: tobikos.test.openstack.org
       specDescriptors:
+      - description: A SELinuxLevel that should be used for test pods spawned by the
+          test operator.
+        displayName: SELinux Level
+        path: SELinuxLevel
       - description: BackoffLimit allows to define the maximum number of retried executions
           (defaults to 0).
         displayName: Backoff Limit
@@ -778,9 +857,22 @@ spec:
       - description: tobiko.conf
         displayName: Config
         path: config
-      - description: Container image for tobiko
+      - description: A URL of a container image that should be used by the test-operator
+          for tests execution.
         displayName: Container Image
         path: containerImage
+      - description: Extra configmaps for mounting inside the pod
+        displayName: Extra Configmaps Mounts
+        path: extraConfigmapsMounts
+      - description: Path within the container at which the volume should be mounted.
+        displayName: Mount Path
+        path: extraConfigmapsMounts[0].mountPath
+      - description: The name of an existing config map for mounting.
+        displayName: Name
+        path: extraConfigmapsMounts[0].name
+      - description: Config map subpath for mounting, defaults to configmap root.
+        displayName: Sub Path
+        path: extraConfigmapsMounts[0].subPath
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
@@ -826,7 +918,7 @@ spec:
           tests
         displayName: Pytest Addopts
         path: pytestAddopts
-      - description: StorageClass used to create PVCs that store the logs
+      - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: storageClass
       - description: Test environment
@@ -844,6 +936,10 @@ spec:
         path: workflow
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
+      - description: A SELinuxLevel that should be used for test pods spawned by the
+          test operator.
+        displayName: SELinux Level
+        path: workflow[0].SELinuxLevel
       - description: BackoffLimit allows to define the maximum number of retried executions
           (defaults to 0).
         displayName: Backoff Limit
@@ -853,9 +949,22 @@ spec:
       - description: tobiko.conf
         displayName: Config
         path: workflow[0].config
-      - description: Container image for tobiko
+      - description: A URL of a container image that should be used by the test-operator
+          for tests execution.
         displayName: Container Image
         path: workflow[0].containerImage
+      - description: Extra configmaps for mounting inside the pod
+        displayName: Extra Configmaps Mounts
+        path: workflow[0].extraConfigmapsMounts
+      - description: Path within the container at which the volume should be mounted.
+        displayName: Mount Path
+        path: workflow[0].extraConfigmapsMounts.mountPath
+      - description: The name of an existing config map for mounting.
+        displayName: Name
+        path: workflow[0].extraConfigmapsMounts.name
+      - description: Config map subpath for mounting, defaults to configmap root.
+        displayName: Sub Path
+        path: workflow[0].extraConfigmapsMounts.subPath
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name
@@ -901,7 +1010,7 @@ spec:
         path: workflow[0].stepName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: StorageClass used to create PVCs that store the logs
+      - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: workflow[0].storageClass
       - description: Test environment
