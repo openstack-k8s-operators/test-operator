@@ -35,6 +35,8 @@ const (
 	customDataConfigMapinfix = "-custom-data-step-"
 	workflowStepNumInvalid   = -1
 	workflowStepNameInvalid  = "no-step-name"
+	workflowStepLabel        = "workflowStep"
+	instanceNameLabel        = "instanceName"
 
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOnwerField = "owner"
@@ -349,10 +351,11 @@ func (r *Reconciler) AcquireLock(
 		return true, nil
 	}
 
-	_, err := r.GetLockInfo(ctx, instance)
+	instanceGUID := string(instance.GetUID())
+	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		cm := map[string]string{
-			testOperatorLockOnwerField: string(instance.GetUID()),
+			testOperatorLockOnwerField: instanceGUID,
 		}
 
 		cms := []util.Template{
@@ -365,6 +368,10 @@ func (r *Reconciler) AcquireLock(
 
 		err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
 		return err == nil, err
+	}
+
+	if cm.Data[testOperatorLockOnwerField] == instanceGUID {
+		return true, nil
 	}
 
 	return false, err
@@ -404,77 +411,6 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	}
 
 	return false, errors.New("failed to delete test-operator-lock")
-}
-
-func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err == nil {
-		return true
-	}
-
-	counterData := make(map[string]string)
-	counterData["counter"] = "0"
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: counterData,
-		},
-	}
-
-	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
-}
-
-func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return false
-	}
-
-	counterValue, _ := strconv.Atoi(cm.Data["counter"])
-	newCounterValue := strconv.Itoa(counterValue + 1)
-	cm.Data["counter"] = newCounterValue
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: cm.Data,
-		},
-	}
-
-	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
-}
-
-func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object) int {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return workflowStepNumInvalid
-	}
-
-	counter, _ := strconv.Atoi(cm.Data["counter"])
-	return counter
-}
-
-func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
-	job := &batchv1.Job{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
-
-	if err != nil {
-		return false
-	}
-
-	if job.Status.Succeeded > 0 || job.Status.Failed > 0 {
-		return true
-	}
-
-	return false
 }
 
 func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
@@ -531,4 +467,112 @@ func (r *Reconciler) OverwriteValueWithWorkflow(
 	}
 
 	return nil
+}
+
+func (r *Reconciler) GetJobsWithLabel(
+	ctx context.Context,
+	instance client.Object,
+	labels map[string]string,
+) ([]batchv1.Job, error) {
+	jobList := &batchv1.JobList{}
+
+	namespaceListOpt := client.InNamespace(instance.GetNamespace())
+	labelsListOpt := client.MatchingLabels(labels)
+
+	err := r.Client.List(ctx, jobList, namespaceListOpt, labelsListOpt)
+	if err != nil {
+		return []batchv1.Job{}, err
+	}
+
+	return jobList.Items, nil
+}
+
+func (r *Reconciler) GetLastJob(ctx context.Context, instance client.Object) (*batchv1.Job, error) {
+	labels := map[string]string{instanceNameLabel: instance.GetName()}
+	jobs, err := r.GetJobsWithLabel(ctx, instance, labels)
+	if err != nil {
+		return nil, err
+	}
+
+	var maxJob *batchv1.Job
+	maxJobWorkflowStep := 0
+
+	for _, job := range jobs {
+		workflowStep, err := strconv.Atoi(job.Labels[workflowStepLabel])
+		if err != nil {
+			return &batchv1.Job{}, err
+		}
+
+		if workflowStep >= maxJobWorkflowStep {
+			maxJobWorkflowStep = workflowStep
+			maxJob = &job
+		}
+	}
+
+	return maxJob, nil
+}
+
+type NextAction int
+
+const (
+	Wait = iota
+	CreateFirstJob
+	CreateNextJob
+	EndTesting
+	Failure
+)
+
+func isLastJob(createdJobs int, workflowLength int) bool {
+	switch workflowLength {
+	case 0:
+		return createdJobs == 1
+	default:
+		return createdJobs == workflowLength
+	}
+}
+
+func (r *Reconciler) NextAction(
+	ctx context.Context,
+	instance client.Object,
+	helper *helper.Helper,
+	workflowLength int,
+	parallel bool,
+) (NextAction, error) {
+	lastJob, err := r.GetLastJob(ctx, instance)
+	if err != nil {
+		return Failure, err
+	}
+
+	labels := map[string]string{instanceNameLabel: instance.GetName()}
+	jobs, err := r.GetJobsWithLabel(ctx, instance, labels)
+	if err != nil {
+		return Failure, err
+	}
+
+	if lastJob != nil {
+		lastJobFinished := (lastJob.Status.Failed + lastJob.Status.Succeeded) > 0
+
+		if !lastJobFinished {
+			return Wait, err
+		}
+	}
+
+	if isLastJob(len(jobs), workflowLength) {
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			// TODO(lpiwowar): No failure when releasing non-existing lock
+			return Failure, err
+		}
+		return EndTesting, nil
+	}
+
+	if len(jobs) == 0 {
+		lockAcquired, err := r.AcquireLock(ctx, instance, helper, parallel)
+		if !lockAcquired {
+			return Failure, err
+		}
+
+		return CreateFirstJob, nil
+	}
+
+	return CreateNextJob, nil
 }
