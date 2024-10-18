@@ -468,3 +468,111 @@ func (r *Reconciler) OverwriteValueWithWorkflow(
 
 	return nil
 }
+
+func (r *Reconciler) GetJobsWithLabel(
+	ctx context.Context,
+	instance client.Object,
+	labels map[string]string,
+) ([]batchv1.Job, error) {
+	jobList := &batchv1.JobList{}
+
+	namespaceListOpt := client.InNamespace(instance.GetNamespace())
+	labelsListOpt := client.MatchingLabels(labels)
+
+	err := r.Client.List(ctx, jobList, namespaceListOpt, labelsListOpt)
+	if err != nil {
+		return []batchv1.Job{}, err
+	}
+
+	return jobList.Items, nil
+}
+
+func (r *Reconciler) GetLastJob(ctx context.Context, instance client.Object) (*batchv1.Job, error) {
+	labels := map[string]string{instanceNameLabel: instance.GetName()}
+	jobs, err := r.GetJobsWithLabel(ctx, instance, labels)
+	if err != nil {
+		return nil, err
+	}
+
+	var maxJob *batchv1.Job
+	maxJobWorkflowStep := 0
+
+	for _, job := range jobs {
+		workflowStep, err := strconv.Atoi(job.Labels[workflowStepLabel])
+		if err != nil {
+			return &batchv1.Job{}, err
+		}
+
+		if workflowStep >= maxJobWorkflowStep {
+			maxJobWorkflowStep = workflowStep
+			maxJob = &job
+		}
+	}
+
+	return maxJob, nil
+}
+
+type NextAction int
+
+const (
+	Wait = iota
+	CreateFirstJob
+	CreateNextJob
+	EndTesting
+	Failure
+)
+
+func isLastJob(createdJobs int, workflowLength int) bool {
+	switch workflowLength {
+	case 0:
+		return createdJobs == 1
+	default:
+		return createdJobs == workflowLength
+	}
+}
+
+func (r *Reconciler) NextAction(
+	ctx context.Context,
+	instance client.Object,
+	helper *helper.Helper,
+	workflowLength int,
+	parallel bool,
+) (NextAction, error) {
+	lastJob, err := r.GetLastJob(ctx, instance)
+	if err != nil {
+		return Failure, err
+	}
+
+	labels := map[string]string{instanceNameLabel: instance.GetName()}
+	jobs, err := r.GetJobsWithLabel(ctx, instance, labels)
+	if err != nil {
+		return Failure, err
+	}
+
+	if lastJob != nil {
+		lastJobFinished := (lastJob.Status.Failed + lastJob.Status.Succeeded) > 0
+
+		if !lastJobFinished {
+			return Wait, err
+		}
+	}
+
+	if isLastJob(len(jobs), workflowLength) {
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			// TODO(lpiwowar): No failure when releasing non-existing lock
+			return Failure, err
+		}
+		return EndTesting, nil
+	}
+
+	if len(jobs) == 0 {
+		lockAcquired, err := r.AcquireLock(ctx, instance, helper, parallel)
+		if !lockAcquired {
+			return Failure, err
+		}
+
+		return CreateFirstJob, nil
+	}
+
+	return CreateNextJob, nil
+}

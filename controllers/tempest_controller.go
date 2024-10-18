@@ -39,7 +39,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -51,43 +50,6 @@ type TempestReconciler struct {
 // GetLogger returns a logger object with a prefix of "controller.name" and additional controller context fields
 func (r *TempestReconciler) GetLogger(ctx context.Context) logr.Logger {
 	return log.FromContext(ctx).WithName("Controllers").WithName("Tempest")
-}
-
-func (r *Reconciler) GetJobsWithLabel(
-	ctx context.Context,
-	instance client.Object,
-	labels map[string]string,
-) ([]batchv1.Job, error) {
-	jobList := &batchv1.JobList{}
-
-	namespaceListOpt := client.InNamespace(instance.GetNamespace())
-	labelsListOpt := client.MatchingLabels(labels)
-
-	err := r.Client.List(ctx, jobList, namespaceListOpt, labelsListOpt)
-	if err != nil {
-		return []batchv1.Job{}, err
-	}
-
-	return jobList.Items, nil
-}
-
-func (r *Reconciler) GetLastJob(jobList []batchv1.Job) (*batchv1.Job, error) {
-	var maxJob *batchv1.Job
-	maxJobWorkflowStep := 0
-
-	for _, job := range jobList {
-		workflowStep, err := strconv.Atoi(job.Labels[workflowStepLabel])
-		if err != nil {
-			return &batchv1.Job{}, err
-		}
-
-		if workflowStep >= maxJobWorkflowStep {
-			maxJobWorkflowStep = workflowStep
-			maxJob = &job
-		}
-	}
-
-	return maxJob, nil
 }
 
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests,verbs=get;list;watch;create;update;patch;delete
@@ -195,66 +157,50 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return r.reconcileDelete(ctx, instance, helper)
 	}
 
-	// Log.Info("Get list of all Jobs that were spawn by the instance")
-	// Get list of all Jobs that were spawn by the instance
-	labels := map[string]string{instanceNameLabel: instance.Name}
-	jobs, err := r.GetJobsWithLabel(ctx, instance, labels)
-	if err != nil {
+	nextAction, err := r.NextAction(
+		ctx,
+		instance,
+		helper,
+		len(instance.Spec.Workflow),
+		instance.Spec.Parallel,
+	)
+
+	nextWorkflowStep := 0
+	switch nextAction {
+	case Failure:
+		Log.Error(err, "Nopi")
 		return ctrl.Result{}, err
-	}
 
-	// Log.Info("Get the job with the highest workflowStep (the newest job)")
-	// Get the job with the highest workflowStep (the newest job)
-	lastJob, err := r.GetLastJob(jobs)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	case Wait:
+		Log.Info("Waiting on job to finish or release of the lock.")
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 
-	Log.Info("If job is active -> wait")
-	if lastJob != nil {
-		Log.Info(strconv.Itoa(int(lastJob.Status.Active)))
-	} else {
-		Log.Info("It is nil")
-	}
-	// If job is active -> wait
+	case EndTesting:
+		Log.Info("Testing completed")
+		return ctrl.Result{}, nil
 
-	if lastJob != nil {
-		lastJobFinished := (lastJob.Status.Failed + lastJob.Status.Succeeded) > 0
-		if !lastJobFinished {
-			return ctrl.Result{RequeueAfter: requeueAfter}, err
-		}
-	}
+	case CreateFirstJob:
+		Log.Info("Creating first job")
+		nextWorkflowStep = 0
 
-	// Log.Info("If this is the last job -> do not create another one")
-	// If this is the last job -> do not create another one
-	if len(jobs) == len(instance.Spec.Workflow) {
-		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+	case CreateNextJob:
+		Log.Info("Creating next job")
+
+		lastJob, err := r.GetLastJob(ctx, instance)
+		if err != nil {
 			return ctrl.Result{}, err
 		}
-		Log.Info("global test-operator lock released")
-		Log.Info("testing completed")
-		return ctrl.Result{}, nil
-	}
 
-	if len(jobs) == 0 {
-		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
-		if !lockAcquired {
-			Log.Info("global test-operator lock can not be acquired")
-			requeueAfter := time.Second * 60
-			return ctrl.Result{RequeueAfter: requeueAfter}, err
-		}
-		Log.Info("global test-operator lock acquired")
-	}
-
-	// Get the workflow step label from the last job
-	nextWorkflowStep := 0
-	if len(jobs) > 0 {
 		lastJobworkflowStep, err := strconv.Atoi(lastJob.Labels[workflowStepLabel])
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
 		nextWorkflowStep = lastJobworkflowStep + 1
+
+	default:
+		Log.Info("Unexpected action")
+		return ctrl.Result{}, nil
 	}
 
 	// The job created by the instance was completed. Release the lock
@@ -294,11 +240,15 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		common.AppSelector: tempest.ServiceName,
 		workflowStepLabel:  strconv.Itoa(nextWorkflowStep),
 		instanceNameLabel:  instance.Name,
-		"operator":         "test-operator",
 	}
 
-	workflowStepNum := 0
+	// The job created by the instance was completed. Release the lock
+	// so that other instances can spawn a job.
+	instance.Status.Conditions.MarkTrue(
+		condition.DeploymentReadyCondition,
+		condition.DeploymentReadyMessage)
 
+	workflowStepNum := 0
 	// Create multiple PVCs for parallel execution
 	if instance.Spec.Parallel && nextWorkflowStep < len(instance.Spec.Workflow) {
 		workflowStepNum = nextWorkflowStep
