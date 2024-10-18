@@ -37,6 +37,7 @@ const (
 	workflowStepNumInvalid   = -1
 	workflowStepNameInvalid  = "no-step-name"
 	workflowStepLabel        = "workflowStep"
+	instanceNameLabel        = "instanceName"
 
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOnwerField = "owner"
@@ -351,10 +352,11 @@ func (r *Reconciler) AcquireLock(
 		return true, nil
 	}
 
-	_, err := r.GetLockInfo(ctx, instance)
+	instanceGUID := string(instance.GetUID())
+	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		cm := map[string]string{
-			testOperatorLockOnwerField: string(instance.GetUID()),
+			testOperatorLockOnwerField: instanceGUID,
 		}
 
 		cms := []util.Template{
@@ -367,6 +369,10 @@ func (r *Reconciler) AcquireLock(
 
 		err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
 		return err == nil, err
+	}
+
+	if cm.Data[testOperatorLockOnwerField] == instanceGUID {
+		return true, nil
 	}
 
 	return false, err

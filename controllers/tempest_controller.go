@@ -71,7 +71,7 @@ func (r *Reconciler) GetJobsWithLabel(
 }
 
 func (r *Reconciler) GetLastJob(jobList []batchv1.Job) (*batchv1.Job, error) {
-	var maxJob batchv1.Job
+	var maxJob *batchv1.Job
 	maxJobWorkflowStep := 0
 
 	for _, job := range jobList {
@@ -80,13 +80,13 @@ func (r *Reconciler) GetLastJob(jobList []batchv1.Job) (*batchv1.Job, error) {
 			return &batchv1.Job{}, err
 		}
 
-		if workflowStep > maxJobWorkflowStep {
+		if workflowStep >= maxJobWorkflowStep {
 			maxJobWorkflowStep = workflowStep
-			maxJob = job
+			maxJob = &job
 		}
 	}
 
-	return &maxJob, nil
+	return maxJob, nil
 }
 
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests,verbs=get;list;watch;create;update;patch;delete
@@ -190,38 +190,56 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return r.reconcileDelete(ctx, instance, helper)
 	}
 
-	// Log.Info("A")
-	// Each job that is being executed by the test operator has
-	labels := map[string]string{workflowStepLabel: instance.Name}
+	// Log.Info("Get list of all Jobs that were spawn by the instance")
+	// Get list of all Jobs that were spawn by the instance
+	labels := map[string]string{instanceNameLabel: instance.Name}
 	jobs, err := r.GetJobsWithLabel(ctx, instance, labels)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Log.Info("B")
-	// Get the last job for this instance
+	// Log.Info("Get the job with the highest workflowStep (the newest job)")
+	// Get the job with the highest workflowStep (the newest job)
 	lastJob, err := r.GetLastJob(jobs)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Log.Info("C")
+	Log.Info("If job is active -> wait")
+	if lastJob != nil {
+		Log.Info(strconv.Itoa(int(lastJob.Status.Active)))
+	} else {
+		Log.Info("It is nil")
+	}
 	// If job is active -> wait
-	if len(jobs) > 0 && lastJob.Status.Active > 0 {
-		return ctrl.Result{RequeueAfter: requeueAfter}, err
+
+	if lastJob != nil {
+		lastJobFinished := (lastJob.Status.Failed + lastJob.Status.Succeeded) > 0
+		if !lastJobFinished {
+			return ctrl.Result{RequeueAfter: requeueAfter}, err
+		}
 	}
 
-	// Log.Info("D")
-	// if this is the last job -> do not create another one
-	if len(jobs) == len(instance.Spec.Workflow)+1 {
+	// Log.Info("If this is the last job -> do not create another one")
+	// If this is the last job -> do not create another one
+	if len(jobs) == len(instance.Spec.Workflow) {
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
 			return ctrl.Result{}, err
 		}
-		Log.Info("Lock Released")
+		Log.Info("global test-operator lock released")
+		Log.Info("testing completed")
 		return ctrl.Result{}, nil
 	}
 
-	Log.Info("Job completed")
+	if len(jobs) == 0 {
+		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+		if !lockAcquired {
+			Log.Info("global test-operator lock can not be acquired")
+			requeueAfter := time.Second * 60
+			return ctrl.Result{RequeueAfter: requeueAfter}, err
+		}
+		Log.Info("global test-operator lock acquired")
+	}
 
 	// Get the workflow step label from the last job
 	nextWorkflowStep := 0
@@ -242,8 +260,8 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tempest.ServiceName,
-		"workflowStep":     strconv.Itoa(nextWorkflowStep),
-		"instanceName":     instance.Name,
+		workflowStepLabel:  strconv.Itoa(nextWorkflowStep),
+		instanceNameLabel:  instance.Name,
 		"operator":         "test-operator",
 	}
 
@@ -275,16 +293,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	if instance.Spec.SSHKeySecretName != "" {
 		mountSSHKey = r.CheckSecretExists(ctx, instance, instance.Spec.SSHKeySecretName)
 	}
-
-	// We are about to start job that spawns the pod with tests.
-	// This lock ensures that there is always only one pod running.
-	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
-	if !lockAcquired {
-		Log.Info("Can not acquire lock")
-		requeueAfter := time.Second * 60
-		return ctrl.Result{RequeueAfter: requeueAfter}, err
-	}
-	Log.Info("Lock acquired")
 
 	// Generate ConfigMaps
 	err = r.generateServiceConfigMaps(ctx, helper, instance, nextWorkflowStep)
@@ -657,8 +665,8 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
 
 	operatorLabels := map[string]string{
-		"operator":     "test-operator",
-		"instanceName": instance.Name,
+		"operator":        "test-operator",
+		instanceNameLabel: instance.Name,
 	}
 
 	// Combine labels
