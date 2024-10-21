@@ -44,7 +44,21 @@ const (
 )
 
 const (
-	ErrNetworkAttachments = "not all pods have interfaces with ips as configured in NetworkAttachments: %s"
+	ErrNetworkAttachments       = "not all pods have interfaces with ips as configured in NetworkAttachments: %s"
+	ErrReceivedUnexpectedAction = "unexpected action received"
+)
+
+const (
+	InfoWaitingOnJob     = "Waiting on either job to finish or release of the lock."
+	InfoTestingCompleted = "Testing completed. All pods spawned by the test-operator finished."
+	InfoCreatingFirstPod = "Creating first test pod (workflow step %d)."
+	InfoCreatingNextPod  = "Creating next test pod (workflow step %d)."
+)
+
+const (
+	// How much time should we wait before calling Reconcile loop when we have to wait for a change
+	// or there is a failure
+	requeueAfter = time.Second * 60
 )
 
 type Reconciler struct {
@@ -383,7 +397,7 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 
 	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
-		return false, nil
+		return true, nil
 	} else if err != nil {
 		return false, err
 	}
@@ -395,7 +409,7 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 
 	err = r.Client.Delete(ctx, cm)
 	if err != nil && k8s_errors.IsNotFound(err) {
-		return false, nil
+		return true, nil
 	}
 
 	// Check whether the lock was successfully deleted deleted
@@ -577,8 +591,7 @@ func (r *Reconciler) NextAction(
 
 	if isLastJob(len(jobs), workflowLength) {
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			// TODO(lpiwowar): No failure when releasing non-existing lock
-			return Failure, err
+			return EndTesting, err
 		}
 		return EndTesting, nil
 	}

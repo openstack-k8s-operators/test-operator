@@ -68,8 +68,6 @@ func (r *TempestReconciler) GetLogger(ctx context.Context) logr.Logger {
 // Reconcile - Tempest
 func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
 	Log := r.GetLogger(ctx)
-	// How much time should we wait before calling Reconcile loop when there is a failure
-	requeueAfter := time.Second * 60
 
 	// Fetch the Tempest instance
 	instance := &testv1beta1.Tempest{}
@@ -163,24 +161,30 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	nextWorkflowStep := 0
 	switch nextAction {
 	case Failure:
-		Log.Error(err, "Nopi")
 		return ctrl.Result{}, err
 
 	case Wait:
-		Log.Info("Waiting on job to finish or release of the lock.")
+		Log.Info(InfoWaitingOnJob)
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 
 	case EndTesting:
-		Log.Info("Testing completed")
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
+			return ctrl.Result{}, err
+		}
+
+		Log.Info(InfoTestingCompleted)
 		return ctrl.Result{}, nil
 
 	case CreateFirstJob:
-		Log.Info("Creating first job")
+		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+		if !lockAcquired {
+			return ctrl.Result{}, err
+		}
+
 		nextWorkflowStep = 0
+		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
 
 	case CreateNextJob:
-		Log.Info("Creating next job")
-
 		lastJob, err := r.GetLastJob(ctx, instance)
 		if err != nil {
 			return ctrl.Result{}, err
@@ -192,10 +196,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 
 		nextWorkflowStep = lastJobworkflowStep + 1
+		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
 
 	default:
-		Log.Info("Unexpected action")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, fmt.Errorf(ErrReceivedUnexpectedAction)
 	}
 
 	// The job created by the instance was completed. Release the lock
@@ -380,7 +384,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 	// Create a new job - end
 
-	Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil
 }
 
