@@ -49,9 +49,6 @@ func Job(
 						RunAsUser:  &runAsUser,
 						RunAsGroup: &runAsGroup,
 						FSGroup:    &runAsGroup,
-						SELinuxOptions: &corev1.SELinuxOptions{
-							Level: instance.Spec.SELinuxLevel,
-						},
 					},
 					Tolerations:  instance.Spec.Tolerations,
 					NodeSelector: instance.Spec.NodeSelector,
@@ -91,6 +88,12 @@ func Job(
 				},
 			},
 		},
+	}
+
+	if len(instance.Spec.SELinuxLevel) > 0 {
+		job.Spec.Template.Spec.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+			Level: instance.Spec.SELinuxLevel,
+		}
 	}
 
 	return job

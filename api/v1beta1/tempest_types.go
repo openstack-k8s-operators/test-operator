@@ -368,14 +368,8 @@ type TempestconfRunSpec struct {
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type TempestSpec struct {
-	CommonOptions              `json:",inline"`
-	CommonOpenstackConfig      `json:",inline"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="s0:c478,c978"
-	// A SELinuxLevel that is used for all the tempest test pods.
-	SELinuxLevel string `json:"SELinuxLevel"`
+	CommonOptions         `json:",inline"`
+	CommonOpenstackConfig `json:",inline"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

@@ -43,6 +43,11 @@ spec:
           spec:
             description: AnsibleTestSpec defines the desired state of AnsibleTest
             properties:
+              SELinuxLevel:
+                default: ""
+                description: A SELinuxLevel that should be used for test pods spawned
+                  by the test operator.
+                type: string
               ansibleCollections:
                 default: ""
                 description: AnsibleCollections - extra ansible collections to instal
@@ -191,6 +196,10 @@ spec:
                 description: A parameter that contains a workflow definition.
                 items:
                   properties:
+                    SELinuxLevel:
+                      description: A SELinuxLevel that should be used for test pods
+                        spawned by the test operator.
+                      type: string
                     ansibleCollections:
                       description: AnsibleCollections - extra ansible collections
                         to instal in additionn to the ones exist in the requirements.yaml

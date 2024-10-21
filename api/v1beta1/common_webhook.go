@@ -21,4 +21,10 @@ const (
 		"set of tests might fail, as this configuration may be " +
 		"required for the tests to run successfully. Before enabling" +
 		"this parameter, consult documentation of the %[1]s CR."
+
+	// WarnSELinuxLevel
+	WarnSELinuxLevel = "%[1]s.Spec.Workflow is used and %[1]s.Spec.Privileged is " +
+		"set to true. Please, consider setting %[1]s.Spec.SELinuxLevel. This " +
+		"ensures that the copying of the logs to the PV is completed without any " +
+		"complications."
 )

@@ -46,9 +46,9 @@ spec:
               see TempestconfRunSpec.
             properties:
               SELinuxLevel:
-                default: s0:c478,c978
-                description: A SELinuxLevel that is used for all the tempest test
-                  pods.
+                default: ""
+                description: A SELinuxLevel that should be used for test pods spawned
+                  by the test operator.
                 type: string
               SSHKeySecretName:
                 default: ""
@@ -490,6 +490,10 @@ spec:
                     For specific configuration of tempest see TempestRunSpec and for
                     discover-tempest-config see TempestconfRunSpec.
                   properties:
+                    SELinuxLevel:
+                      description: A SELinuxLevel that should be used for test pods
+                        spawned by the test operator.
+                      type: string
                     SSHKeySecretName:
                       description: SSHKeySecretName is the name of the k8s secret
                         that contains an ssh key. The key is mounted to ~/.ssh/id_ecdsa

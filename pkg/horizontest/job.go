@@ -76,5 +76,11 @@ func Job(
 		},
 	}
 
+	if len(instance.Spec.SELinuxLevel) > 0 {
+		job.Spec.Template.Spec.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+			Level: instance.Spec.SELinuxLevel,
+		}
+	}
+
 	return job
 }
