@@ -37,6 +37,9 @@
 
       # Tempest
       cifmw_run_tempest: true
+      cifmw_test_operator_tempest_cleanup: true
+      cifmw_test_operator_tempest_image: quay.io/lpiwowar0/openstack-tempest-all
+      cifmw_test_operator_tempest_image_tag: v0.0.1
       cifmw_test_operator_tempest_include_list: |
         ^tempest.
       cifmw_test_operator_tempest_exclude_list: |
