@@ -27,7 +27,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
-	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/horizontest"

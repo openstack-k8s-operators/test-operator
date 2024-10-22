@@ -83,12 +83,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		return ctrl.Result{}, err
 	}
 
-	// Check whether the user wants to execute workflow
-	workflowActive := false
-	if len(instance.Spec.Workflow) > 0 {
-		workflowActive = true
-	}
-
 	helper, err := helper.NewHelper(
 		instance,
 		r.Client,
@@ -148,36 +142,61 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		instance.Status.NetworkAttachments = map[string][]string{}
 	}
 
-	// Ensure that there is an external counter and read its value
-	// We use the external counter to keep track of the workflow steps
-	r.WorkflowStepCounterCreate(ctx, instance, helper)
-	externalWorkflowCounter := r.WorkflowStepCounterRead(ctx, instance)
-	if externalWorkflowCounter == -1 {
+	nextAction, err := r.NextAction(
+		ctx,
+		instance,
+		helper,
+		len(instance.Spec.Workflow),
+		instance.Spec.Parallel,
+	)
+
+	nextWorkflowStep := 0
+	switch nextAction {
+	case Failure:
+		return ctrl.Result{}, err
+
+	case Wait:
+		Log.Info(InfoWaitingOnJob)
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	}
 
-	// Each job that is being executed by the test operator has
-	currentWorkflowStep := 0
-	runningTobikoJob := &batchv1.Job{}
-	runningJobName := r.GetJobName(instance, externalWorkflowCounter-1)
-	err = r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: runningJobName}, runningTobikoJob)
-	if err == nil {
-		currentWorkflowStep, _ = strconv.Atoi(runningTobikoJob.Labels["workflowStep"])
-	}
-
-	if r.CompletedJobExists(ctx, instance, currentWorkflowStep) {
-		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
-		// The job created by the instance was completed. Release the lock
-		// so that other instances can spawn a job.
-		Log.Info("Job completed")
+	case EndTesting:
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
 			return ctrl.Result{}, err
 		}
+
+		Log.Info(InfoTestingCompleted)
+		return ctrl.Result{}, nil
+
+	case CreateFirstJob:
+		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+		if !lockAcquired {
+			return ctrl.Result{}, err
+		}
+
+		nextWorkflowStep = 0
+		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
+
+	case CreateNextJob:
+		lastJob, err := r.GetLastJob(ctx, instance)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		lastJobworkflowStep, err := strconv.Atoi(lastJob.Labels[workflowStepLabel])
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		nextWorkflowStep = lastJobworkflowStep + 1
+		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
+
+	default:
+		return ctrl.Result{}, fmt.Errorf(ErrReceivedUnexpectedAction)
 	}
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tobiko.ServiceName,
-		"workflowStep":     strconv.Itoa(externalWorkflowCounter),
+		"workflowStep":     strconv.Itoa(nextWorkflowStep),
 		"instanceName":     instance.Name,
 		"operator":         "test-operator",
 	}
@@ -191,8 +210,8 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	workflowStepNum := 0
 
 	// Create multiple PVCs for parallel execution
-	if instance.Spec.Parallel && externalWorkflowCounter < len(instance.Spec.Workflow) {
-		workflowStepNum = externalWorkflowCounter
+	if instance.Spec.Parallel && nextWorkflowStep < len(instance.Spec.Workflow) {
+		workflowStepNum = nextWorkflowStep
 	}
 
 	// Create PersistentVolumeClaim
@@ -218,7 +237,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 
 	// NetworkAttachments
-	if r.JobExists(ctx, instance, externalWorkflowCounter) {
+	if r.JobExists(ctx, instance, nextWorkflowStep) {
 		networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(
 			ctx,
 			helper,
@@ -265,32 +284,12 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		mountKubeconfig = true
 	}
 
-	// If the current job is executing the last workflow step -> do not create another job
-	if workflowActive && externalWorkflowCounter >= len(instance.Spec.Workflow) {
-		return ctrl.Result{}, nil
-	} else if !workflowActive && r.JobExists(ctx, instance, currentWorkflowStep) {
-		return ctrl.Result{}, nil
-	}
-
-	// We are about to start job that spawns the pod with tests.
-	// This lock ensures that there is always only one pod running.
-	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
-	if !lockAcquired {
-		Log.Info("Can not acquire lock")
-		return ctrl.Result{RequeueAfter: requeueAfter}, err
-	}
-	Log.Info("Lock acquired")
-
-	if workflowActive {
-		r.WorkflowStepCounterIncrease(ctx, instance, helper)
-	}
-
 	// Prepare Tobiko env vars
-	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, externalWorkflowCounter)
-	jobName := r.GetJobName(instance, externalWorkflowCounter)
+	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, nextWorkflowStep)
+	jobName := r.GetJobName(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
 	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
-	privileged := r.OverwriteValueWithWorkflow(instance.Spec, "Privileged", "pbool", externalWorkflowCounter).(bool)
+	privileged := r.OverwriteValueWithWorkflow(instance.Spec, "Privileged", "pbool", nextWorkflowStep).(bool)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
