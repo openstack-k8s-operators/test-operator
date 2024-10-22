@@ -409,7 +409,7 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 
 	err = r.Client.Delete(ctx, cm)
 	if err != nil && k8s_errors.IsNotFound(err) {
-		return true, nil
+		return false, nil
 	}
 
 	// Check whether the lock was successfully deleted deleted
@@ -563,6 +563,15 @@ func isLastJob(createdJobs int, workflowLength int) bool {
 	}
 }
 
+func isLastIndex(workflowLength int, lastJobIndex int) bool {
+	switch workflowLength {
+	case 0:
+		return lastJobIndex == workflowLength
+	default:
+		return lastJobIndex == (workflowLength - 1)
+	}
+}
+
 func (r *Reconciler) NextAction(
 	ctx context.Context,
 	instance client.Object,
@@ -581,6 +590,14 @@ func (r *Reconciler) NextAction(
 		return Failure, err
 	}
 
+	lastJobIndex := -2
+	if lastJob != nil {
+		lastJobIndex, err = strconv.Atoi(lastJob.Labels[workflowStepLabel])
+		if err != nil {
+			return Failure, err
+		}
+	}
+
 	if lastJob != nil {
 		lastJobFinished := (lastJob.Status.Failed + lastJob.Status.Succeeded) > 0
 
@@ -589,11 +606,16 @@ func (r *Reconciler) NextAction(
 		}
 	}
 
-	if isLastJob(len(jobs), workflowLength) {
+	if isLastJob(len(jobs), workflowLength) && isLastIndex(workflowLength, lastJobIndex) {
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			return EndTesting, err
+			// TODO(lpiwowar): No failure when releasing non-existing lock
+			return Failure, err
 		}
 		return EndTesting, nil
+	}
+
+	if isLastJob(len(jobs), workflowLength) && !isLastIndex(workflowLength, lastJobIndex) {
+		return Wait, nil
 	}
 
 	if len(jobs) == 0 {

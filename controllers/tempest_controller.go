@@ -333,8 +333,8 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 			instance.Spec.Tolerations = *instance.Spec.Workflow[nextWorkflowStep].Tolerations
 		}
 
-		if instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel != nil {
-			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel
+		if instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel != nil {
+			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel
 		}
 	}
 
