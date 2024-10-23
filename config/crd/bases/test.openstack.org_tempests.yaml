@@ -168,6 +168,10 @@ spec:
                     description: A content of exclude.txt file that is passed to tempest
                       via --exclude-list
                     type: string
+                  expectedFailuresList:
+                    description: A content of expected_failures.txt file that is passed
+                      to tempest via --expected-failures-list
+                    type: string
                   externalPlugin:
                     description: ExternalPlugin contains information about plugin
                       that should be installed within the tempest test pod. If this
@@ -602,6 +606,10 @@ spec:
                         excludeList:
                           description: A content of exclude.txt file that is passed
                             to tempest via --exclude-list
+                          type: string
+                        expectedFailuresList:
+                          description: A content of expected_failures.txt file that
+                            is passed to tempest via --expected-failures-list
                           type: string
                         externalPlugin:
                           description: ExternalPlugin contains information about plugin
