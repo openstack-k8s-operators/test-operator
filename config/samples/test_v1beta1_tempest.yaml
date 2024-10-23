@@ -46,6 +46,8 @@ spec:
     concurrency: 8
     # excludeList: | # <-- Use | to preserve \n
     #   tempest.api.identity.v3.*
+    # expectedFailuresList: | # <-- Use | to preserve \n
+    #   tempest.api.identity.v3.test_tokens.TokensV3Test.test_create_token
     # workerFile: | # <-- Use | to preserve \n
     #   - worker:
     #     - tempest.api.*
