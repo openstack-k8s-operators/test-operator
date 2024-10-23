@@ -57,6 +57,8 @@
         tempest.api.identity.admin.v3.test_credentials.CredentialsTestJSON
         tempest.api.identity.admin.v3.test_tokens.TokensV3TestJSON.test_rescope_token
         tempest.api.identity.admin.v3.test_users.UsersV3TestJSON.test_update_user_password
+      cifmw_test_operator_tempest_expected_failures_list: |
+        foobar
       cifmw_tempest_tempestconf_config:
         overrides: |
           compute-feature-enabled.dhcp_domain ''
