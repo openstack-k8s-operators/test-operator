@@ -32,6 +32,12 @@ type WorkflowTempestRunSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// A content of expected_failures.txt file that is passed to tempest via
+	// --expected-failures-list
+	ExpectedFailuresList *string `json:"expectedFailuresList,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Concurrency value that is passed to tempest via --concurrency
 	Concurrency *int64 `json:"concurrency,omitempty"`
 
