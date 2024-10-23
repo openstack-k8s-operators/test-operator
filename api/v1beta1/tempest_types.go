@@ -153,6 +153,13 @@ type TempestRunSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// The expectedFailuresList parameter contains tests that should not count
+	// as failures. When a test from this list fails, the test pod ends with
+	// Completed state rather than with Error state.
+	ExpectedFailuresList string `json:"expectedFailuresList"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=0
 	// Concurrency value that is passed to tempest via --concurrency
 	Concurrency int64 `json:"concurrency"`
