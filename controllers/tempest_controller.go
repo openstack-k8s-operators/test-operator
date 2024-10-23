@@ -473,6 +473,13 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXCLUDE_LIST"] = testOperatorDir + excludeListFile
 	}
 
+	value = mergeWithWorkflow(tRun.ExpectedFailuresList, wtRun.ExpectedFailuresList)
+	if len(value) != 0 {
+		expectedFailuresListFile := "expected_failures.txt"
+		customData[expectedFailuresListFile] = value
+		envVars["TEMPEST_EXPECTED_FAILURES_LIST"] = testOperatorDir + expectedFailuresListFile
+	}
+
 	// Bool
 	tempestBoolEnvVars := map[string]bool{
 		"TEMPEST_SERIAL":     mergeWithWorkflow(tRun.Serial, wtRun.Serial),
