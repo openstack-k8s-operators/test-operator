@@ -12,5 +12,8 @@ aliases:
   - stuggi
   test-approvers:
   - lpiwowar
-  - kstrenkova
   - kopecmartin
+  test-reviewers:
+  - kstrenkova
+  - evallesp
+  - frenzyfriday
