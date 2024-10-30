@@ -240,6 +240,10 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel != nil {
 			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[externalWorkflowCounter].SELinuxLevel
 		}
+
+		if instance.Spec.Workflow[externalWorkflowCounter].Resources != nil {
+			instance.Spec.Resources = *instance.Spec.Workflow[externalWorkflowCounter].Resources
+		}
 	}
 
 	// Service account, role, binding
@@ -263,6 +267,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		externalWorkflowCounter,
 		containerImage,
 		privileged,
+		instance.Spec.Resources,
 	)
 	ansibleTestsJob := job.NewJob(
 		jobDef,

@@ -7,6 +7,7 @@ import (
 	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,6 +24,7 @@ func Job(
 	envVars map[string]env.Setter,
 	containerImage string,
 	privileged bool,
+	resources corev1.ResourceRequirements,
 ) *batchv1.Job {
 
 	runAsUser := int64(42495)
@@ -32,6 +34,18 @@ func Job(
 
 	capabilities := []corev1.Capability{"NET_ADMIN", "NET_RAW"}
 	securityContext := util.GetSecurityContext(runAsUser, capabilities, privileged)
+
+	defaultResources := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("4000Mi"),
+			corev1.ResourceMemory: resource.MustParse("10Gi"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("2000Mi"),
+			corev1.ResourceMemory: resource.MustParse("5Gi"),
+		},
+	}
+	resources = util.GetResourceRequirements(resources, defaultResources)
 
 	// Note(lpiwowar): Once the webhook is implemented move all the logic of merging
 	//                 the workflows there.
@@ -68,6 +82,7 @@ func Job(
 							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts:    GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig, instance),
 							SecurityContext: &securityContext,
+							Resources:       resources,
 						},
 					},
 					Volumes: GetVolumes(

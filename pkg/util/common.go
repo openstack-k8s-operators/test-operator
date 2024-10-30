@@ -36,3 +36,22 @@ func GetSecurityContext(
 
 	return securityContext
 }
+
+func GetResourceRequirements(
+	resourceRequirements corev1.ResourceRequirements,
+	defaultResourceRequirements corev1.ResourceRequirements,
+) corev1.ResourceRequirements {
+	if resourceRequirements.Limits == nil {
+		resourceRequirements.Limits = defaultResourceRequirements.Limits
+	}
+
+	if resourceRequirements.Requests == nil {
+		resourceRequirements.Requests = defaultResourceRequirements.Requests
+	}
+
+	if resourceRequirements.Claims == nil {
+		resourceRequirements.Claims = defaultResourceRequirements.Claims
+	}
+
+	return resourceRequirements
+}

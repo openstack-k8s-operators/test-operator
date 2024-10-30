@@ -7,6 +7,7 @@ import (
 	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,12 +23,25 @@ func Job(
 	mountCerts bool,
 	mountSSHKey bool,
 	containerImage string,
+	resources corev1.ResourceRequirements,
 ) *batchv1.Job {
 
 	envVars := map[string]env.Setter{}
 	runAsUser := int64(42480)
 	runAsGroup := int64(42480)
 	securityContext := util.GetSecurityContext(runAsUser, []corev1.Capability{}, instance.Spec.Privileged)
+
+	defaultResources := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("4000Mi"),
+			corev1.ResourceMemory: resource.MustParse("10Gi"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("2000Mi"),
+			corev1.ResourceMemory: resource.MustParse("5Gi"),
+		},
+	}
+	resources = util.GetResourceRequirements(resources, defaultResources)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -60,6 +74,7 @@ func Job(
 							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts:    GetVolumeMounts(mountCerts, mountSSHKey, instance),
 							SecurityContext: &securityContext,
+							Resources:       resources,
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
