@@ -37,13 +37,33 @@ const (
 	customDataConfigMapinfix = "-custom-data-step-"
 	workflowStepNumInvalid   = -1
 	workflowStepNameInvalid  = "no-step-name"
+	workflowStepLabel        = "workflowStep"
+	instanceNameLabel        = "instanceName"
+	operatorNameLabel        = "operator"
 
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOnwerField = "owner"
 )
 
 const (
-	ErrNetworkAttachments = "not all pods have interfaces with ips as configured in NetworkAttachments: %s"
+	ErrNetworkAttachments       = "not all pods have interfaces with ips as configured in NetworkAttachments: %s"
+	ErrReceivedUnexpectedAction = "unexpected action received"
+	ErrConfirmLockOwnership     = "can not confirm ownership of %s lock"
+)
+
+const (
+	InfoWaitingOnJob      = "Waiting on either job to finish or release of the lock."
+	InfoTestingCompleted  = "Testing completed. All pods spawned by the test-operator finished."
+	InfoCreatingFirstPod  = "Creating first test pod (workflow step %d)."
+	InfoCreatingNextPod   = "Creating next test pod (workflow step %d)."
+	InfoCanNotAcquireLock = "Can not acquire %s lock."
+	InfoCanNotReleaseLock = "Can not release %s lock."
+)
+
+const (
+	// RequeueAfterValue tells how much time should we wait before calling Reconcile
+	// loop again.
+	RequeueAfterValue = time.Second * 60
 )
 
 type Reconciler struct {
@@ -51,6 +71,126 @@ type Reconciler struct {
 	Kclient kubernetes.Interface
 	Log     logr.Logger
 	Scheme  *runtime.Scheme
+}
+
+// NextAction holds an action that should be performed by the Reconcile loop.
+type NextAction int
+
+const (
+	// Wait indicates that we should wait for the state of the OpenShift cluster
+	// to change
+	Wait = iota
+
+	// CreateFirstJob indicates that the Reconcile loop should create the first job
+	// either specified in the .Spec section or in the .Spec.Workflow section.
+	CreateFirstJob
+
+	// CreateNextJob indicates that the Reconcile loop should create a next job
+	// specified in the .Spec.Workflow section (if .Spec.Workflow is defined)
+	CreateNextJob
+
+	// EndTesting indicates that all jobs have already finished. The Reconcile
+	// loop should end the testing and release resources that are required to
+	// be release (e.g., global lock)
+	EndTesting
+
+	// Failure indicates that an unexpected error was encountered
+	Failure
+)
+
+// NextAction indicates what action needs to be performed by the Reconcile loop
+// based on the current state of the OpenShift cluster.
+func (r *Reconciler) NextAction(
+	ctx context.Context,
+	instance client.Object,
+	workflowLength int,
+) (NextAction, int, error) {
+	// Get the latest job. The latest job is job with the highest value stored
+	// in workflowStep label
+	workflowStepIdx := 0
+	lastJob, err := r.GetLastJob(ctx, instance)
+	if err != nil {
+		return Failure, workflowStepIdx, err
+	}
+
+	// If there is a job associated with the current instance.
+	if lastJob != nil {
+		workflowStepIdx, err := strconv.Atoi(lastJob.Labels[workflowStepLabel])
+		if err != nil {
+			return Failure, workflowStepIdx, err
+		}
+
+		// If the last job is not in Failed or Succeded state -> Wait
+		lastJobFinished := (lastJob.Status.Failed + lastJob.Status.Succeeded) > 0
+		if !lastJobFinished {
+			return Wait, workflowStepIdx, nil
+		}
+
+		// If the last job is in Failed or Succeeded state and it is NOT the last
+		// job which was supposed to be created -> CreateNextJob
+		if lastJobFinished && !isLastJobIndex(workflowStepIdx, workflowLength) {
+			workflowStepIdx++
+			return CreateNextJob, workflowStepIdx, nil
+		}
+
+		// Otherwise if the job is in Failed or Succeded stated and it IS the
+		// last job -> EndTesting
+		if lastJobFinished && isLastJobIndex(workflowStepIdx, workflowLength) {
+			return EndTesting, workflowStepIdx, nil
+		}
+	}
+
+	// If there is not any job associated with the instance -> createFirstJob
+	if lastJob == nil {
+		return CreateFirstJob, workflowStepIdx, nil
+	}
+
+	return Failure, workflowStepIdx, nil
+}
+
+// isLastJobIndex returns true when jobIndex is the index of the last job that
+// should be executed. Otherwise the return value is false.
+func isLastJobIndex(jobIndex int, workflowLength int) bool {
+	switch workflowLength {
+	case 0:
+		return jobIndex == workflowLength
+	default:
+		return jobIndex == (workflowLength - 1)
+	}
+}
+
+// GetLastJob returns job associated with an instance which has the highest value
+// stored in the workflowStep label
+func (r *Reconciler) GetLastJob(
+	ctx context.Context,
+	instance client.Object,
+) (*batchv1.Job, error) {
+	labels := map[string]string{instanceNameLabel: instance.GetName()}
+	namespaceListOpt := client.InNamespace(instance.GetNamespace())
+	labelsListOpt := client.MatchingLabels(labels)
+	jobList := &batchv1.JobList{}
+	err := r.Client.List(ctx, jobList, namespaceListOpt, labelsListOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	var maxJob *batchv1.Job
+	maxJobWorkflowStep := 0
+
+	for _, job := range jobList.Items {
+		workflowStep, err := strconv.Atoi(job.Labels[workflowStepLabel])
+		if err != nil {
+			return &batchv1.Job{}, err
+		}
+
+		if workflowStep >= maxJobWorkflowStep {
+			maxJobWorkflowStep = workflowStep
+			newMaxJob := job
+			maxJob = &newMaxJob
+		}
+	}
+
+	return maxJob, nil
 }
 
 func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {
@@ -351,10 +491,11 @@ func (r *Reconciler) AcquireLock(
 		return true, nil
 	}
 
-	_, err := r.GetLockInfo(ctx, instance)
+	instanceGUID := string(instance.GetUID())
+	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		cm := map[string]string{
-			testOperatorLockOnwerField: string(instance.GetUID()),
+			testOperatorLockOnwerField: instanceGUID,
 		}
 
 		cms := []util.Template{
@@ -369,6 +510,10 @@ func (r *Reconciler) AcquireLock(
 		return err == nil, err
 	}
 
+	if cm.Data[testOperatorLockOnwerField] == instanceGUID {
+		return true, nil
+	}
+
 	return false, err
 }
 
@@ -377,7 +522,7 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 
 	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
-		return false, nil
+		return true, nil
 	} else if err != nil {
 		return false, err
 	}
@@ -406,77 +551,6 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	}
 
 	return false, errors.New("failed to delete test-operator-lock")
-}
-
-func (r *Reconciler) WorkflowStepCounterCreate(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err == nil {
-		return true
-	}
-
-	counterData := make(map[string]string)
-	counterData["counter"] = "0"
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: counterData,
-		},
-	}
-
-	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
-}
-
-func (r *Reconciler) WorkflowStepCounterIncrease(ctx context.Context, instance client.Object, h *helper.Helper) bool {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return false
-	}
-
-	counterValue, _ := strconv.Atoi(cm.Data["counter"])
-	newCounterValue := strconv.Itoa(counterValue + 1)
-	cm.Data["counter"] = newCounterValue
-
-	cms := []util.Template{
-		{
-			Name:       r.GetWorkflowConfigMapName(instance),
-			Namespace:  instance.GetNamespace(),
-			CustomData: cm.Data,
-		},
-	}
-
-	err = configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
-	return err == nil
-}
-
-func (r *Reconciler) WorkflowStepCounterRead(ctx context.Context, instance client.Object) int {
-	cm := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetWorkflowConfigMapName(instance)}, cm)
-	if err != nil {
-		return workflowStepNumInvalid
-	}
-
-	counter, _ := strconv.Atoi(cm.Data["counter"])
-	return counter
-}
-
-func (r *Reconciler) CompletedJobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
-	job := &batchv1.Job{}
-	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: r.GetJobName(instance, workflowStepNum)}, job)
-
-	if err != nil {
-		return false
-	}
-
-	if job.Status.Succeeded > 0 || job.Status.Failed > 0 {
-		return true
-	}
-
-	return false
 }
 
 func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
