@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -56,10 +58,6 @@ func (r *HorizonTestReconciler) GetLogger(ctx context.Context) logr.Logger {
 // Reconcile - HorizonTest
 func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
 	Log := r.GetLogger(ctx)
-
-	// How much time should we wait before calling Reconcile loop when there is a failure
-	requeueAfter := time.Second * 60
-
 	instance := &testv1beta1.HorizonTest{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
@@ -123,14 +121,55 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	}
 
-	if r.CompletedJobExists(ctx, instance, 0) {
-		// The job created by the instance was completed. Release the lock
-		// so that other instances can spawn a job.
-		instance.Status.Conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
-		Log.Info("Job completed")
+	workflowLength := 0
+	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
+
+	switch nextAction {
+	case Failure:
+		return ctrl.Result{}, err
+
+	case Wait:
+		Log.Info(InfoWaitingOnJob)
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
+
+	case EndTesting:
+		// All jobs created by the instance were completed. Release the lock
+		// so that other instances can spawn their jobs.
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			return ctrl.Result{}, err
+			Log.Info(fmt.Sprintf(InfoCanNotReleaseLock, testOperatorLockName))
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
+
+		instance.Status.Conditions.MarkTrue(
+			condition.DeploymentReadyCondition,
+			condition.DeploymentReadyMessage)
+
+		Log.Info(InfoTestingCompleted)
+		return ctrl.Result{}, nil
+
+	case CreateFirstJob:
+		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+		if !lockAcquired {
+			Log.Info(fmt.Sprintf(InfoCanNotAcquireLock, testOperatorLockName))
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+		}
+
+		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
+
+	case CreateNextJob:
+		// Confirm that we still hold the lock. This is useful to check if for
+		// example somebody / something deleted the lock and it got claimed by
+		// another instance. This is considered to be an error state.
+		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
+		if !lockAcquired {
+			Log.Error(err, ErrConfirmLockOwnership, testOperatorLockName)
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+		}
+
+		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
+
+	default:
+		return ctrl.Result{}, errors.New(ErrReceivedUnexpectedAction)
 	}
 
 	rbacRules := []rbacv1.PolicyRule{
@@ -156,13 +195,13 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	serviceLabels := map[string]string{
 		common.AppSelector: horizontest.ServiceName,
-		"instanceName":     instance.Name,
-		"operator":         "test-operator",
+		instanceNameLabel:  instance.Name,
+		operatorNameLabel:  "test-operator",
 
 		// NOTE(lpiwowar):  This is a workaround since the Horizontest CR does not support
 		//                  workflows. However, the label might be required by automation that
 		//                  consumes the test-operator (e.g., ci-framework).
-		"workflowStep": "0",
+		workflowStepLabel: "0",
 	}
 
 	yamlResult, err := EnsureCloudsConfigMapExists(ctx, instance, helper, serviceLabels)
@@ -196,20 +235,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if len(instance.Spec.KubeconfigSecretName) != 0 {
 		mountKubeconfig = true
 	}
-
-	// If the current job is executing the last workflow step -> do not create another job
-	if r.JobExists(ctx, instance, 0) {
-		return ctrl.Result{}, nil
-	}
-
-	// We are about to start job that spawns the pod with tests.
-	// This lock ensures that there is always only one pod running.
-	lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
-	if !lockAcquired {
-		Log.Info("Cannot acquire lock")
-		return ctrl.Result{RequeueAfter: requeueAfter}, err
-	}
-	Log.Info("Lock acquired")
 
 	// Prepare HorizonTest env vars
 	envVars := r.PrepareHorizonTestEnvVars(instance)
@@ -257,7 +282,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrlResult, nil
 	}
 	// create Job - end
-
 	Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil
 }
