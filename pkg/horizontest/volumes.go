@@ -2,6 +2,8 @@ package horizontest
 
 import (
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
+	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -15,8 +17,6 @@ func GetVolumes(
 
 	var scriptsVolumeDefaultMode int32 = 0755
 	var scriptsVolumeConfidentialMode int32 = 0420
-	//var privateKeyMode int32 = 0600
-	//var publicKeyMode int32 = 0644
 	var tlsCertificateMode int32 = 0444
 	var publicInfoMode int32 = 0744
 
@@ -33,12 +33,12 @@ func GetVolumes(
 			},
 		},
 		{
-			Name: "horizontest-clouds-config",
+			Name: util.TestOperatorCloudsConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					DefaultMode: &scriptsVolumeConfidentialMode,
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "horizontest-clouds-config",
+						Name: util.TestOperatorCloudsConfigMapName,
 					},
 				},
 			},
@@ -123,13 +123,13 @@ func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool, inst
 			ReadOnly:  false,
 		},
 		{
-			Name:      "horizontest-clouds-config",
+			Name:      util.TestOperatorCloudsConfigMapName,
 			MountPath: "/var/lib/horizontest/.config/openstack/clouds.yaml",
 			SubPath:   "clouds.yaml",
 			ReadOnly:  true,
 		},
 		{
-			Name:      "horizontest-clouds-config",
+			Name:      util.TestOperatorCloudsConfigMapName,
 			MountPath: "/etc/openstack/clouds.yaml",
 			SubPath:   "clouds.yaml",
 			ReadOnly:  true,

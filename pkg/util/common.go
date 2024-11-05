@@ -4,6 +4,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	// TestOperatorCloudsConfigMapName is name of the ConfigMap which contains
+	// modified clouds.yaml obtained from openstack-config ConfigMap. The modified
+	// CM is needed by some test frameworks (e.g., HorizonTest and Tobiko)
+	TestOperatorCloudsConfigMapName = "test-operator-clouds-config"
+)
+
 func GetSecurityContext(
 	runAsUser int64,
 	addCapabilities []corev1.Capability,
