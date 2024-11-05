@@ -2,6 +2,7 @@ package tobiko
 
 import (
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
+	"github.com/openstack-k8s-operators/test-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -34,12 +35,12 @@ func GetVolumes(
 			},
 		},
 		{
-			Name: "tobiko-clouds-config",
+			Name: util.TestOperatorCloudsConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					DefaultMode: &scriptsVolumeConfidentialMode,
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "tobiko-clouds-config",
+						Name: util.TestOperatorCloudsConfigMapName,
 					},
 				},
 			},
@@ -155,13 +156,13 @@ func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool, inst
 			ReadOnly:  false,
 		},
 		{
-			Name:      "tobiko-clouds-config",
+			Name:      util.TestOperatorCloudsConfigMapName,
 			MountPath: "/var/lib/tobiko/.config/openstack/clouds.yaml",
 			SubPath:   "clouds.yaml",
 			ReadOnly:  true,
 		},
 		{
-			Name:      "tobiko-clouds-config",
+			Name:      util.TestOperatorCloudsConfigMapName,
 			MountPath: "/etc/openstack/clouds.yaml",
 			SubPath:   "clouds.yaml",
 			ReadOnly:  true,
