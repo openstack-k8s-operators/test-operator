@@ -35,7 +35,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/tobiko"
-	"gopkg.in/yaml.v3"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -183,7 +182,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		"operator":         "test-operator",
 	}
 
-	yamlResult, err := r.EnsureTobikoCloudsYAML(ctx, instance, helper, serviceLabels)
+	yamlResult, err := EnsureCloudsConfigMapExists(ctx, instance, helper, serviceLabels)
 
 	if err != nil {
 		return yamlResult, err
@@ -386,49 +385,6 @@ func (r *TobikoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
-}
-
-// Tobiko requires password value to be present in clouds.yaml
-// This code ensures that we set a default value of 12345678 when
-// password value is missing in the clouds.yaml
-func (r *TobikoReconciler) EnsureTobikoCloudsYAML(ctx context.Context, instance client.Object, helper *helper.Helper, labels map[string]string) (ctrl.Result, error) {
-	cm, _, _ := configmap.GetConfigMap(ctx, helper, instance, "openstack-config", time.Second*10)
-	result := make(map[string]interface{})
-
-	err := yaml.Unmarshal([]byte(cm.Data["clouds.yaml"]), &result)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	clouds := result["clouds"].(map[string]interface{})
-	defaultValue := clouds["default"].(map[string]interface{})
-	auth := defaultValue["auth"].(map[string]interface{})
-
-	if _, ok := auth["password"].(string); !ok {
-		auth["password"] = "12345678"
-	}
-
-	yamlString, err := yaml.Marshal(result)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	cms := []util.Template{
-		{
-			Name:      "tobiko-clouds-config",
-			Namespace: instance.GetNamespace(),
-			Labels:    labels,
-			CustomData: map[string]string{
-				"clouds.yaml": string(yamlString),
-			},
-		},
-	}
-	err = configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
 }
 
 // This function prepares env variables for a single workflow step.
