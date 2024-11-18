@@ -31,7 +31,6 @@ import (
 const (
 	workflowNameSuffix       = "-workflow-counter"
 	jobNameStepInfix         = "-workflow-step-"
-	logDirNameInfix          = "-workflow-step-"
 	envVarsConfigMapinfix    = "-env-vars-step-"
 	customDataConfigMapinfix = "-custom-data-step-"
 	workflowStepNumInvalid   = -1
@@ -178,7 +177,7 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
 		}
 
-		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
+		return typedInstance.Name + jobNameStepInfix + fmt.Sprintf("%02d", workflowStepNum) + "-" + workflowStepName
 	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
 			return typedInstance.Name
@@ -189,7 +188,7 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
 		}
 
-		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
+		return typedInstance.Name + jobNameStepInfix + fmt.Sprintf("%02d", workflowStepNum) + "-" + workflowStepName
 	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
 		return typedInstance.Name
 	} else if typedInstance, ok := instance.(*v1beta1.AnsibleTest); ok {
@@ -202,7 +201,7 @@ func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) strin
 			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
 		}
 
-		return typedInstance.Name + "-" + workflowStepName + jobNameStepInfix + strconv.Itoa(workflowStepNum)
+		return typedInstance.Name + jobNameStepInfix + fmt.Sprintf("%02d", workflowStepNum) + "-" + workflowStepName
 	}
 
 	return workflowStepNameInvalid
