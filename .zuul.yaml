@@ -6,11 +6,29 @@
         - openstack-k8s-operators-content-provider:
             vars:
               cifmw_operator_build_meta_build: false
+        - openstack-meta-content-provider
         - podified-multinode-edpm-deployment-crc-test-operator:
             dependencies:
               - openstack-k8s-operators-content-provider
+              - openstack-meta-content-provider
             vars:
+              # Test operator image
               cifmw_test_operator_index: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator-index:{{ zuul.patchset }}"
+
+              # Tempest image
+              cifmw_test_operator_tempest_registry: "{{ content_provider_os_registry_url | split('/') | first }}"
+              cifmw_test_operator_tempest_namespace: "{{ content_provider_os_registry_url | split('/') | last }}"
+              cifmw_test_operator_tempest_image_tag: "{{ content_provider_dlrn_md5_hash }}"
+
+              # Tobiko image
+              cifmw_test_operator_tobiko_registry: "{{ cifmw_test_operator_tempest_registry }}"
+              cifmw_test_operator_tobiko_namespace: "{{ cifmw_test_operator_tempest_namespace }}"
+              cifmw_test_operator_tobiko_image_tag: "{{ content_provider_dlrn_md5_hash }}"
+
+              # Ansibletest image
+              cifmw_test_operator_ansibletest_registry: "{{ cifmw_test_operator_tempest_registry }}"
+              cifmw_test_operator_ansibletest_namespace: "{{ cifmw_test_operator_tempest_namespace }}"
+              cifmw_test_operator_ansibletest_container: "{{ content_provider_dlrn_md5_hash }}"
     periodic:
       jobs:
         - openstack-k8s-operators-content-provider:
