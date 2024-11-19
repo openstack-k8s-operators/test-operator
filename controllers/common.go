@@ -16,6 +16,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
+	"gopkg.in/yaml.v3"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -531,4 +532,73 @@ func (r *Reconciler) OverwriteValueWithWorkflow(
 	}
 
 	return nil
+}
+
+// Some frameworks like (e.g., Tobiko and Horizon) require password value to be
+// present in clouds.yaml. This code ensures that we set a default value of
+// 12345678 when password value is missing in the clouds.yaml
+func EnsureCloudsConfigMapExists(
+	ctx context.Context,
+	instance client.Object,
+	helper *helper.Helper,
+	labels map[string]string,
+) (ctrl.Result, error) {
+	const openstackConfigMapName = "openstack-config"
+	const testOperatorCloudsConfigMapName = "test-operator-clouds-config"
+
+	cm, _, _ := configmap.GetConfigMap(
+		ctx,
+		helper,
+		instance,
+		testOperatorCloudsConfigMapName,
+		time.Second*10,
+	)
+	if cm.Name == testOperatorCloudsConfigMapName {
+		return ctrl.Result{}, nil
+	}
+
+	cm, _, _ = configmap.GetConfigMap(
+		ctx,
+		helper,
+		instance,
+		openstackConfigMapName,
+		time.Second*10,
+	)
+
+	result := make(map[string]interface{})
+
+	err := yaml.Unmarshal([]byte(cm.Data["clouds.yaml"]), &result)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	clouds := result["clouds"].(map[string]interface{})
+	defaultValue := clouds["default"].(map[string]interface{})
+	auth := defaultValue["auth"].(map[string]interface{})
+
+	if _, ok := auth["password"].(string); !ok {
+		auth["password"] = "12345678"
+	}
+
+	yamlString, err := yaml.Marshal(result)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	cms := []util.Template{
+		{
+			Name:      testOperatorCloudsConfigMapName,
+			Namespace: instance.GetNamespace(),
+			Labels:    labels,
+			CustomData: map[string]string{
+				"clouds.yaml": string(yamlString),
+			},
+		},
+	}
+	err = configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
