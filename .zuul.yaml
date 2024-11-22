@@ -29,7 +29,13 @@
         - 'TEST_BRANCH'
         - 'OUTPUT_DIR'
 
-      cifmw_run_test_role: test_operator
+      cifmw_test_operator_stages:
+        - name: tempest
+          type: tempest
+        - name: ansibletest
+          type: ansibletest
+        - name: tobiko
+          type: tobiko
 
       # Test operator
       cifmw_test_operator_concurrency: 4
