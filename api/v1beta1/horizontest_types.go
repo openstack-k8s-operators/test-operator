@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,6 +28,11 @@ import (
 // HorizonTestSpec defines the desired state of HorizonTest
 type HorizonTestSpec struct {
 	CommonOptions `json:",inline"`
+
+	// +kubebuilder:default:={limits: {cpu: "2000m", memory: "4Gi"}, requests: {cpu: "1000m", memory: "2Gi"}}
+	// The desired amount of resources that should be assigned to each test pod
+	// spawned using the HorizonTest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
