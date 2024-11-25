@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,6 +29,11 @@ import (
 type AnsibleTestSpec struct {
 	CommonOptions         `json:",inline"`
 	CommonOpenstackConfig `json:",inline"`
+
+	// +kubebuilder:default:={limits: {cpu: "4000m", memory: "4Gi"}, requests: {cpu: "2000m", memory: "2Gi"}}
+	// The desired amount of resources that should be assigned to each test pod
+	// spawned using the AnsibleTest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
@@ -102,6 +108,11 @@ type AnsibleTestWorkflowSpec struct {
 	// Name of a workflow step. The step name will be used for example to create
 	// a logs directory.
 	StepName string `json:"stepName"`
+
+	// The desired amount of resources that should be assigned to each test pod
+	// spawned using the AnsibleTest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
+	// +kubebuilder:default:={limits: {cpu: "2000m", memory: "2Gi"}, requests: {cpu: "1000m", memory: "2Gi"}}
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional

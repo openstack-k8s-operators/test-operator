@@ -33,6 +33,14 @@ spec:
   # of tobiko tests).
   #
   # privileged: false
+
+  # resources:
+  #   limits:
+  #     cpu: 4000m
+  #     memory: 4Gi
+  #   requests:
+  #     cpu: 2000m
+  #     memory: 2Gi
   workflow:
     - stepName: beststep
       ansibleExtraVars: ' -e manual_run=false '

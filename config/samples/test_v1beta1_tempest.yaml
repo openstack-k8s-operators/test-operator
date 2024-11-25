@@ -38,6 +38,14 @@ spec:
   # or certain set tobiko tests).
   #
   # privileged: false
+
+  # resources:
+  #   limits:
+  #     cpu: 8000m
+  #     memory: 4Gi
+  #   requests:
+  #     cpu: 4000m
+  #     memory: 2Gi
   tempestRun:
     # NOTE: All parameters have default values (use only when you want to override
     #       the default behaviour)
