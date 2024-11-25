@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1beta1
 
+import corev1 "k8s.io/api/core/v1"
+
 // TempestRunSpec - is used to configure execution of tempest. Please refer to
 // Please refer to https://docs.openstack.org/tempest/latest/ for the further
 // explanation of the CLI parameters.
@@ -227,6 +229,11 @@ type WorkflowTempestconfRunSpec struct {
 type WorkflowTempestSpec struct {
 	WorkflowCommonParameters              `json:",inline"`
 	CommonOpenstackConfig      `json:",inline"`
+
+	// The desired amount of resources that should be assigned to each test pod
+	// spawned using the Tempest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
+	// +kubebuilder:default:={limits: {cpu: "8000m", memory: "4Gi"}, requests: {cpu: "4000m", memory: "2Gi"}}
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MaxLength:=100

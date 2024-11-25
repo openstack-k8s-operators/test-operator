@@ -60,6 +60,7 @@ func Job(
 							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
 							VolumeMounts:    GetVolumeMounts(mountCerts, mountSSHKey, instance),
 							SecurityContext: &securityContext,
+							Resources:       instance.Spec.Resources,
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{

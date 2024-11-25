@@ -234,6 +234,10 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel != nil {
 			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel
 		}
+
+		if instance.Spec.Workflow[nextWorkflowStep].Resources != nil {
+			instance.Spec.Resources = *instance.Spec.Workflow[nextWorkflowStep].Resources
+		}
 	}
 
 	// Service account, role, binding

@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,6 +28,11 @@ import (
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
 	CommonOptions `json:",inline"`
+
+	// +kubebuilder:default:={limits: {cpu: "8000m", memory: "8Gi"}, requests: {cpu: "4000m", memory: "4Gi"}}
+	// The desired amount of resources that should be assigned to each test pod
+	// spawned using the Tobiko CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
@@ -56,7 +62,7 @@ type TobikoSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=0
+	// +kubebuilder:default:=4
 	// Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
 	NumProcesses uint8 `json:"numProcesses"`
 
@@ -114,6 +120,11 @@ type TobikoSpec struct {
 
 type TobikoWorkflowSpec struct {
 	WorkflowCommonParameters `json:",inline"`
+
+	// +kubebuilder:default:={limits: {cpu: "8000m", memory: "8Gi"}, requests: {cpu: "4000m", memory: "4Gi"}}
+	// The desired amount of resources that should be assigned to each test pod
+	// spawned using the Tobiko CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -174,7 +185,6 @@ type TobikoWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	StepName string `json:"stepName"`
 }
-
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
