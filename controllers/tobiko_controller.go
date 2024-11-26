@@ -340,6 +340,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		envVars,
 		containerImage,
 		privileged,
+		instance.Spec.Resources,
 	)
 	tobikoJob := job.NewJob(
 		jobDef,
@@ -404,6 +405,10 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 
 		if instance.Spec.Workflow[step].SELinuxLevel != nil {
 			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[step].SELinuxLevel
+		}
+
+		if instance.Spec.Workflow[step].Resources != nil {
+			instance.Spec.Resources = *instance.Spec.Workflow[step].Resources
 		}
 	}
 

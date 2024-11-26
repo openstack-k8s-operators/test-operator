@@ -95,6 +95,11 @@ type CommonOptions struct {
 	// This value contains a toleration that is applied to pods spawned by the
 	// test pods that are spawned by the test-operator.
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// Specify Resource Requirements for a each test pod spawned
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type CommonOpenstackConfig struct {
@@ -179,4 +184,9 @@ type WorkflowCommonParameters struct {
 	// This value contains a toleration that is applied to pods spawned by the
 	// test pods that are spawned by the test-operator.
 	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// Specify Resource Requirements for a each test pod spawned
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
