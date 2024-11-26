@@ -12,8 +12,8 @@ const (
 const (
 	// WarnPrivilegedModeOn
 	WarnPrivilegedModeOn = "%s.Spec.Privileged is set to true. This means that test pods " +
-		"are spawned with allowPrivilegedEscalation: true and default " +
-		"capabilities on top of those required by the test operator " +
+		"are spawned with allowPrivilegedEscalation: true, readOnlyRootFilesystem: false " +
+		"and default capabilities on top of those required by the test operator " +
 		"(NET_ADMIN, NET_RAW)."
 
 	// WarnPrivilegedModeOff
