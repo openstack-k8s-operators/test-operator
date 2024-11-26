@@ -63,6 +63,18 @@ func GetVolumes(
 				},
 			},
 		},
+		{
+			Name: util.TestOperatorEphemeralVolumeNameWorkdir,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: util.TestOperatorEphemeralVolumeNameTmp,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 
 	if mountCerts {
@@ -150,6 +162,16 @@ func GetVolumes(
 // GetVolumeMounts -
 func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool, instance *testv1beta1.Tobiko) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      util.TestOperatorEphemeralVolumeNameWorkdir,
+			MountPath: "/var/lib/tobiko",
+			ReadOnly:  false,
+		},
+		{
+			Name:      util.TestOperatorEphemeralVolumeNameTmp,
+			MountPath: "/tmp",
+			ReadOnly:  false,
+		},
 		{
 			Name:      "test-operator-logs",
 			MountPath: "/var/lib/tobiko/external_files",

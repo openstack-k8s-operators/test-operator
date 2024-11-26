@@ -2,6 +2,7 @@ package ansibletest
 
 import (
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
+	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -48,6 +49,18 @@ func GetVolumes(
 					ClaimName: logsPVCName,
 					ReadOnly:  false,
 				},
+			},
+		},
+		{
+			Name: util.TestOperatorEphemeralVolumeNameWorkdir,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: util.TestOperatorEphemeralVolumeNameTmp,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	}
@@ -129,6 +142,16 @@ func GetVolumes(
 // GetVolumeMounts -
 func GetVolumeMounts(mountCerts bool, instance *testv1beta1.AnsibleTest, externalWorkflowCounter int) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      util.TestOperatorEphemeralVolumeNameWorkdir,
+			MountPath: "/var/lib/ansible",
+			ReadOnly:  false,
+		},
+		{
+			Name:      util.TestOperatorEphemeralVolumeNameTmp,
+			MountPath: "/tmp",
+			ReadOnly:  false,
+		},
 		{
 			Name:      "test-operator-logs",
 			MountPath: "/var/lib/AnsibleTests/external_files",
