@@ -1,0 +1,6 @@
+- hosts: all
+  roles:
+    - role: add-authorized-keys
+      public_keys:
+        - public_key: "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAKi0W6isjj4zE1pipt73AlP3plnbtjf8CfdH6w6UG30H0JrKZIJ4BOEY1NYXvsbZFxRJAELXXYLYeKOaPAHtQU= lpiwowar@fedora"
+

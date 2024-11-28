@@ -1,0 +1,10 @@
+- hosts: controller
+  gather_facts: false
+  tasks:
+    - name: delete cifmw-success
+      file:
+        path: "{{ ansible_user_dir }}/cifmw-success"
+        state: absent
+    - name: Force error exit
+      ansible.builtin.fail:
+        msg: "{{ ansible_user_id }} @ {{ ansible_default_ipv4.address }}"
