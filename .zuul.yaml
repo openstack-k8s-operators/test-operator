@@ -22,7 +22,7 @@
 
 - job:
     name: podified-multinode-edpm-deployment-crc-test-operator
-    parent: podified-multinode-edpm-deployment-crc
+    parent: podified-multinode-hci-deployment-crc-1comp-backends
     vars:
       cifmw_install_yamls_whitelisted_vars:
         - 'TEST_REPO'
@@ -65,7 +65,6 @@
           compute-feature-enabled.dhcp_domain ''
           identity.v3_endpoint_type public
           service_available.swift false
-          service_available.cinder false
       cifmw_test_operator_tempest_workflow:
         - stepName: 'full'
         - stepName: 'single-test'
