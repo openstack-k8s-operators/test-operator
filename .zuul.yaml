@@ -22,7 +22,7 @@
 
 - job:
     name: podified-multinode-edpm-deployment-crc-test-operator
-    parent: podified-multinode-edpm-deployment-crc
+    parent: podified-multinode-hci-deployment-crc-1comp-backends
     vars:
       cifmw_install_yamls_whitelisted_vars:
         - 'TEST_REPO'
@@ -60,7 +60,7 @@
         tempest.api.identity.admin.v3.test_users.UsersV3TestJSON.test_update_user_password
       cifmw_test_operator_tempest_expected_failures_list: |
         foobar
-      cifmw_tempest_tempestconf_config:
+      cifmw_test_operator_tempest_tempestconf_config:
         overrides: |
           compute-feature-enabled.dhcp_domain ''
           identity.v3_endpoint_type public
