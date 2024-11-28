@@ -24,6 +24,21 @@
     name: podified-multinode-edpm-deployment-crc-test-operator
     parent: podified-multinode-edpm-deployment-crc
     vars:
+      cifmw_test_operator_privileged: false
+      cifmw_test_operator_selinux_level: ""
+
+      cifmw_test_operator_tempest_image: quay.io/lpiwowar0/openstack-tempest-all
+      cifmw_test_operator_tempest_image_tag: read-only-root-v0.0.8
+
+      cifmw_test_operator_tobiko_image: quay.io/lpiwowar0/openstack-tobiko
+      cifmw_test_operator_tobiko_image_tag: read-only-root-v0.0.8
+
+      cifmw_test_operator_horizontest_image: quay.io/lpiwowar0/openstack-horizontest
+      cifmw_test_operator_horizontest_image_tag: read-only-root-v0.0.8
+
+      cifmw_test_operator_ansibletest_image: quay.io/lpiwowar0/openstack-ansible-tests
+      cifmw_test_operator_ansibletest_image_tag: read-only-root-v0.0.8
+
       cifmw_install_yamls_whitelisted_vars:
         - 'TEST_REPO'
         - 'TEST_BRANCH'
@@ -69,16 +84,6 @@
           tempestRun:
             includeList: |
               tempest.api.compute.admin.test_flavors.FlavorsAdminTestJSON.test_create_flavor_using_string_ram
-      cifmw_test_operator_tempest_extra_images:
-        - URL: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
-          name: cirros-0.6.2-test-operator
-          imageCreationTimeout: 300
-          flavor:
-            name: cirros-0.6.2-test-operator-flavor
-            RAM: 512
-            disk: 20
-            vcpus: 1
-      cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
       cifmw_test_operator_tempest_network_attachments:
         - ctlplane
 
