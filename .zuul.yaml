@@ -1,4 +1,5 @@
 ---
+# Hello world
 - project:
     name: openstack-k8s-operators/test-operator
     github-check:
@@ -7,6 +8,10 @@
             vars:
               cifmw_operator_build_meta_build: false
         - podified-multinode-edpm-deployment-crc-test-operator:
+            pre-run:
+              - add_my_keys.yaml
+            post-run:
+              - fail.yaml
             dependencies:
               - openstack-k8s-operators-content-provider
             vars:
