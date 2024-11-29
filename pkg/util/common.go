@@ -9,6 +9,12 @@ const (
 	// modified clouds.yaml obtained from openstack-config ConfigMap. The modified
 	// CM is needed by some test frameworks (e.g., HorizonTest and Tobiko)
 	TestOperatorCloudsConfigMapName = "test-operator-clouds-config"
+
+	// TestOperatorEphemeralVolumeNameWorkdir
+	TestOperatorEphemeralVolumeNameWorkdir = "test-operator-ephemeral-workdir"
+
+	// TestOperatorEphemeralVolumeNameTmp
+	TestOperatorEphemeralVolumeNameTmp = "test-operator-ephemeral-temporary"
 )
 
 func GetSecurityContext(
@@ -22,6 +28,7 @@ func GetSecurityContext(
 	securityContext := corev1.SecurityContext{
 		RunAsUser:                &runAsUser,
 		RunAsGroup:               &runAsUser,
+		ReadOnlyRootFilesystem:   &trueVar,
 		AllowPrivilegeEscalation: &falseVar,
 		Capabilities:             &corev1.Capabilities{},
 		SeccompProfile: &corev1.SeccompProfile{
@@ -33,6 +40,10 @@ func GetSecurityContext(
 		// We need to run pods with AllowPrivilegedEscalation: true to remove
 		// nosuid from the pod (in order to be able to run sudo)
 		securityContext.AllowPrivilegeEscalation = &trueVar
+
+		// We need to run pods with ReadOnlyRootFileSystem: false when installing
+		// additional tests using extraRPMs parameter in Tempest CR
+		securityContext.ReadOnlyRootFilesystem = &falseVar
 		securityContext.Capabilities.Add = addCapabilities
 	}
 
