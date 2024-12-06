@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: tempests.test.openstack.org
 spec:
   group: test.openstack.org
@@ -29,32 +28,38 @@ spec:
       openAPIV3Schema:
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
           spec:
-            description: TempestSpec - configuration of execution of tempest. For
-              specific configuration of tempest see TempestRunSpec and for discover-tempest-config
-              see TempestconfRunSpec.
+            description: |-
+              TempestSpec - configuration of execution of tempest. For specific configuration
+              of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
             properties:
               SELinuxLevel:
                 default: ""
-                description: A SELinuxLevel that should be used for test pods spawned
-                  by the test operator.
+                description: |-
+                  A SELinuxLevel that should be used for test pods spawned by the test
+                  operator.
                 type: string
               SSHKeySecretName:
                 default: ""
-                description: SSHKeySecretName is the name of the k8s secret that contains
-                  an ssh key. The key is mounted to ~/.ssh/id_ecdsa in the tempest
-                  pod
+                description: |-
+                  SSHKeySecretName is the name of the k8s secret that contains an ssh key.
+                  The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
                 type: string
               backoffLimit:
                 default: 0
@@ -64,16 +69,18 @@ spec:
                 type: integer
               cleanup:
                 default: false
-                description: Activate tempest cleanup. When activated, tempest will
-                  run tempest cleanup after test execution is complete to delete any
-                  resources created by tempest that may have been left out.
+                description: |-
+                  Activate tempest cleanup. When activated, tempest will run tempest cleanup
+                  after test execution is complete to delete any resources created by tempest
+                  that may have been left out.
                 type: boolean
               configOverwrite:
                 additionalProperties:
                   type: string
-                description: ConfigOverwrite - interface to overwrite default config
-                  files like e.g. logging.conf But can also be used to add additional
-                  files. Those get added to the service config dir in /etc/test_operator/<file>
+                description: |-
+                  ConfigOverwrite - interface to overwrite default config files like e.g. logging.conf
+                  But can also be used to add additional files. Those get added to the
+                  service config dir in /etc/test_operator/<file>
                 type: object
               containerImage:
                 default: ""
@@ -82,11 +89,11 @@ spec:
                 type: string
               debug:
                 default: false
-                description: Activate debug mode. When debug mode is activated any
-                  error encountered inside the test-pod causes that the pod will be
-                  kept alive indefinitely (stuck in "Running" phase) or until the
-                  corresponding Tempest CR is deleted. This allows the user to debug
-                  any potential troubles with `oc rsh`.
+                description: |-
+                  Activate debug mode. When debug mode is activated any error encountered
+                  inside the test-pod causes that the pod will be kept alive indefinitely
+                  (stuck in "Running" phase) or until the corresponding Tempest CR is deleted.
+                  This allows the user to debug any potential troubles with `oc rsh`.
                 type: boolean
               extraConfigmapsMounts:
                 description: Extra configmaps for mounting inside the pod
@@ -112,16 +119,18 @@ spec:
                   type: object
                 type: array
               networkAttachments:
-                description: NetworkAttachments is a list of NetworkAttachment resource
-                  names to expose the services to the given network
+                description: |-
+                  NetworkAttachments is a list of NetworkAttachment resource names to expose
+                  the services to the given network
                 items:
                   type: string
                 type: array
               nodeSelector:
                 additionalProperties:
                   type: string
-                description: This value contains a nodeSelector value that is applied
-                  to test pods spawned by the test operator.
+                description: |-
+                  This value contains a nodeSelector value that is applied to test pods
+                  spawned by the test operator.
                 type: object
               openStackConfigMap:
                 default: openstack-config
@@ -135,19 +144,20 @@ spec:
                 type: string
               parallel:
                 default: false
-                description: By default test-operator executes the test-pods sequentially
-                  if multiple instances of test-operator related CRs exist. If you
-                  want to turn off this behaviour then set this option to true.
+                description: |-
+                  By default test-operator executes the test-pods sequentially if multiple
+                  instances of test-operator related CRs exist. If you want to turn off this
+                  behaviour then set this option to true.
                 type: boolean
               privileged:
                 default: false
-                description: 'Use with caution! This parameter specifies whether test-operator
-                  should spawn test pods with allowedPrivilegedEscalation: true and
-                  the default capabilities on top of capabilities that are usually
-                  needed by the test pods (NET_ADMIN, NET_RAW). This parameter is
-                  deemed insecure but it is needed for certain test-operator functionalities
-                  to work properly (e.g.: extraRPMs in Tempest CR, or certain set
-                  of tobiko tests).'
+                description: |-
+                  Use with caution! This parameter specifies whether test-operator should spawn test
+                  pods with allowedPrivilegedEscalation: true and the default capabilities on
+                  top of capabilities that are usually needed by the test pods (NET_ADMIN, NET_RAW).
+                  This parameter is deemed insecure but it is needed for certain test-operator
+                  functionalities to work properly (e.g.: extraRPMs in Tempest CR, or certain set
+                  of tobiko tests).
                 type: boolean
               storageClass:
                 default: local-storage
@@ -155,9 +165,10 @@ spec:
                   PVCs.
                 type: string
               tempestRun:
-                description: TempestRunSpec - is used to configure execution of tempest.
-                  Please refer to Please refer to https://docs.openstack.org/tempest/latest/
-                  for the further explanation of the CLI parameters.
+                description: |-
+                  TempestRunSpec - is used to configure execution of tempest. Please refer to
+                  Please refer to https://docs.openstack.org/tempest/latest/ for the further
+                  explanation of the CLI parameters.
                 properties:
                   concurrency:
                     default: 0
@@ -169,29 +180,31 @@ spec:
                       via --exclude-list
                     type: string
                   expectedFailuresList:
-                    description: The expectedFailuresList parameter contains tests
-                      that should not count as failures. When a test from this list
-                      fails, the test pod ends with Completed state rather than with
-                      Error state.
+                    description: |-
+                      The expectedFailuresList parameter contains tests that should not count
+                      as failures. When a test from this list fails, the test pod ends with
+                      Completed state rather than with Error state.
                     type: string
                   externalPlugin:
-                    description: ExternalPlugin contains information about plugin
-                      that should be installed within the tempest test pod. If this
-                      option is specified then only tests that are part of the external
-                      plugin can be executed.
+                    description: |-
+                      ExternalPlugin contains information about plugin that should be installed
+                      within the tempest test pod. If this option is specified then only tests
+                      that are part of the external plugin can be executed.
                     items:
-                      description: ExternalPluginType - is used to specify a plugin
-                        that should be installed from an external resource
+                      description: |-
+                        ExternalPluginType - is used to specify a plugin that should be installed
+                        from an external resource
                       properties:
                         changeRefspec:
-                          description: ChangeRefspec specifies which change the remote
-                            repository should be checked out to (ChangeRepository
-                            must be defined as well).
+                          description: |-
+                            ChangeRefspec specifies which change the remote repository should be
+                            checked out to (ChangeRepository must be defined as well).
                           type: string
                         changeRepository:
-                          description: URL that points to a repository that contains
-                            a change that should be applied to the repository defined
-                            by Repository (ChangeRefspec must be defined as well).
+                          description: |-
+                            URL that points to a repository that contains a change that should be
+                            applied to the repository defined by Repository (ChangeRefspec must be
+                            defined as well).
                           type: string
                         repository:
                           description: URL that points to a git repository containing
@@ -202,12 +215,13 @@ spec:
                       type: object
                     type: array
                   extraImages:
-                    description: Extra images that should be downloaded inside the
-                      test pod and uploaded to openstack.
+                    description: |-
+                      Extra images that should be downloaded inside the test pod and uploaded to
+                      openstack.
                     items:
-                      description: ExtraImagesType - is used to specify extra images
-                        that should be downloaded inside the test pod and uploaded
-                        to openstack
+                      description: |-
+                        ExtraImagesType - is used to specify extra images that should be downloaded
+                        inside the test pod and uploaded to openstack
                       properties:
                         ID:
                           default: '-'
@@ -282,8 +296,9 @@ spec:
                       type: object
                     type: array
                   extraRPMs:
-                    description: A list URLs that point to RPMs that should be downloaded
-                      and installed inside the tempest test pod.
+                    description: |-
+                      A list URLs that point to RPMs that should be downloaded and installed
+                      inside the tempest test pod.
                     items:
                       type: string
                     type: array
@@ -314,24 +329,28 @@ spec:
                     type: string
                 type: object
               tempestconfRun:
-                description: TempestconfRunSpec - is used to configure execution of
-                  discover-tempest-config Please refer to https://docs.opendev.org/openinfra/python-tempestconf
-                  for the further explanation of the CLI parameters.
+                description: |-
+                  TempestconfRunSpec - is used to configure execution of discover-tempest-config
+                  Please refer to https://docs.opendev.org/openinfra/python-tempestconf for the
+                  further explanation of the CLI parameters.
                 properties:
                   append:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --append
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --append
                     type: string
                   collectTiming:
                     default: false
-                    description: Indicate whether discover-tempest-config should be
-                      executed with --collect-timing
+                    description: |-
+                      Indicate whether discover-tempest-config should be executed with
+                      --collect-timing
                     type: boolean
                   convertToRaw:
                     default: false
-                    description: Indicate whether discover-tempest-config should be
-                      executed with --convert-to-raw
+                    description: |-
+                      Indicate whether discover-tempest-config should be executed with
+                      --convert-to-raw
                     type: boolean
                   create:
                     default: true
@@ -340,8 +359,9 @@ spec:
                     type: boolean
                   createAccountsFile:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via the --create-accounts-file
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      the --create-accounts-file
                     type: string
                   debug:
                     default: false
@@ -355,30 +375,35 @@ spec:
                     type: string
                   flavorMinDisk:
                     default: 0
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --flavor-min-disk
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --flavor-min-disk
                     format: int64
                     type: integer
                   flavorMinMem:
                     default: 0
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --flavor-min-mem
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --flavor-min-mem
                     format: int64
                     type: integer
                   generateProfile:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --generate-profile
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --generate-profile
                     type: string
                   image:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --image
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --image
                     type: string
                   imageDiskFormat:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --image-disk-format
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --image-disk-format
                     type: string
                   insecure:
                     default: false
@@ -387,13 +412,15 @@ spec:
                     type: boolean
                   networkID:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --network-id
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --network-id
                     type: string
                   noDefaultDeployer:
                     default: false
-                    description: Indicate whether discover-tempest-config should be
-                      executed with --no-default-deployer
+                    description: |-
+                      Indicate whether discover-tempest-config should be executed with
+                      --no-default-deployer
                     type: boolean
                   nonAdmin:
                     default: false
@@ -402,14 +429,15 @@ spec:
                     type: boolean
                   out:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via the --out parameter
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      the --out parameter
                     type: string
                   overrides:
                     default: identity.v3_endpoint_type public
-                    description: The content of this variable will be appended at
-                      the end of the command that executes discover-tempest-config
-                      (override values).
+                    description: |-
+                      The content of this variable will be appended at the end of the command
+                      that executes discover-tempest-config (override values).
                     type: string
                   profile:
                     default: ""
@@ -418,8 +446,9 @@ spec:
                     type: string
                   remove:
                     default: ""
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --remove
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --remove
                     type: string
                   retryImage:
                     default: false
@@ -433,8 +462,9 @@ spec:
                     type: string
                   timeout:
                     default: 0
-                    description: The content of this variable will be passed to discover-tempest-config
-                      via --timeout
+                    description: |-
+                      The content of this variable will be passed to discover-tempest-config via
+                      --timeout
                     format: int64
                     type: integer
                   verbose:
@@ -444,66 +474,68 @@ spec:
                     type: boolean
                 type: object
               tolerations:
-                description: This value contains a toleration that is applied to pods
-                  spawned by the test pods that are spawned by the test-operator.
+                description: |-
+                  This value contains a toleration that is applied to pods spawned by the
+                  test pods that are spawned by the test-operator.
                 items:
-                  description: The pod this Toleration is attached to tolerates any
-                    taint that matches the triple <key,value,effect> using the matching
-                    operator <operator>.
+                  description: |-
+                    The pod this Toleration is attached to tolerates any taint that matches
+                    the triple <key,value,effect> using the matching operator <operator>.
                   properties:
                     effect:
-                      description: Effect indicates the taint effect to match. Empty
-                        means match all taint effects. When specified, allowed values
-                        are NoSchedule, PreferNoSchedule and NoExecute.
+                      description: |-
+                        Effect indicates the taint effect to match. Empty means match all taint effects.
+                        When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
                       type: string
                     key:
-                      description: Key is the taint key that the toleration applies
-                        to. Empty means match all taint keys. If the key is empty,
-                        operator must be Exists; this combination means to match all
-                        values and all keys.
+                      description: |-
+                        Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                        If the key is empty, operator must be Exists; this combination means to match all values and all keys.
                       type: string
                     operator:
-                      description: Operator represents a key's relationship to the
-                        value. Valid operators are Exists and Equal. Defaults to Equal.
-                        Exists is equivalent to wildcard for value, so that a pod
-                        can tolerate all taints of a particular category.
+                      description: |-
+                        Operator represents a key's relationship to the value.
+                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Exists is equivalent to wildcard for value, so that a pod can
+                        tolerate all taints of a particular category.
                       type: string
                     tolerationSeconds:
-                      description: TolerationSeconds represents the period of time
-                        the toleration (which must be of effect NoExecute, otherwise
-                        this field is ignored) tolerates the taint. By default, it
-                        is not set, which means tolerate the taint forever (do not
-                        evict). Zero and negative values will be treated as 0 (evict
-                        immediately) by the system.
+                      description: |-
+                        TolerationSeconds represents the period of time the toleration (which must be
+                        of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                        it is not set, which means tolerate the taint forever (do not evict). Zero and
+                        negative values will be treated as 0 (evict immediately) by the system.
                       format: int64
                       type: integer
                     value:
-                      description: Value is the taint value the toleration matches
-                        to. If the operator is Exists, the value should be empty,
-                        otherwise just a regular string.
+                      description: |-
+                        Value is the taint value the toleration matches to.
+                        If the operator is Exists, the value should be empty, otherwise just a regular string.
                       type: string
                   type: object
                 type: array
               workflow:
-                description: Workflow - can be used to specify a multiple executions
-                  of tempest with a different configuration in a single CR. Accepts
-                  a list of dictionaries where each member of the list accepts the
-                  same values as the Tempest CR does in the `spec`` section. Values
-                  specified using the workflow section have a higher precedence than
-                  the values specified higher in the Tempest CR hierarchy.
+                description: |-
+                  Workflow - can be used to specify a multiple executions of tempest with
+                  a different configuration in a single CR. Accepts a list of dictionaries
+                  where each member of the list accepts the same values as the Tempest CR
+                  does in the `spec`` section. Values specified using the workflow section have
+                  a higher precedence than the values specified higher in the Tempest CR
+                  hierarchy.
                 items:
-                  description: TempestSpec - configuration of execution of tempest.
-                    For specific configuration of tempest see TempestRunSpec and for
-                    discover-tempest-config see TempestconfRunSpec.
+                  description: |-
+                    TempestSpec - configuration of execution of tempest. For specific configuration
+                    of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
                   properties:
                     SELinuxLevel:
-                      description: A SELinuxLevel that should be used for test pods
-                        spawned by the test operator.
+                      description: |-
+                        A SELinuxLevel that should be used for test pods spawned by the test
+                        operator.
                       type: string
                     SSHKeySecretName:
-                      description: SSHKeySecretName is the name of the k8s secret
-                        that contains an ssh key. The key is mounted to ~/.ssh/id_ecdsa
-                        in the tempest pod
+                      description: |-
+                        SSHKeySecretName is the name of the k8s secret that contains an ssh key.
+                        The key is mounted to ~/.ssh/id_ecdsa in the tempest pod
                       type: string
                     backoffLimit:
                       default: 0
@@ -514,10 +546,10 @@ spec:
                     configOverwrite:
                       additionalProperties:
                         type: string
-                      description: ConfigOverwrite - interface to overwrite default
-                        config files like e.g. logging.conf But can also be used to
-                        add additional files. Those get added to the service config
-                        dir in /etc/test_operator/<file>
+                      description: |-
+                        ConfigOverwrite - interface to overwrite default config files like e.g. logging.conf
+                        But can also be used to add additional files. Those get added to the
+                        service config dir in /etc/test_operator/<file>
                       type: object
                     containerImage:
                       default: ""
@@ -548,16 +580,18 @@ spec:
                         type: object
                       type: array
                     networkAttachments:
-                      description: NetworkAttachments is a list of NetworkAttachment
-                        resource names to expose the services to the given network
+                      description: |-
+                        NetworkAttachments is a list of NetworkAttachment resource names to expose
+                        the services to the given network
                       items:
                         type: string
                       type: array
                     nodeSelector:
                       additionalProperties:
                         type: string
-                      description: This value contains a nodeSelector value that is
-                        applied to test pods spawned by the test operator.
+                      description: |-
+                        This value contains a nodeSelector value that is applied to test pods
+                        spawned by the test operator.
                       type: object
                     openStackConfigMap:
                       default: openstack-config
@@ -570,23 +604,24 @@ spec:
                         containing the secure.yaml
                       type: string
                     parallel:
-                      description: By default test-operator executes the test-pods
-                        sequentially if multiple instances of test-operator related
-                        CRs exist. If you want to turn off this behaviour then set
-                        this option to true.
+                      description: |-
+                        By default test-operator executes the test-pods sequentially if multiple
+                        instances of test-operator related CRs exist. If you want to turn off this
+                        behaviour then set this option to true.
                       type: boolean
                     privileged:
-                      description: 'Use with caution! This parameter specifies whether
-                        test-operator should spawn test pods with allowedPrivilegedEscalation:
-                        true and the default capabilities on top of capabilities that
-                        are usually needed by the test pods (NET_ADMIN, NET_RAW).
-                        This parameter is deemed insecure but it is needed for certain
-                        test-operator functionalities to work properly (e.g.: extraRPMs
-                        in Tempest CR, or certain set of tobiko tests).'
+                      description: |-
+                        Use with caution! This parameter specifies whether test-operator should spawn test
+                        pods with allowedPrivilegedEscalation: true and the default capabilities on
+                        top of capabilities that are usually needed by the test pods (NET_ADMIN, NET_RAW).
+                        This parameter is deemed insecure but it is needed for certain test-operator
+                        functionalities to work properly (e.g.: extraRPMs in Tempest CR, or certain set
+                        of tobiko tests).
                       type: boolean
                     stepName:
-                      description: Name of a workflow step. The step name will be
-                        used for example to create a logs directory.
+                      description: |-
+                        Name of a workflow step. The step name will be used for example to create
+                        a logs directory.
                       maxLength: 100
                       pattern: ^[a-z0-9]
                       type: string
@@ -596,9 +631,10 @@ spec:
                         PVCs.
                       type: string
                     tempestRun:
-                      description: TempestRunSpec - is used to configure execution
-                        of tempest. Please refer to Please refer to https://docs.openstack.org/tempest/latest/
-                        for the further explanation of the CLI parameters.
+                      description: |-
+                        TempestRunSpec - is used to configure execution of tempest. Please refer to
+                        Please refer to https://docs.openstack.org/tempest/latest/ for the further
+                        explanation of the CLI parameters.
                       properties:
                         concurrency:
                           description: Concurrency value that is passed to tempest
@@ -610,30 +646,31 @@ spec:
                             to tempest via --exclude-list
                           type: string
                         expectedFailuresList:
-                          description: The expectedFailuresList parameter contains
-                            tests that should not count as failures. When a test from
-                            this list fails, the test pod ends with Completed state
-                            rather than with Error state.
+                          description: |-
+                            The expectedFailuresList parameter contains tests that should not count
+                            as failures. When a test from this list fails, the test pod ends with
+                            Completed state rather than with Error state.
                           type: string
                         externalPlugin:
-                          description: ExternalPlugin contains information about plugin
-                            that should be installed within the tempest test pod.
-                            If this option is specified then only tests that are part
-                            of the external plugin can be executed.
+                          description: |-
+                            ExternalPlugin contains information about plugin that should be installed
+                            within the tempest test pod. If this option is specified then only tests
+                            that are part of the external plugin can be executed.
                           items:
-                            description: ExternalPluginType - is used to specify a
-                              plugin that should be installed from an external resource
+                            description: |-
+                              ExternalPluginType - is used to specify a plugin that should be installed
+                              from an external resource
                             properties:
                               changeRefspec:
-                                description: ChangeRefspec specifies which change
-                                  the remote repository should be checked out to (ChangeRepository
-                                  must be defined as well).
+                                description: |-
+                                  ChangeRefspec specifies which change the remote repository should be
+                                  checked out to (ChangeRepository must be defined as well).
                                 type: string
                               changeRepository:
-                                description: URL that points to a repository that
-                                  contains a change that should be applied to the
-                                  repository defined by Repository (ChangeRefspec
-                                  must be defined as well).
+                                description: |-
+                                  URL that points to a repository that contains a change that should be
+                                  applied to the repository defined by Repository (ChangeRefspec must be
+                                  defined as well).
                                 type: string
                               repository:
                                 description: URL that points to a git repository containing
@@ -644,12 +681,13 @@ spec:
                             type: object
                           type: array
                         extraImagesType:
-                          description: Extra images that should be downloaded inside
-                            the test pod and uploaded to openstack.
+                          description: |-
+                            Extra images that should be downloaded inside the test pod and uploaded to
+                            openstack.
                           items:
-                            description: ExtraImagesType - is used to specify extra
-                              images that should be downloaded inside the test pod
-                              and uploaded to openstack
+                            description: |-
+                              ExtraImagesType - is used to specify extra images that should be downloaded
+                              inside the test pod and uploaded to openstack
                             properties:
                               ID:
                                 default: '-'
@@ -725,8 +763,9 @@ spec:
                             type: object
                           type: array
                         extraRPMs:
-                          description: A list URLs that point to RPMs that should
-                            be downloaded and installed inside the tempest test pod.
+                          description: |-
+                            A list URLs that point to RPMs that should be downloaded and installed
+                            inside the tempest test pod.
                           items:
                             type: string
                           type: array
@@ -752,29 +791,34 @@ spec:
                           type: string
                       type: object
                     tempestconfRun:
-                      description: TempestconfRunSpec - is used to configure execution
-                        of discover-tempest-config Please refer to https://docs.opendev.org/openinfra/python-tempestconf
-                        for the further explanation of the CLI parameters.
+                      description: |-
+                        TempestconfRunSpec - is used to configure execution of discover-tempest-config
+                        Please refer to https://docs.opendev.org/openinfra/python-tempestconf for the
+                        further explanation of the CLI parameters.
                       properties:
                         append:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --append
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --append
                           type: string
                         collectTiming:
-                          description: Indicate whether discover-tempest-config should
-                            be executed with --collect-timing
+                          description: |-
+                            Indicate whether discover-tempest-config should be executed with
+                            --collect-timing
                           type: boolean
                         convertToRaw:
-                          description: Indicate whether discover-tempest-config should
-                            be executed with --convert-to-raw
+                          description: |-
+                            Indicate whether discover-tempest-config should be executed with
+                            --convert-to-raw
                           type: boolean
                         create:
                           description: Indicate whether discover-tempest-config should
                             be executed with --create
                           type: boolean
                         createAccountsFile:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via the --create-accounts-file
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            the --create-accounts-file
                           type: string
                         debug:
                           description: Indicate whether discover-tempest-config should
@@ -785,59 +829,68 @@ spec:
                             to tempest via --deployer-input
                           type: string
                         flavorMinDisk:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --flavor-min-disk
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --flavor-min-disk
                           format: int64
                           type: integer
                         flavorMinMem:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --flavor-min-mem
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --flavor-min-mem
                           format: int64
                           type: integer
                         generateProfile:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --generate-profile
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --generate-profile
                           type: string
                         image:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --image
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --image
                           type: string
                         imageDiskFormat:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --image-disk-format
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --image-disk-format
                           type: string
                         insecure:
                           description: Indicate whether discover-tempest-config should
                             be executed with --insecure
                           type: boolean
                         networkID:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --network-id
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --network-id
                           type: string
                         noDefaultDeployer:
-                          description: Indicate whether discover-tempest-config should
-                            be executed with --no-default-deployer
+                          description: |-
+                            Indicate whether discover-tempest-config should be executed with
+                            --no-default-deployer
                           type: boolean
                         nonAdmin:
                           description: Indicate whether discover-tempest-config should
                             be executed with --non-admin
                           type: boolean
                         out:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via the --out parameter
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            the --out parameter
                           type: string
                         overrides:
-                          description: The content of this variable will be appended
-                            at the end of the command that executes discover-tempest-config
-                            (override values).
+                          description: |-
+                            The content of this variable will be appended at the end of the command
+                            that executes discover-tempest-config (override values).
                           type: string
                         profile:
                           description: A content of profile.yaml that is passed to
                             tempest via --profile
                           type: string
                         remove:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --remove
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --remove
                           type: string
                         retryImage:
                           description: Indicate whether discover-tempest-config should
@@ -848,8 +901,9 @@ spec:
                             tempest via --test-acounts
                           type: string
                         timeout:
-                          description: The content of this variable will be passed
-                            to discover-tempest-config via --timeout
+                          description: |-
+                            The content of this variable will be passed to discover-tempest-config via
+                            --timeout
                           format: int64
                           type: integer
                         verbose:
@@ -858,45 +912,43 @@ spec:
                           type: boolean
                       type: object
                     tolerations:
-                      description: This value contains a toleration that is applied
-                        to pods spawned by the test pods that are spawned by the test-operator.
+                      description: |-
+                        This value contains a toleration that is applied to pods spawned by the
+                        test pods that are spawned by the test-operator.
                       items:
-                        description: The pod this Toleration is attached to tolerates
-                          any taint that matches the triple <key,value,effect> using
-                          the matching operator <operator>.
+                        description: |-
+                          The pod this Toleration is attached to tolerates any taint that matches
+                          the triple <key,value,effect> using the matching operator <operator>.
                         properties:
                           effect:
-                            description: Effect indicates the taint effect to match.
-                              Empty means match all taint effects. When specified,
-                              allowed values are NoSchedule, PreferNoSchedule and
-                              NoExecute.
+                            description: |-
+                              Effect indicates the taint effect to match. Empty means match all taint effects.
+                              When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
                             type: string
                           key:
-                            description: Key is the taint key that the toleration
-                              applies to. Empty means match all taint keys. If the
-                              key is empty, operator must be Exists; this combination
-                              means to match all values and all keys.
+                            description: |-
+                              Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                              If the key is empty, operator must be Exists; this combination means to match all values and all keys.
                             type: string
                           operator:
-                            description: Operator represents a key's relationship
-                              to the value. Valid operators are Exists and Equal.
-                              Defaults to Equal. Exists is equivalent to wildcard
-                              for value, so that a pod can tolerate all taints of
-                              a particular category.
+                            description: |-
+                              Operator represents a key's relationship to the value.
+                              Valid operators are Exists and Equal. Defaults to Equal.
+                              Exists is equivalent to wildcard for value, so that a pod can
+                              tolerate all taints of a particular category.
                             type: string
                           tolerationSeconds:
-                            description: TolerationSeconds represents the period of
-                              time the toleration (which must be of effect NoExecute,
-                              otherwise this field is ignored) tolerates the taint.
-                              By default, it is not set, which means tolerate the
-                              taint forever (do not evict). Zero and negative values
-                              will be treated as 0 (evict immediately) by the system.
+                            description: |-
+                              TolerationSeconds represents the period of time the toleration (which must be
+                              of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                              it is not set, which means tolerate the taint forever (do not evict). Zero and
+                              negative values will be treated as 0 (evict immediately) by the system.
                             format: int64
                             type: integer
                           value:
-                            description: Value is the taint value the toleration matches
-                              to. If the operator is Exists, the value should be empty,
-                              otherwise just a regular string.
+                            description: |-
+                              Value is the taint value the toleration matches to.
+                              If the operator is Exists, the value should be empty, otherwise just a regular string.
                             type: string
                         type: object
                       type: array
@@ -915,10 +967,10 @@ spec:
                     operational state.
                   properties:
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another. This should be when the underlying condition changed.
-                        If that is not known, then using the time when the API field
-                        changed is acceptable.
+                      description: |-
+                        Last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
@@ -930,14 +982,13 @@ spec:
                         in CamelCase.
                       type: string
                     severity:
-                      description: Severity provides a classification of Reason code,
-                        so the current situation is immediately understandable and
-                        could act accordingly. It is meant for situations where Status=False
-                        and it should be indicated if it is just informational, warning
-                        (next reconciliation might fix it) or an error (e.g. DB create
-                        issue and no actions to automatically resolve the issue can/should
-                        be done). For conditions where Status=Unknown or Status=True
-                        the Severity should be SeverityNone.
+                      description: |-
+                        Severity provides a classification of Reason code, so the current situation is immediately
+                        understandable and could act accordingly.
+                        It is meant for situations where Status=False and it should be indicated if it is just
+                        informational, warning (next reconciliation might fix it) or an error (e.g. DB create issue
+                        and no actions to automatically resolve the issue can/should be done).
+                        For conditions where Status=Unknown or Status=True the Severity should be SeverityNone.
                       type: string
                     status:
                       description: Status of the condition, one of True, False, Unknown.
