@@ -16,6 +16,7 @@ func GetSecurityContext(
 	securityContext := corev1.SecurityContext{
 		RunAsUser:                &runAsUser,
 		RunAsGroup:               &runAsUser,
+		RunAsNonRoot:             &trueVar,
 		AllowPrivilegeEscalation: &falseVar,
 		Capabilities: &corev1.Capabilities{
 			Add: addCapabilities,
@@ -26,6 +27,11 @@ func GetSecurityContext(
 	}
 
 	if privileged {
+		// Sometimes we require the test pods run sudo to be able to install
+		// additional packages or run commands with elevated priveleges (e.g.,
+		// tcpdump in case of Tobiko)
+		securityContext.RunAsNonRoot = &falseVar
+
 		// We need to run pods with AllowPrivilegedEscalation: true to remove
 		// nosuid from the pod (in order to be able to run sudo)
 		securityContext.AllowPrivilegeEscalation = &trueVar
