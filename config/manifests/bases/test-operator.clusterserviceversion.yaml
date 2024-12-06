@@ -11,7 +11,7 @@ metadata:
     features.operators.openshift.io/token-auth-aws: "false"
     features.operators.openshift.io/token-auth-azure: "false"
     features.operators.openshift.io/token-auth-gcp: "false"
-    operatorframework.io/suggested-namespace: openstack
+    operatorframework.io/suggested-namespace: openstack-operators
   name: test-operator.v0.0.0
   namespace: placeholder
 spec:
