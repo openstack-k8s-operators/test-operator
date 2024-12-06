@@ -47,8 +47,9 @@ func Job(
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					RestartPolicy:      corev1.RestartPolicyNever,
-					ServiceAccountName: instance.RbacResourceName(),
+					AutomountServiceAccountToken: &instance.Spec.Privileged,
+					RestartPolicy:                corev1.RestartPolicyNever,
+					ServiceAccountName:           instance.RbacResourceName(),
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser:  &runAsUser,
 						RunAsGroup: &runAsGroup,
