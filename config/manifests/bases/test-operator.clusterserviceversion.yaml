@@ -89,11 +89,11 @@ spec:
         displayName: Open Stack Config Secret
         path: openStackConfigSecret
       - description: 'Use with caution! This parameter specifies whether test-operator
-          should spawn test pods with allowedPrivilegedEscalation: true and the default
-          capabilities on top of capabilities that are usually needed by the test
-          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
-          for certain test-operator functionalities to work properly (e.g.: extraRPMs
-          in Tempest CR, or certain set of tobiko tests).'
+          should spawn test pods with allowedPrivilegedEscalation: true, automountServiceAccountToken:
+          true and the default capabilities on top of capabilities that are usually
+          needed by the test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure
+          but it is needed for certain test-operator functionalities to work properly
+          (e.g.: extraRPMs in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: StorageClass used to create any test-operator related PVCs.
@@ -283,11 +283,11 @@ spec:
         displayName: Password
         path: password
       - description: 'Use with caution! This parameter specifies whether test-operator
-          should spawn test pods with allowedPrivilegedEscalation: true and the default
-          capabilities on top of capabilities that are usually needed by the test
-          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
-          for certain test-operator functionalities to work properly (e.g.: extraRPMs
-          in Tempest CR, or certain set of tobiko tests).'
+          should spawn test pods with allowedPrivilegedEscalation: true, automountServiceAccountToken:
+          true and the default capabilities on top of capabilities that are usually
+          needed by the test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure
+          but it is needed for certain test-operator functionalities to work properly
+          (e.g.: extraRPMs in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: ProjectName is the name of the OpenStack project for Horizon
@@ -380,11 +380,11 @@ spec:
         displayName: Parallel
         path: parallel
       - description: 'Use with caution! This parameter specifies whether test-operator
-          should spawn test pods with allowedPrivilegedEscalation: true and the default
-          capabilities on top of capabilities that are usually needed by the test
-          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
-          for certain test-operator functionalities to work properly (e.g.: extraRPMs
-          in Tempest CR, or certain set of tobiko tests).'
+          should spawn test pods with allowedPrivilegedEscalation: true, automountServiceAccountToken:
+          true and the default capabilities on top of capabilities that are usually
+          needed by the test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure
+          but it is needed for certain test-operator functionalities to work properly
+          (e.g.: extraRPMs in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: StorageClass used to create any test-operator related PVCs.
@@ -398,6 +398,11 @@ spec:
       - description: A content of exclude.txt file that is passed to tempest via --exclude-list
         displayName: Exclude List
         path: tempestRun.excludeList
+      - description: The expectedFailuresList parameter contains tests that should
+          not count as failures. When a test from this list fails, the test pod ends
+          with Completed state rather than with Error state.
+        displayName: Expected Failures List
+        path: tempestRun.expectedFailuresList
       - description: ExternalPlugin contains information about plugin that should
           be installed within the tempest test pod. If this option is specified then
           only tests that are part of the external plugin can be executed.
@@ -662,6 +667,11 @@ spec:
       - description: A content of exclude.txt file that is passed to tempest via --exclude-list
         displayName: Exclude List
         path: workflow[0].tempestRun.excludeList
+      - description: The expectedFailuresList parameter contains tests that should
+          not count as failures. When a test from this list fails, the test pod ends
+          with Completed state rather than with Error state.
+        displayName: Expected Failures List
+        path: workflow[0].tempestRun.expectedFailuresList
       - description: ExternalPlugin contains information about plugin that should
           be installed within the tempest test pod. If this option is specified then
           only tests that are part of the external plugin can be executed.
@@ -904,11 +914,11 @@ spec:
         displayName: Private Key
         path: privateKey
       - description: 'Use with caution! This parameter specifies whether test-operator
-          should spawn test pods with allowedPrivilegedEscalation: true and the default
-          capabilities on top of capabilities that are usually needed by the test
-          pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
-          for certain test-operator functionalities to work properly (e.g.: extraRPMs
-          in Tempest CR, or certain set of tobiko tests).'
+          should spawn test pods with allowedPrivilegedEscalation: true, automountServiceAccountToken:
+          true and the default capabilities on top of capabilities that are usually
+          needed by the test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure
+          but it is needed for certain test-operator functionalities to work properly
+          (e.g.: extraRPMs in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: Public Key
