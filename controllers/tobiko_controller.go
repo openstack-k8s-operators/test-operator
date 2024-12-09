@@ -405,6 +405,10 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 		if instance.Spec.Workflow[step].SELinuxLevel != nil {
 			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[step].SELinuxLevel
 		}
+
+		if instance.Spec.Workflow[step].Resources != nil {
+			instance.Spec.Resources = *instance.Spec.Workflow[step].Resources
+		}
 	}
 
 	// Prepare env vars
