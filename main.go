@@ -21,6 +21,7 @@ import (
 	"flag"
 	"os"
 	"strings"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -31,6 +32,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -49,11 +51,34 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+const (
+	CacheSyncTimeout = time.Minute * 10
+)
+
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(testv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
+}
+
+// getWatchNamespace returns the Namespace the operator should be watching for changes
+func getWatchNamespace() ([]string, error) {
+	// WatchNamespaceEnvVar is the constant for env variable WATCH_NAMESPACE
+	// which specifies the Namespace to watch.
+	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
+
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		defaultWatchNamespace := []string{"openstack-test-operator", "openstack"}
+		return defaultWatchNamespace, nil
+	}
+
+	if len(ns) > 0 {
+		return strings.Split(ns, ","), nil
+	}
+
+	return []string{}, nil
 }
 
 func main() {
@@ -82,7 +107,7 @@ func main() {
 		c.NextProtos = []string{"http/1.1"}
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	ctrlOptions := ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
@@ -106,7 +131,25 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
-	})
+	}
+
+	watchNamespace, err := getWatchNamespace()
+	if err != nil {
+		setupLog.Error(err, "unable to get WatchNamespace, "+
+			"the manager will watch and manage resources in all namespaces")
+	}
+
+	defaultNamespaces := map[string]cache.Config{}
+	for _, namespace := range watchNamespace {
+		defaultNamespaces[namespace] = cache.Config{}
+	}
+
+	if len(watchNamespace) > 0 {
+		ctrlOptions.Cache.DefaultNamespaces = defaultNamespaces
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrlOptions)
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -128,6 +171,7 @@ func main() {
 	tempestReconciler.Client = mgr.GetClient()
 	tempestReconciler.Scheme = mgr.GetScheme()
 	tempestReconciler.Kclient = kclient
+	tempestReconciler.CacheSyncTimeout = CacheSyncTimeout
 	if err = tempestReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Tempest")
 		os.Exit(1)
@@ -137,6 +181,7 @@ func main() {
 	tobikoReconciler.Client = mgr.GetClient()
 	tobikoReconciler.Scheme = mgr.GetScheme()
 	tobikoReconciler.Kclient = kclient
+	tobikoReconciler.CacheSyncTimeout = CacheSyncTimeout
 	if err = tobikoReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Tobiko")
 		os.Exit(1)
@@ -146,6 +191,7 @@ func main() {
 	ansibleReconciler.Client = mgr.GetClient()
 	ansibleReconciler.Scheme = mgr.GetScheme()
 	ansibleReconciler.Kclient = kclient
+	ansibleReconciler.CacheSyncTimeout = CacheSyncTimeout
 	if err = ansibleReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AnsibleTest")
 		os.Exit(1)
@@ -155,6 +201,7 @@ func main() {
 	horizontestReconciler.Client = mgr.GetClient()
 	horizontestReconciler.Scheme = mgr.GetScheme()
 	horizontestReconciler.Kclient = kclient
+	horizontestReconciler.CacheSyncTimeout = CacheSyncTimeout
 	if err = horizontestReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HorizonTest")
 		os.Exit(1)
