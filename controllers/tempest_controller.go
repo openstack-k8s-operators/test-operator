@@ -354,6 +354,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		if instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel != nil {
 			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel
 		}
+
+		if instance.Spec.Workflow[externalWorkflowCounter].Resources != nil {
+			instance.Spec.Resources = *instance.Spec.Workflow[externalWorkflowCounter].Resources
+		}
 	}
 
 	jobDef := tempest.Job(
@@ -367,6 +371,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		mountCerts,
 		mountSSHKey,
 		containerImage,
+		instance.Spec.Resources,
 	)
 	tempestJob := job.NewJob(
 		jobDef,

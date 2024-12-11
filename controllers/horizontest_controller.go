@@ -251,6 +251,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		mountKubeconfig,
 		envVars,
 		containerImage,
+		instance.Spec.Resources,
 	)
 	horizontestJob := job.NewJob(
 		jobDef,
