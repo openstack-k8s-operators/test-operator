@@ -40,7 +40,33 @@ using the OLM.
 Follow these steps to install the operator in the :code:`openstack-operators`
 project.
 
-1. Create :code:`Subscription`
+1. Create namespace :code:`openstack-test-operator`. This is the namespace where
+   we will install the test-operator.
+
+.. code-block:: bash
+
+      oc new-project openstack-test-operator
+
+2. Create an OperatorGroup for the :code:`openstack-test-operator` namespace.
+
+.. code-block:: yaml
+
+   cat operator-group.yaml
+   ---
+   apiVersion: operators.coreos.com/v1
+   kind: OperatorGroup
+   metadata:
+     name: test-operator
+     namespace: openstack-test-operator
+   spec:
+     targetNamespaces:
+       - openstack
+
+.. code-block:: bash
+
+   oc apply -f operator-group.yaml
+
+3. Create :code:`Subscription`
 
 .. code-block:: yaml
 
@@ -50,24 +76,23 @@ project.
    kind: Subscription
    metadata:
      name: test-operator
-     namespace: openstack-operators
+     namespace: openstack-test-operator
    spec:
      name: test-operator
      source: openstack-operator-index
      sourceNamespace: openstack-operators
 
-2. Apply :code:`subscription.yaml`
-
 .. code-block:: bash
 
    oc apply -f subscription.yaml
 
-3. Wait for the :code:`test-operator-controller-manager` pod to successfully
-   spawn. Once you see the pod running, you can start communicating with the
-   operator using the CRs understood by the test-operator (see
-   :ref:`custom-resources-used-by-the-test-operator`). For more information
-   about how to run tests via the test-operator, refer to the :ref:`executing-tests`
-   section.
+4. Wait for the :code:`test-operator-controller-manager` pod to successfully
+   spawn and for the test-operator role to be present in the in the :code:`openstack`
+   namespace. Once you see the pod running and the role is present in the namespace,
+   you can start communicating with the operator using the CRs understood by the
+   test-operator (see :ref:`custom-resources-used-by-the-test-operator`). For more
+   information about how to run tests via the test-operator, refer to the
+   :ref:`executing-tests` section.
 
 .. code-block:: bash
 
@@ -75,6 +100,18 @@ project.
    ...
    test-operator-controller-manager-6c9994847c-6jwn5                 2/2     Running     0              20s
    ...
+
+.. code-block:: bash
+
+   oc get role -n openstack -l olm.copiedFrom=openstack-test-operator
+   test-operator.v0.0.1-tes-bti8yTEQMDWw9K2RWdGHcK21pAEMEM1LJIsYel   2024-12-12T12:05:20Z
+
+5. Switch to the :code:`openstack` namespace and start using the test-operator.
+
+.. code-block:: bash
+
+   oc project openstack
+
 
 .. _running-operator-locally:
 
@@ -129,20 +166,20 @@ Please make sure that you follow the order of the steps:
 
 .. code-block:: bash
 
-   oc delete subscription/test-operator -n openstack-operators
+   oc delete subscription/test-operator -n openstack-test-operator
 
 4. Remove the :code:`csv`
 
 .. code-block:: bash
 
-   oc delete clusterserviceversion.operators.coreos.com/test-operator.v0.0.1 -n openstack-operators
+   oc delete clusterserviceversion.operators.coreos.com/test-operator.v0.0.1 -n openstack-test-operator
 
 5. Remove test-operator related installplan (replace :code:`XXXXX` with value obtained
    with the first command :code:`oc get installplans`)
 
 .. code-block:: bash
 
-   oc get installplans -n openstack-operators | grep "test-operator"
+   oc get installplans -n openstack-test-operator | grep "test-operator"
    oc delete installplan install-XXXXX -n openstack-operators
 
 
@@ -152,14 +189,14 @@ Please make sure that you follow the order of the steps:
 
 .. code-block:: bash
 
-   oc delete operator/test-operator.openstack-operators
+   oc delete operator/test-operator.openstack-test-operator
 
 7. Check that there are no test-operator related resources hanging. This step
    is not required.
 
 .. code-block:: bash
 
-   oc get olm -n openstack-operators
+   oc get olm -n openstack-test-operator
 
 .. note::
    It might happen that by changing the order of the uninstallation steps,
