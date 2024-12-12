@@ -5,13 +5,12 @@ import (
 
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Job - prepare job to run Tempest tests
-func Job(
+// Pod - prepare pod to run Tempest tests
+func Pod(
 	instance *testv1beta1.Tempest,
 	labels map[string]string,
 	annotations map[string]string,
@@ -22,79 +21,70 @@ func Job(
 	mountCerts bool,
 	mountSSHKey bool,
 	containerImage string,
-) *batchv1.Job {
+) *corev1.Pod {
 
 	envVars := map[string]env.Setter{}
 	runAsUser := int64(42480)
 	runAsGroup := int64(42480)
 	securityContext := util.GetSecurityContext(runAsUser, []corev1.Capability{}, instance.Spec.Privileged)
 
-	job := &batchv1.Job{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      jobName,
-			Namespace: instance.Namespace,
-			Labels:    labels,
+			Annotations: annotations,
+			Name:        jobName,
+			Namespace:   instance.Namespace,
+			Labels:      labels,
 		},
-		Spec: batchv1.JobSpec{
-			BackoffLimit: instance.Spec.BackoffLimit,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: annotations,
-					Labels:      labels,
-				},
-				Spec: corev1.PodSpec{
-					RestartPolicy:      corev1.RestartPolicyNever,
-					ServiceAccountName: instance.RbacResourceName(),
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser:  &runAsUser,
-						RunAsGroup: &runAsGroup,
-						FSGroup:    &runAsGroup,
-					},
-					Tolerations:  instance.Spec.Tolerations,
-					NodeSelector: instance.Spec.NodeSelector,
-					Containers: []corev1.Container{
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyNever,
+			Tolerations:   instance.Spec.Tolerations,
+			NodeSelector:  instance.Spec.NodeSelector,
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser:  &runAsUser,
+				RunAsGroup: &runAsGroup,
+				FSGroup:    &runAsGroup,
+			},
+			Containers: []corev1.Container{
+				{
+					Name:            instance.Name + "-tests-runner",
+					Image:           containerImage,
+					Args:            []string{},
+					Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
+					VolumeMounts:    GetVolumeMounts(mountCerts, mountSSHKey, instance),
+					SecurityContext: &securityContext,
+					EnvFrom: []corev1.EnvFromSource{
 						{
-							Name:            instance.Name + "-tests-runner",
-							Image:           containerImage,
-							Args:            []string{},
-							Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
-							VolumeMounts:    GetVolumeMounts(mountCerts, mountSSHKey, instance),
-							SecurityContext: &securityContext,
-							EnvFrom: []corev1.EnvFromSource{
-								{
-									ConfigMapRef: &corev1.ConfigMapEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: customDataConfigMapName,
-										},
-									},
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: customDataConfigMapName,
 								},
-								{
-									ConfigMapRef: &corev1.ConfigMapEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: envVarsConfigMapName,
-										},
-									},
+							},
+						},
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: envVarsConfigMapName,
 								},
 							},
 						},
 					},
-					Volumes: GetVolumes(
-						instance,
-						customDataConfigMapName,
-						logsPVCName,
-						mountCerts,
-						mountSSHKey,
-					),
 				},
 			},
+			Volumes: GetVolumes(
+				instance,
+				customDataConfigMapName,
+				logsPVCName,
+				mountCerts,
+				mountSSHKey,
+			),
 		},
 	}
 
 	if len(instance.Spec.SELinuxLevel) > 0 {
-		job.Spec.Template.Spec.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+		pod.Spec.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
 			Level: instance.Spec.SELinuxLevel,
 		}
 	}
 
-	return job
+	return pod
 }

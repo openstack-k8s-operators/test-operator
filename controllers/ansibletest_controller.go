@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
 	"reflect"
 
@@ -30,12 +29,10 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
-	"github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
+	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/ansibletest"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -161,7 +158,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		Log.Info(InfoTestingCompleted)
 		return ctrl.Result{}, nil
 
-	case CreateFirstJob:
+	case CreateFirstPod:
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, false)
 		if !lockAcquired {
 			Log.Info(fmt.Sprintf(InfoCanNotAcquireLock, testOperatorLockName))
@@ -170,7 +167,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
 
-	case CreateNextJob:
+	case CreateNextPod:
 		// Confirm that we still hold the lock. This is useful to check if for
 		// example somebody / something deleted the lock and it got claimed by
 		// another instance. This is considered to be an error state.
@@ -213,7 +210,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Create a new job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	jobName := r.GetJobName(instance, nextWorkflowStep)
+	jobName := r.GetPodName(instance, nextWorkflowStep)
 	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage, err := r.GetContainerImage(ctx, workflowOverrideParams["ContainerImage"], instance)
@@ -245,8 +242,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return rbacResult, nil
 	}
 	// Service account, role, binding - end
-
-	jobDef := ansibletest.Job(
+	podDef := ansibletest.Pod(
 		instance,
 		serviceLabels,
 		jobName,
@@ -258,15 +254,8 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		containerImage,
 		privileged,
 	)
-	ansibleTestsJob := job.NewJob(
-		jobDef,
-		testv1beta1.ConfigHash,
-		true,
-		time.Duration(5)*time.Second,
-		"",
-	)
 
-	ctrlResult, err = ansibleTestsJob.DoJob(ctx, helper)
+	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
 	if err != nil {
 		// Creation of the ansibleTests job was not successfull.
 		// Release the lock and allow other controllers to spawn
@@ -299,7 +288,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *AnsibleTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&testv1beta1.AnsibleTest{}).
-		Owns(&batchv1.Job{}).
+		Owns(&corev1.Pod{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
