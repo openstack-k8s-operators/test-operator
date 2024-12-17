@@ -34,6 +34,13 @@
       # Test operator
       cifmw_test_operator_concurrency: 4
       cifmw_test_operator_timeout: 7200
+      cifmw_test_operator_stages:
+        - name: tempest
+          type: tempest
+        - name: tobiko
+          type: tobiko
+        - name: ansibletest
+          type: ansibletest
 
       # Tempest
       cifmw_run_tempest: true
