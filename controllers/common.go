@@ -66,10 +66,11 @@ const (
 )
 
 type Reconciler struct {
-	Client  client.Client
-	Kclient kubernetes.Interface
-	Log     logr.Logger
-	Scheme  *runtime.Scheme
+	CacheSyncTimeout time.Duration
+	Client           client.Client
+	Kclient          kubernetes.Interface
+	Log              logr.Logger
+	Scheme           *runtime.Scheme
 }
 
 // NextAction holds an action that should be performed by the Reconcile loop.
