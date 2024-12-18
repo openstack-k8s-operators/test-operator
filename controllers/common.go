@@ -17,7 +17,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"gopkg.in/yaml.v3"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -80,13 +80,13 @@ const (
 	// to change
 	Wait = iota
 
-	// CreateFirstJob indicates that the Reconcile loop should create the first job
+	// CreateFirstPod indicates that the Reconcile loop should create the first job
 	// either specified in the .Spec section or in the .Spec.Workflow section.
-	CreateFirstJob
+	CreateFirstPod
 
-	// CreateNextJob indicates that the Reconcile loop should create a next job
+	// CreateNextPod indicates that the Reconcile loop should create a next job
 	// specified in the .Spec.Workflow section (if .Spec.Workflow is defined)
-	CreateNextJob
+	CreateNextPod
 
 	// EndTesting indicates that all jobs have already finished. The Reconcile
 	// loop should end the testing and release resources that are required to
@@ -97,6 +97,47 @@ const (
 	Failure
 )
 
+// GetPod returns pod that has a specific name (podName) in a given namespace
+// (podNamespace).
+func (r *Reconciler) GetPod(
+	ctx context.Context,
+	podName string,
+	podNamespace string,
+) (*corev1.Pod, error) {
+	pod := &corev1.Pod{}
+	objectKey := client.ObjectKey{Namespace: podNamespace, Name: podName}
+	if err := r.Client.Get(ctx, objectKey, pod); err != nil {
+		return pod, err
+	}
+
+	return pod, nil
+}
+
+// CreatePod creates a pod based on a spec provided via PodSpec.
+func (r *Reconciler) CreatePod(
+	ctx context.Context,
+	h helper.Helper,
+	podSpec *corev1.Pod,
+) (ctrl.Result, error) {
+	_, err := r.GetPod(ctx, podSpec.Name, podSpec.Namespace)
+	if err == nil {
+		return ctrl.Result{}, nil
+	} else if !k8s_errors.IsNotFound(err) {
+		return ctrl.Result{}, err
+	}
+
+	err = controllerutil.SetControllerReference(h.GetBeforeObject(), podSpec, r.GetScheme())
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.Client.Create(ctx, podSpec); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // NextAction indicates what action needs to be performed by the Reconcile loop
 // based on the current state of the OpenShift cluster.
 func (r *Reconciler) NextAction(
@@ -104,52 +145,52 @@ func (r *Reconciler) NextAction(
 	instance client.Object,
 	workflowLength int,
 ) (NextAction, int, error) {
-	// Get the latest job. The latest job is job with the highest value stored
+	// Get the latest pod. The latest pod is pod with the highest value stored
 	// in workflowStep label
 	workflowStepIdx := 0
-	lastJob, err := r.GetLastJob(ctx, instance)
+	lastPod, err := r.GetLastPod(ctx, instance)
 	if err != nil {
 		return Failure, workflowStepIdx, err
 	}
 
-	// If there is a job associated with the current instance.
-	if lastJob != nil {
-		workflowStepIdx, err := strconv.Atoi(lastJob.Labels[workflowStepLabel])
+	// If there is a pod associated with the current instance.
+	if lastPod != nil {
+		workflowStepIdx, err := strconv.Atoi(lastPod.Labels[workflowStepLabel])
 		if err != nil {
 			return Failure, workflowStepIdx, err
 		}
 
-		// If the last job is not in Failed or Succeded state -> Wait
-		lastJobFinished := (lastJob.Status.Failed + lastJob.Status.Succeeded) > 0
-		if !lastJobFinished {
+		// If the last pod is not in Failed or Succeded state -> Wait
+		lastPodFinished := lastPod.Status.Phase == corev1.PodFailed || lastPod.Status.Phase == corev1.PodSucceeded
+		if !lastPodFinished {
 			return Wait, workflowStepIdx, nil
 		}
 
-		// If the last job is in Failed or Succeeded state and it is NOT the last
-		// job which was supposed to be created -> CreateNextJob
-		if lastJobFinished && !isLastJobIndex(workflowStepIdx, workflowLength) {
+		// If the last pod is in Failed or Succeeded state and it is NOT the last
+		// pod which was supposed to be created -> CreateNextPod
+		if lastPodFinished && !isLastPodIndex(workflowStepIdx, workflowLength) {
 			workflowStepIdx++
-			return CreateNextJob, workflowStepIdx, nil
+			return CreateNextPod, workflowStepIdx, nil
 		}
 
-		// Otherwise if the job is in Failed or Succeded stated and it IS the
-		// last job -> EndTesting
-		if lastJobFinished && isLastJobIndex(workflowStepIdx, workflowLength) {
+		// Otherwise if the pod is in Failed or Succeded stated and it IS the
+		// last pod -> EndTesting
+		if lastPodFinished && isLastPodIndex(workflowStepIdx, workflowLength) {
 			return EndTesting, workflowStepIdx, nil
 		}
 	}
 
-	// If there is not any job associated with the instance -> createFirstJob
-	if lastJob == nil {
-		return CreateFirstJob, workflowStepIdx, nil
+	// If there is not any pod associated with the instance -> createFirstPod
+	if lastPod == nil {
+		return CreateFirstPod, workflowStepIdx, nil
 	}
 
 	return Failure, workflowStepIdx, nil
 }
 
-// isLastJobIndex returns true when jobIndex is the index of the last job that
+// isLastPodIndex returns true when jobIndex is the index of the last job that
 // should be executed. Otherwise the return value is false.
-func isLastJobIndex(jobIndex int, workflowLength int) bool {
+func isLastPodIndex(jobIndex int, workflowLength int) bool {
 	switch workflowLength {
 	case 0:
 		return jobIndex == workflowLength
@@ -160,26 +201,26 @@ func isLastJobIndex(jobIndex int, workflowLength int) bool {
 
 // GetLastJob returns job associated with an instance which has the highest value
 // stored in the workflowStep label
-func (r *Reconciler) GetLastJob(
+func (r *Reconciler) GetLastPod(
 	ctx context.Context,
 	instance client.Object,
-) (*batchv1.Job, error) {
+) (*corev1.Pod, error) {
 	labels := map[string]string{instanceNameLabel: instance.GetName()}
 	namespaceListOpt := client.InNamespace(instance.GetNamespace())
 	labelsListOpt := client.MatchingLabels(labels)
-	jobList := &batchv1.JobList{}
-	err := r.Client.List(ctx, jobList, namespaceListOpt, labelsListOpt)
+	podList := &corev1.PodList{}
+	err := r.Client.List(ctx, podList, namespaceListOpt, labelsListOpt)
 	if err != nil {
 		return nil, err
 	}
 
-	var maxJob *batchv1.Job
+	var maxJob *corev1.Pod
 	maxJobWorkflowStep := 0
 
-	for _, job := range jobList.Items {
+	for _, job := range podList.Items {
 		workflowStep, err := strconv.Atoi(job.Labels[workflowStepLabel])
 		if err != nil {
-			return &batchv1.Job{}, err
+			return &corev1.Pod{}, err
 		}
 
 		if workflowStep >= maxJobWorkflowStep {
@@ -307,7 +348,7 @@ func (r *Reconciler) GetContainerImage(
 	return "", nil
 }
 
-func (r *Reconciler) GetJobName(instance interface{}, workflowStepNum int) string {
+func (r *Reconciler) GetPodName(instance interface{}, workflowStepNum int) string {
 	if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
 			return typedInstance.Name
@@ -552,11 +593,11 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	return false, errors.New("failed to delete test-operator-lock")
 }
 
-func (r *Reconciler) JobExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
-	job := &batchv1.Job{}
-	jobName := r.GetJobName(instance, workflowStepNum)
-	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: jobName}
-	err := r.Client.Get(ctx, objectKey, job)
+func (r *Reconciler) PodExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
+	pod := &corev1.Pod{}
+	podName := r.GetPodName(instance, workflowStepNum)
+	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: podName}
+	err := r.Client.Get(ctx, objectKey, pod)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		return false
 	}
