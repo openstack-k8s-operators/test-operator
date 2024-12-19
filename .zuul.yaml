@@ -22,7 +22,7 @@
 
 - job:
     name: podified-multinode-edpm-deployment-crc-test-operator
-    parent: podified-multinode-edpm-deployment-crc
+    parent: podified-multinode-hci-deployment-crc-1comp-backends
     vars:
       cifmw_install_yamls_whitelisted_vars:
         - 'TEST_REPO'
@@ -41,6 +41,8 @@
           type: tobiko
         - name: ansibletest
           type: ansibletest
+        - name: horizontest
+          type: horizontest
 
       # Tempest
       cifmw_run_tempest: true
@@ -67,12 +69,19 @@
         tempest.api.identity.admin.v3.test_users.UsersV3TestJSON.test_update_user_password
       cifmw_test_operator_tempest_expected_failures_list: |
         foobar
-      cifmw_tempest_tempestconf_config:
+      cifmw_test_operator_tempest_tempestconf_config:
         overrides: |
           compute-feature-enabled.dhcp_domain ''
+          dashboard.dashboard_url https://horizon-openstack.apps-crc.testing/dashboard/
+          dashboard.login_url https://horizon-openstack.apps-crc.testing/dashboard/auth/login/
+          dashboard.disable_ssl_certificate_validation True
           identity.v3_endpoint_type public
           service_available.swift false
           service_available.cinder false
+          service_available.horizon True
+          share.run_share_group_tests false
+          share.capability_storage_protocol cephfs
+          share.suppress_errors_in_cleanup true
       cifmw_test_operator_tempest_workflow:
         - stepName: 'full'
         - stepName: 'single-test'
@@ -103,6 +112,11 @@
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
 
+      # Horizontest
+      cifmw_run_horizontest: true
+      cifmw_test_operator_horizontest_auth_url: "https://keystone-public-openstack.apps-crc.testing"
+      cifmw_test_operator_horizontest_dashboard_url: "https://horizon-openstack.apps-crc.testing/"
+
       # Ansibletest
       run_ansibletest: true
       cifmw_test_operator_ansibletest_ansible_git_repo: https://github.com/ansible/test-playbooks
@@ -114,6 +128,15 @@
       cifmw_test_operator_ansibletest_ansible_var_files: |
         ---
         foo: bar
+
+      pre_deploy:
+        - name: 61 HCI pre deploy kustomizations
+          type: playbook
+          source: control_plane_hci_pre_deploy.yml
+        - name: 80 Kustomize OpenStack CR
+          type: playbook
+          source: control_plane_horizon.yml
+
     required-projects: &rp
       - name: openstack-k8s-operators/install_yamls
         override-checkout: main
