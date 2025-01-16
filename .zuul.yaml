@@ -1,4 +1,5 @@
 ---
+# REMOVE ME
 - project:
     name: openstack-k8s-operators/test-operator
     github-check:
