@@ -30,13 +30,11 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/tobiko"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,7 +54,6 @@ func (r *TobikoReconciler) GetLogger(ctx context.Context) logr.Logger {
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tobikoes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tobikoes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tobikoes/finalizers,verbs=update;patch
-// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;patch;update;delete;
 // +kubebuilder:rbac:groups=k8s.cni.cncf.io,resources=network-attachment-definitions,verbs=get;list;watch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch
@@ -147,12 +144,12 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		return ctrl.Result{}, err
 
 	case Wait:
-		Log.Info(InfoWaitingOnJob)
+		Log.Info(InfoWaitingOnPod)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
 	case EndTesting:
-		// All jobs created by the instance were completed. Release the lock
-		// so that other instances can spawn their jobs.
+		// All pods created by the instance were completed. Release the lock
+		// so that other instances can spawn their pods.
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
 			Log.Info(fmt.Sprintf(InfoCanNotReleaseLock, testOperatorLockName))
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
@@ -165,7 +162,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		Log.Info(InfoTestingCompleted)
 		return ctrl.Result{}, nil
 
-	case CreateFirstJob:
+	case CreateFirstPod:
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
 		if !lockAcquired {
 			Log.Info(fmt.Sprintf(InfoCanNotAcquireLock, testOperatorLockName))
@@ -174,7 +171,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
 
-	case CreateNextJob:
+	case CreateNextPod:
 		// Confirm that we still hold the lock. This needs to be checked in order
 		// to prevent situation when somebody / something deleted the lock and it
 		// got claimedy by another instance.
@@ -261,7 +258,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 
 	// NetworkAttachments
-	if r.JobExists(ctx, instance, nextWorkflowStep) {
+	if r.PodExists(ctx, instance, nextWorkflowStep) {
 		networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(
 			ctx,
 			helper,
@@ -310,7 +307,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	// Prepare Tobiko env vars
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, nextWorkflowStep)
-	jobName := r.GetJobName(instance, nextWorkflowStep)
+	podName := r.GetPodName(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
 	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
 	privileged := r.OverwriteValueWithWorkflow(instance.Spec, "Privileged", "pbool", nextWorkflowStep).(bool)
@@ -328,11 +325,11 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 	// Service account, role, binding - end
 
-	jobDef := tobiko.Job(
+	podDef := tobiko.Pod(
 		instance,
 		serviceLabels,
 		serviceAnnotations,
-		jobName,
+		podName,
 		logsPVCName,
 		mountCerts,
 		mountKeys,
@@ -341,15 +338,8 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		containerImage,
 		privileged,
 	)
-	tobikoJob := job.NewJob(
-		jobDef,
-		testv1beta1.ConfigHash,
-		true,
-		time.Duration(5)*time.Second,
-		"",
-	)
 
-	ctrlResult, err = tobikoJob.DoJob(ctx, helper)
+	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.DeploymentReadyCondition,
@@ -375,7 +365,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 func (r *TobikoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&testv1beta1.Tobiko{}).
-		Owns(&batchv1.Job{}).
+		Owns(&corev1.Pod{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
@@ -414,7 +404,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetJobName(instance, step))
+	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetPodName(instance, step))
 
 	testenv := r.OverwriteValueWithWorkflow(instance.Spec, "Testenv", "string", step).(string)
 	envVars["TOBIKO_TESTENV"] = env.SetValue(testenv)

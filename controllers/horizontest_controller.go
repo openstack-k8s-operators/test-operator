@@ -20,18 +20,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/horizontest"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,7 +48,6 @@ func (r *HorizonTestReconciler) GetLogger(ctx context.Context) logr.Logger {
 // +kubebuilder:rbac:groups=test.openstack.org,resources=horizontests,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=test.openstack.org,resources=horizontests/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=test.openstack.org,resources=horizontests/finalizers,verbs=update;patch
-// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;patch;update;delete;
 // +kubebuilder:rbac:groups=k8s.cni.cncf.io,resources=network-attachment-definitions,verbs=get;list;watch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch
@@ -136,12 +132,12 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 
 	case Wait:
-		Log.Info(InfoWaitingOnJob)
+		Log.Info(InfoWaitingOnPod)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
 	case EndTesting:
-		// All jobs created by the instance were completed. Release the lock
-		// so that other instances can spawn their jobs.
+		// All pods created by the instance were completed. Release the lock
+		// so that other instances can spawn their pods.
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
 			Log.Info(fmt.Sprintf(InfoCanNotReleaseLock, testOperatorLockName))
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
@@ -154,7 +150,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		Log.Info(InfoTestingCompleted)
 		return ctrl.Result{}, nil
 
-	case CreateFirstJob:
+	case CreateFirstPod:
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
 		if !lockAcquired {
 			Log.Info(fmt.Sprintf(InfoCanNotAcquireLock, testOperatorLockName))
@@ -163,7 +159,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
 
-	case CreateNextJob:
+	case CreateNextPod:
 		// Confirm that we still hold the lock. This is useful to check if for
 		// example somebody / something deleted the lock and it got claimed by
 		// another instance. This is considered to be an error state.
@@ -224,7 +220,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Prepare HorizonTest env vars
 	envVars := r.PrepareHorizonTestEnvVars(instance)
-	jobName := r.GetJobName(instance, 0)
+	podName := r.GetPodName(instance, 0)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
 	if err != nil {
@@ -240,11 +236,10 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return rbacResult, nil
 	}
 	// Service account, role, binding - end
-
-	jobDef := horizontest.Job(
+	podDef := horizontest.Pod(
 		instance,
 		serviceLabels,
-		jobName,
+		podName,
 		logsPVCName,
 		mountCerts,
 		mountKeys,
@@ -252,15 +247,8 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		envVars,
 		containerImage,
 	)
-	horizontestJob := job.NewJob(
-		jobDef,
-		testv1beta1.ConfigHash,
-		true,
-		time.Duration(5)*time.Second,
-		"",
-	)
 
-	ctrlResult, err = horizontestJob.DoJob(ctx, helper)
+	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.DeploymentReadyCondition,
@@ -286,7 +274,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *HorizonTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&testv1beta1.HorizonTest{}).
-		Owns(&batchv1.Job{}).
+		Owns(&corev1.Pod{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
