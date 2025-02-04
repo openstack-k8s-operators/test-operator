@@ -49,7 +49,17 @@ var _ webhook.Defaulter = &AnsibleTest{}
 func (r *AnsibleTest) Default() {
 	ansibletestlog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	r.Spec.Default()
+}
+
+// Default - set defaults for this AnsibleTest spec.
+func (spec *AnsibleTestSpec) Default() {
+	if len(spec.Workflow) > 0 {
+		for i := range spec.Workflow {
+			mergeSectionIntoWorkflow(*spec, &spec.Workflow[i])
+		}
+
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

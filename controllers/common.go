@@ -570,44 +570,6 @@ func (r *Reconciler) setConfigOverwrite(customData map[string]string, configOver
 	}
 }
 
-func (r *Reconciler) OverwriteValueWithWorkflow(
-	instance v1beta1.TobikoSpec,
-	sectionName string,
-	workflowValueType string,
-	workflowStepNum int,
-) interface{} {
-	if len(instance.Workflow)-1 < workflowStepNum {
-		reflected := reflect.ValueOf(instance)
-		fieldValue := reflected.FieldByName(sectionName)
-		return fieldValue.Interface()
-	}
-
-	reflected := reflect.ValueOf(instance)
-	tobikoSpecValue := reflected.FieldByName(sectionName).Interface()
-
-	reflected = reflect.ValueOf(instance.Workflow[workflowStepNum])
-	tobikoWorkflowValue := reflected.FieldByName(sectionName).Interface()
-
-	if workflowValueType == "pbool" {
-		if val, ok := tobikoWorkflowValue.(*bool); ok && val != nil {
-			return *(tobikoWorkflowValue.(*bool))
-		}
-		return tobikoSpecValue.(bool)
-	} else if workflowValueType == "puint8" {
-		if val, ok := tobikoWorkflowValue.(*uint8); ok && val != nil {
-			return *(tobikoWorkflowValue.(*uint8))
-		}
-		return tobikoSpecValue
-	} else if workflowValueType == "string" {
-		if val, ok := tobikoWorkflowValue.(string); ok && val != "" {
-			return tobikoWorkflowValue
-		}
-		return tobikoSpecValue
-	}
-
-	return nil
-}
-
 func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
 	rbacPolicyRule := rbacv1.PolicyRule{
 		APIGroups:     []string{"security.openshift.io"},
@@ -692,4 +654,76 @@ func EnsureCloudsConfigMapExists(
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// TODO remove repetitive code
+func getMergedCR(instance interface{}, workflowStepNum int) interface{} {
+	switch typedInstance := instance.(type) {
+	case *v1beta1.Tempest:
+		if workflowStepNum < len(typedInstance.Spec.Workflow) {
+			workflow := typedInstance.Spec.Workflow[workflowStepNum]
+			mergeSections(&typedInstance.Spec, workflow)
+		}
+		return typedInstance.Spec
+	case *v1beta1.Tobiko:
+		if workflowStepNum < len(typedInstance.Spec.Workflow) {
+			workflow := typedInstance.Spec.Workflow[workflowStepNum]
+			mergeSections(&typedInstance.Spec, workflow)
+		}
+		return typedInstance.Spec
+	case *v1beta1.AnsibleTest:
+		if workflowStepNum < len(typedInstance.Spec.Workflow) {
+			workflow := typedInstance.Spec.Workflow[workflowStepNum]
+			mergeSections(&typedInstance.Spec, workflow)
+		}
+		return typedInstance.Spec
+	default:
+		return nil
+	}
+}
+
+func mergeSections(main interface{}, workflow interface{}) {
+	mReflect := reflect.ValueOf(main).Elem()
+	wReflect := reflect.ValueOf(workflow)
+
+	for i := 0; i < mReflect.NumField(); i++ {
+		name := mReflect.Type().Field(i).Name
+		mValue := mReflect.Field(i)
+		wValue := wReflect.FieldByName(name)
+
+		//fmt.Println("MERGE SECTIONS")
+		//fmt.Println("Name", name)
+		//fmt.Println("M value", mValue)
+		//fmt.Println("M Kind", mValue.Kind())
+		//fmt.Println("W value", wValue)
+		//fmt.Println("W Kind", wValue.Kind())
+
+		if mValue.Kind() == reflect.Struct {
+			switch name {
+			case "CommonOptions":
+				wValue := wReflect.FieldByName("WorkflowCommonParameters")
+				mergeSections(mValue.Addr().Interface(), wValue.Interface())
+			case "TempestRun", "TempestconfRun":
+				mergeSections(mValue.Addr().Interface(), wValue.Interface())
+			case "Resources":
+				if !wValue.IsNil() {
+					mValue.Set(wValue.Elem())
+				}
+			}
+			continue
+		}
+
+		if !wValue.IsValid() {
+			continue
+		}
+
+		if wValue.Kind() == reflect.Ptr && mValue.Kind() != reflect.Ptr {
+			if wValue.IsNil() {
+				continue
+			}
+			wValue = wValue.Elem()
+		}
+		mValue.Set(wValue)
+
+	}
 }
