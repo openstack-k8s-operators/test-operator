@@ -42,6 +42,18 @@ type HorizonTestSpec struct {
 	// This allows the user to debug any potential troubles with `oc rsh`.
 	Debug bool `json:"debug"`
 
+	// ExtraFlag is an extra flag that can be set to modify pytest command to
+	// exclude or include particular test(s)
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	ExtraFlag string `json:"extraFlag"`
+
+	// ProjectNameXpath is the xpath to select project name
+	// on the horizon dashboard based on the u/s or d/s theme
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	ProjectNameXpath string `json:"projectNameXpath"`
+
 	// AdminUsername is the username for the OpenStack admin user.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

@@ -56,6 +56,12 @@ spec:
   # The maximum number of retry executions (optional)
   backoffLimit: 0
 
+  # The extra flag to modify pyTest commmand (optional)
+  extraFlag: "not pagination"
+
+  # ProjectNameXpath is the xpath to select project name on dashboard (optional)
+  projectNameXpath: "//span[@class='rcueicon rcueicon-folder-open']/ancestor::li"
+
   # Privileged
   # ----------
   #
