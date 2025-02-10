@@ -32,6 +32,13 @@ type WorkflowTempestRunSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// The expectedFailuresList parameter contains tests that should not count
+	// as failures. When a test from this list fails, the test pod ends with
+	// Completed state rather than with Error state.
+	ExpectedFailuresList *string `json:"expectedFailuresList,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Concurrency value that is passed to tempest via --concurrency
 	Concurrency *int64 `json:"concurrency,omitempty"`
 
