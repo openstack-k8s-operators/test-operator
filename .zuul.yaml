@@ -10,7 +10,7 @@
             dependencies:
               - openstack-k8s-operators-content-provider
             vars:
-              cifmw_test_operator_index: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator-index:{{ zuul.patchset }}"
+              cifmw_test_operator_bundle: "quay.io/openstack-k8s-operators/test-operator@sha256:e845c3930897f6b7de9245a5ad07206d82be2fa81b320dbd6c2fc2a34d52b2f2"
     periodic:
       jobs:
         - openstack-k8s-operators-content-provider:
