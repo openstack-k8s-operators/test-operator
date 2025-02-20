@@ -50,7 +50,7 @@ func Pod(
 					Image:           containerImage,
 					Args:            []string{},
 					Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
-					VolumeMounts:    GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig, instance),
+					VolumeMounts:    GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig, HorizonTestPropagation, instance),
 					SecurityContext: &securityContext,
 					Resources:       instance.Spec.Resources,
 				},
@@ -60,6 +60,7 @@ func Pod(
 				logsPVCName,
 				mountCerts,
 				mountKubeconfig,
+				HorizonTestPropagation,
 			),
 		},
 	}

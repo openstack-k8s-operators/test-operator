@@ -11,6 +11,7 @@
               - openstack-k8s-operators-content-provider
             vars:
               cifmw_test_operator_bundle: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator:{{ zuul.patchset }}"
+              cifmw_test_operator_version: "{{ zuul.patchset }}"
     periodic:
       jobs:
         - openstack-k8s-operators-content-provider:
@@ -97,6 +98,21 @@
       cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
       cifmw_test_operator_tempest_network_attachments:
         - ctlplane
+      cifmw_test_operator_tempest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - Tempest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
 
       # Tobiko
       cifmw_run_tobiko: true
@@ -108,6 +124,21 @@
           testenv: 'sanity'
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
+      cifmw_test_operator_tobiko_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - Tobiko
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
 
       # Horizontest
       cifmw_run_horizontest: true
@@ -115,6 +146,21 @@
       cifmw_test_operator_horizontest_dashboard_url: "https://horizon-openstack.apps-crc.testing/"
       cifmw_test_operator_horizontest_extra_flag: "not pagination and test_users.py"
       cifmw_test_operator_horizontest_project_name_xpath: //*[@class="context-project"]//ancestor::ul
+      cifmw_test_operator_horizontest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - HorizonTest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
 
       # Ansibletest
       run_ansibletest: true
@@ -127,6 +173,21 @@
       cifmw_test_operator_ansibletest_ansible_var_files: |
         ---
         foo: bar
+      cifmw_test_operator_ansibletest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - AnsibleTest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
 
       pre_deploy:
         - name: 61 HCI pre deploy kustomizations
@@ -135,6 +196,7 @@
         - name: 80 Kustomize OpenStack CR
           type: playbook
           source: control_plane_horizon.yml
+
 
     required-projects: &rp
       - name: openstack-k8s-operators/install_yamls
