@@ -52,7 +52,16 @@ var _ webhook.Defaulter = &Tobiko{}
 func (r *Tobiko) Default() {
 	tobikolog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	r.Spec.Default()
+}
+
+// Default - set defaults for this Tobiko spec.
+func (spec *TobikoSpec) Default() {
+	if len(spec.Workflow) > 0 {
+		for i := range spec.Workflow {
+			mergeSectionIntoWorkflow(*spec, &spec.Workflow[i])
+		}
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

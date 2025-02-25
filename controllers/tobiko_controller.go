@@ -141,6 +141,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	workflowLength := len(instance.Spec.Workflow)
 	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
+	instance.Spec = getMergedCR(instance, nextWorkflowStep).(testv1beta1.TobikoSpec)
 
 	switch nextAction {
 	case Failure:
@@ -313,7 +314,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	jobName := r.GetJobName(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
 	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
-	privileged := r.OverwriteValueWithWorkflow(instance.Spec, "Privileged", "pbool", nextWorkflowStep).(bool)
+	privileged := instance.Spec.Privileged
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -387,50 +388,23 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	labels map[string]string,
 	instance *testv1beta1.Tobiko,
 	helper *helper.Helper,
-	step int,
+	workflowStepNum int,
 ) map[string]env.Setter {
-
-	// NOTE(lpiwowar): Move all the merge code to the webhook once it is completed.
-	//                 It will clean up the workflow code and remove the duplicit code
-	//                 (Tempest vs Tobiko)
-	if step < len(instance.Spec.Workflow) {
-		if instance.Spec.Workflow[step].NodeSelector != nil {
-			instance.Spec.NodeSelector = *instance.Spec.Workflow[step].NodeSelector
-		}
-
-		if instance.Spec.Workflow[step].Tolerations != nil {
-			instance.Spec.Tolerations = *instance.Spec.Workflow[step].Tolerations
-		}
-
-		if instance.Spec.Workflow[step].SELinuxLevel != nil {
-			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[step].SELinuxLevel
-		}
-
-		if instance.Spec.Workflow[step].Resources != nil {
-			instance.Spec.Resources = *instance.Spec.Workflow[step].Resources
-		}
-	}
-
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetJobName(instance, step))
+	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetJobName(instance, workflowStepNum))
 
-	testenv := r.OverwriteValueWithWorkflow(instance.Spec, "Testenv", "string", step).(string)
-	envVars["TOBIKO_TESTENV"] = env.SetValue(testenv)
+	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
+	envVars["TOBIKO_VERSION"] = env.SetValue(instance.Spec.Version)
+	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(instance.Spec.PytestAddopts)
 
-	version := r.OverwriteValueWithWorkflow(instance.Spec, "Version", "string", step).(string)
-	envVars["TOBIKO_VERSION"] = env.SetValue(version)
-
-	pytestAddopts := r.OverwriteValueWithWorkflow(instance.Spec, "PytestAddopts", "string", step).(string)
-	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(pytestAddopts)
-
-	preventCreate := r.OverwriteValueWithWorkflow(instance.Spec, "PreventCreate", "pbool", step).(bool)
+	preventCreate := instance.Spec.PreventCreate
 	if preventCreate {
 		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("True")
 	}
 
-	numProcesses := r.OverwriteValueWithWorkflow(instance.Spec, "NumProcesses", "puint8", step).(uint8)
+	numProcesses := instance.Spec.NumProcesses
 	if numProcesses > 0 {
 		envVars["TOX_NUM_PROCESSES"] = env.SetValue(strconv.Itoa(int(numProcesses)))
 	}
@@ -441,16 +415,13 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 
 	// Prepare custom data
 	customData := make(map[string]string)
-	tobikoConf := r.OverwriteValueWithWorkflow(instance.Spec, "Config", "string", step).(string)
-	customData["tobiko.conf"] = tobikoConf
+	customData["tobiko.conf"] = instance.Spec.Config
 
 	privateKeyData := make(map[string]string)
-	privateKey := r.OverwriteValueWithWorkflow(instance.Spec, "PrivateKey", "string", step).(string)
-	privateKeyData["id_ecdsa"] = privateKey
+	privateKeyData["id_ecdsa"] = instance.Spec.PrivateKey
 
 	publicKeyData := make(map[string]string)
-	publicKey := r.OverwriteValueWithWorkflow(instance.Spec, "PublicKey", "string", step).(string)
-	publicKeyData["id_ecdsa.pub"] = publicKey
+	publicKeyData["id_ecdsa.pub"] = instance.Spec.PublicKey
 
 	cms := []util.Template{
 		{

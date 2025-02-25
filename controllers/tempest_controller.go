@@ -154,6 +154,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	workflowLength := len(instance.Spec.Workflow)
 	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
+	instance.Spec = getMergedCR(instance, nextWorkflowStep).(testv1beta1.TempestSpec)
 
 	switch nextAction {
 	case Failure:
@@ -340,26 +341,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 	// Service account, role, binding - end
 
-	// Note(lpiwowar): Remove all the workflow merge code to webhook once it is done.
-	//                 It will simplify the logic and duplicite code (Tempest vs Tobiko)
-	if nextWorkflowStep < len(instance.Spec.Workflow) {
-		if instance.Spec.Workflow[nextWorkflowStep].NodeSelector != nil {
-			instance.Spec.NodeSelector = *instance.Spec.Workflow[nextWorkflowStep].NodeSelector
-		}
-
-		if instance.Spec.Workflow[nextWorkflowStep].Tolerations != nil {
-			instance.Spec.Tolerations = *instance.Spec.Workflow[nextWorkflowStep].Tolerations
-		}
-
-		if instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel != nil {
-			instance.Spec.SELinuxLevel = *instance.Spec.Workflow[nextWorkflowStep].SELinuxLevel
-		}
-
-		if instance.Spec.Workflow[nextWorkflowStep].Resources != nil {
-			instance.Spec.Resources = *instance.Spec.Workflow[nextWorkflowStep].Resources
-		}
-	}
-
 	jobDef := tempest.Job(
 		instance,
 		serviceLabels,
@@ -441,36 +422,32 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	workflowStepNum int,
 ) {
 	tRun := instance.Spec.TempestRun
-	wtRun := testv1beta1.WorkflowTempestRunSpec{}
-	if workflowStepNum < len(instance.Spec.Workflow) {
-		wtRun = instance.Spec.Workflow[workflowStepNum].TempestRun
-	}
 
 	testOperatorDir := "/etc/test_operator/"
 
 	// Files
-	value := mergeWithWorkflow(tRun.WorkerFile, wtRun.WorkerFile)
+	value := tRun.WorkerFile
 	if len(value) != 0 {
 		workerFile := "worker_file.yaml"
 		customData[workerFile] = value
 		envVars["TEMPEST_WORKER_FILE"] = testOperatorDir + workerFile
 	}
 
-	value = mergeWithWorkflow(tRun.IncludeList, wtRun.IncludeList)
+	value = tRun.IncludeList
 	if len(value) != 0 {
 		includeListFile := "include.txt"
 		customData[includeListFile] = value
 		envVars["TEMPEST_INCLUDE_LIST"] = testOperatorDir + includeListFile
 	}
 
-	value = mergeWithWorkflow(tRun.ExcludeList, wtRun.ExcludeList)
+	value = tRun.ExcludeList
 	if len(value) != 0 {
 		excludeListFile := "exclude.txt"
 		customData[excludeListFile] = value
 		envVars["TEMPEST_EXCLUDE_LIST"] = testOperatorDir + excludeListFile
 	}
 
-	value = mergeWithWorkflow(tRun.ExpectedFailuresList, wtRun.ExpectedFailuresList)
+	value = tRun.ExpectedFailuresList
 	if len(value) != 0 {
 		expectedFailuresListFile := "expected_failures.txt"
 		customData[expectedFailuresListFile] = value
@@ -479,9 +456,9 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 
 	// Bool
 	tempestBoolEnvVars := map[string]bool{
-		"TEMPEST_SERIAL":     mergeWithWorkflow(tRun.Serial, wtRun.Serial),
-		"TEMPEST_PARALLEL":   mergeWithWorkflow(tRun.Parallel, wtRun.Parallel),
-		"TEMPEST_SMOKE":      mergeWithWorkflow(tRun.Smoke, wtRun.Smoke),
+		"TEMPEST_SERIAL":     tRun.Serial,
+		"TEMPEST_PARALLEL":   tRun.Parallel,
+		"TEMPEST_SMOKE":      tRun.Smoke,
 		"USE_EXTERNAL_FILES": true,
 	}
 
@@ -490,11 +467,11 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	}
 
 	// Int
-	numValue := mergeWithWorkflow(tRun.Concurrency, wtRun.Concurrency)
+	numValue := tRun.Concurrency
 	envVars["TEMPEST_CONCURRENCY"] = r.GetDefaultInt(numValue)
 
 	// Dictionary
-	dictValue := mergeWithWorkflow(tRun.ExternalPlugin, wtRun.ExternalPlugin)
+	dictValue := tRun.ExternalPlugin
 	for _, externalPluginDictionary := range dictValue {
 		envVars["TEMPEST_EXTERNAL_PLUGIN_GIT_URL"] += externalPluginDictionary.Repository + ","
 
@@ -510,7 +487,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 
 	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetJobName(instance, workflowStepNum)
 
-	extraImages := mergeWithWorkflow(tRun.ExtraImages, wtRun.ExtraImages)
+	extraImages := tRun.ExtraImages
 	for _, extraImageDict := range extraImages {
 		envVars["TEMPEST_EXTRA_IMAGES_URL"] += extraImageDict.URL + ","
 		envVars["TEMPEST_EXTRA_IMAGES_OS_CLOUD"] += extraImageDict.OsCloud + ","
@@ -528,18 +505,10 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_VCPUS"] += r.GetDefaultInt(extraImageDict.Flavor.Vcpus, "-") + ","
 	}
 
-	extraRPMs := mergeWithWorkflow(tRun.ExtraRPMs, wtRun.ExtraRPMs)
+	extraRPMs := tRun.ExtraRPMs
 	for _, extraRPMURL := range extraRPMs {
 		envVars["TEMPEST_EXTRA_RPMS"] += extraRPMURL + ","
 	}
-}
-
-func mergeWithWorkflow[T any](value T, workflowValue *T) T {
-	if workflowValue == nil {
-		return value
-	}
-
-	return *workflowValue
 }
 
 func (r *TempestReconciler) setTempestconfConfigVars(
@@ -549,27 +518,23 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 	workflowStepNum int,
 ) {
 	tcRun := instance.Spec.TempestconfRun
-	wtcRun := testv1beta1.WorkflowTempestconfRunSpec{}
-	if workflowStepNum < len(instance.Spec.Workflow) {
-		wtcRun = instance.Spec.Workflow[workflowStepNum].TempestconfRun
-	}
 
 	testOperatorDir := "/etc/test_operator/"
-	value := mergeWithWorkflow(tcRun.DeployerInput, wtcRun.DeployerInput)
+	value := tcRun.DeployerInput
 	if len(value) != 0 {
 		deployerInputFile := "deployer_input.ini"
 		customData[deployerInputFile] = value
 		envVars["TEMPESTCONF_DEPLOYER_INPUT"] = testOperatorDir + deployerInputFile
 	}
 
-	value = mergeWithWorkflow(tcRun.TestAccounts, wtcRun.TestAccounts)
+	value = tcRun.TestAccounts
 	if len(value) != 0 {
 		accountsFile := "accounts.yaml"
 		customData[accountsFile] = value
 		envVars["TEMPESTCONF_TEST_ACCOUNTS"] = testOperatorDir + accountsFile
 	}
 
-	value = mergeWithWorkflow(tcRun.Profile, wtcRun.Profile)
+	value = tcRun.Profile
 	if len(value) != 0 {
 		profileFile := "profile.yaml"
 		customData[profileFile] = value
@@ -578,15 +543,15 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 
 	// Bool
 	tempestconfBoolEnvVars := map[string]bool{
-		"TEMPESTCONF_CREATE":              mergeWithWorkflow(tcRun.Create, wtcRun.Create),
-		"TEMPESTCONF_COLLECT_TIMING":      mergeWithWorkflow(tcRun.CollectTiming, wtcRun.CollectTiming),
-		"TEMPESTCONF_INSECURE":            mergeWithWorkflow(tcRun.Insecure, wtcRun.Insecure),
-		"TEMPESTCONF_NO_DEFAULT_DEPLOYER": mergeWithWorkflow(tcRun.NoDefaultDeployer, wtcRun.NoDefaultDeployer),
-		"TEMPESTCONF_DEBUG":               mergeWithWorkflow(tcRun.Debug, wtcRun.Debug),
-		"TEMPESTCONF_VERBOSE":             mergeWithWorkflow(tcRun.Verbose, wtcRun.Verbose),
-		"TEMPESTCONF_NON_ADMIN":           mergeWithWorkflow(tcRun.NonAdmin, wtcRun.NonAdmin),
-		"TEMPESTCONF_RETRY_IMAGE":         mergeWithWorkflow(tcRun.RetryImage, wtcRun.RetryImage),
-		"TEMPESTCONF_CONVERT_TO_RAW":      mergeWithWorkflow(tcRun.ConvertToRaw, wtcRun.ConvertToRaw),
+		"TEMPESTCONF_CREATE":              tcRun.Create,
+		"TEMPESTCONF_COLLECT_TIMING":      tcRun.CollectTiming,
+		"TEMPESTCONF_INSECURE":            tcRun.Insecure,
+		"TEMPESTCONF_NO_DEFAULT_DEPLOYER": tcRun.NoDefaultDeployer,
+		"TEMPESTCONF_DEBUG":               tcRun.Debug,
+		"TEMPESTCONF_VERBOSE":             tcRun.Verbose,
+		"TEMPESTCONF_NON_ADMIN":           tcRun.NonAdmin,
+		"TEMPESTCONF_RETRY_IMAGE":         tcRun.RetryImage,
+		"TEMPESTCONF_CONVERT_TO_RAW":      tcRun.ConvertToRaw,
 	}
 
 	for key, value := range tempestconfBoolEnvVars {
@@ -594,9 +559,9 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 	}
 
 	tempestconfIntEnvVars := map[string]int64{
-		"TEMPESTCONF_TIMEOUT":         mergeWithWorkflow(tcRun.Timeout, wtcRun.Timeout),
-		"TEMPESTCONF_FLAVOR_MIN_MEM":  mergeWithWorkflow(tcRun.FlavorMinMem, wtcRun.FlavorMinMem),
-		"TEMPESTCONF_FLAVOR_MIN_DISK": mergeWithWorkflow(tcRun.FlavorMinDisk, wtcRun.FlavorMinDisk),
+		"TEMPESTCONF_TIMEOUT":         tcRun.Timeout,
+		"TEMPESTCONF_FLAVOR_MIN_MEM":  tcRun.FlavorMinMem,
+		"TEMPESTCONF_FLAVOR_MIN_DISK": tcRun.FlavorMinDisk,
 	}
 
 	for key, value := range tempestconfIntEnvVars {
@@ -604,31 +569,31 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 	}
 
 	// String
-	mValue := mergeWithWorkflow(tcRun.Out, wtcRun.Out)
+	mValue := tcRun.Out
 	envVars["TEMPESTCONF_OUT"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.CreateAccountsFile, wtcRun.CreateAccountsFile)
+	mValue = tcRun.CreateAccountsFile
 	envVars["TEMPESTCONF_CREATE_ACCOUNTS_FILE"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.GenerateProfile, wtcRun.GenerateProfile)
+	mValue = tcRun.GenerateProfile
 	envVars["TEMPESTCONF_GENERATE_PROFILE"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.ImageDiskFormat, wtcRun.ImageDiskFormat)
+	mValue = tcRun.ImageDiskFormat
 	envVars["TEMPESTCONF_IMAGE_DISK_FORMAT"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.Image, wtcRun.Image)
+	mValue = tcRun.Image
 	envVars["TEMPESTCONF_IMAGE"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.NetworkID, wtcRun.NetworkID)
+	mValue = tcRun.NetworkID
 	envVars["TEMPESTCONF_NETWORK_ID"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.Append, wtcRun.Append)
+	mValue = tcRun.Append
 	envVars["TEMPESTCONF_APPEND"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.Remove, wtcRun.Remove)
+	mValue = tcRun.Remove
 	envVars["TEMPESTCONF_REMOVE"] = mValue
 
-	mValue = mergeWithWorkflow(tcRun.Overrides, wtcRun.Overrides)
+	mValue = tcRun.Overrides
 	envVars["TEMPESTCONF_OVERRIDES"] = mValue
 }
 
