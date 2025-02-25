@@ -168,6 +168,12 @@ spec:
                     description: A content of exclude.txt file that is passed to tempest
                       via --exclude-list
                     type: string
+                  expectedFailuresList:
+                    description: The expectedFailuresList parameter contains tests
+                      that should not count as failures. When a test from this list
+                      fails, the test pod ends with Completed state rather than with
+                      Error state.
+                    type: string
                   externalPlugin:
                     description: ExternalPlugin contains information about plugin
                       that should be installed within the tempest test pod. If this
@@ -598,6 +604,12 @@ spec:
                         excludeList:
                           description: A content of exclude.txt file that is passed
                             to tempest via --exclude-list
+                          type: string
+                        expectedFailuresList:
+                          description: The expectedFailuresList parameter contains
+                            tests that should not count as failures. When a test from
+                            this list fails, the test pod ends with Completed state
+                            rather than with Error state.
                           type: string
                         externalPlugin:
                           description: ExternalPlugin contains information about plugin

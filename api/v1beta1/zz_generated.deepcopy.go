@@ -710,6 +710,11 @@ func (in *WorkflowTempestRunSpec) DeepCopyInto(out *WorkflowTempestRunSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ExpectedFailuresList != nil {
+		in, out := &in.ExpectedFailuresList, &out.ExpectedFailuresList
+		*out = new(string)
+		**out = **in
+	}
 	if in.Concurrency != nil {
 		in, out := &in.Concurrency, &out.Concurrency
 		*out = new(int64)
