@@ -29,7 +29,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
-	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/pkg/ansibletest"
@@ -52,14 +51,11 @@ func (r *AnsibleTestReconciler) GetLogger(ctx context.Context) logr.Logger {
 // +kubebuilder:rbac:groups=test.openstack.org,resources=ansibletests/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=test.openstack.org,resources=ansibletests/finalizers,verbs=update;patch
 // +kubebuilder:rbac:groups=k8s.cni.cncf.io,resources=network-attachment-definitions,verbs=get;list;watch
-// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch
-// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="security.openshift.io",resourceNames=anyuid;privileged;nonroot;nonroot-v2,resources=securitycontextconstraints,verbs=use
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete;
 // +kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;create;update;watch;patch;delete
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch
 
 // Reconcile - AnsibleTest
 func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
@@ -236,15 +232,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	// Service account, role, binding
-	rbacRules := GetCommonRbacRules(privileged)
-	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
-	if err != nil {
-		return rbacResult, err
-	} else if (rbacResult != ctrl.Result{}) {
-		return rbacResult, nil
-	}
-	// Service account, role, binding - end
 	podDef := ansibletest.Pod(
 		instance,
 		serviceLabels,
