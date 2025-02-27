@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/openstack-k8s-operators/lib-common/modules/storage"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -15,6 +16,10 @@ const (
 
 	// TestOperatorEphemeralVolumeNameTmp
 	TestOperatorEphemeralVolumeNameTmp = "test-operator-ephemeral-temporary"
+
+	// ExtraVolTypeUndefined can be used to label an extraMount which is
+	// not associated to anything in particular
+	ExtraVolTypeUndefined storage.ExtraVolType = "Undefined"
 )
 
 func GetSecurityContext(
