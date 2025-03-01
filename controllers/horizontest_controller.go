@@ -293,6 +293,8 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 	envVars["FLAVOR_NAME"] = env.SetValue("m1.tiny")
 	envVars["HORIZON_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
 	envVars["HORIZONTEST_DEBUG_MODE"] = env.SetValue(r.GetDefaultBool(instance.Spec.Debug))
+	envVars["EXTRA_FLAG"] = env.SetValue(instance.Spec.ExtraFlag)
+	envVars["PROJECT_NAME_XPATH"] = env.SetValue(instance.Spec.ProjectNameXpath)
 
 	return envVars
 }
