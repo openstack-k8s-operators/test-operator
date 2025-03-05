@@ -80,8 +80,8 @@ project.
 
 Running Test Operator Locally Outside the Cluster
 -------------------------------------------------
-This is a **quick and easy way** to experiment with the operator during
-development of a new feature.
+This is an easy way to experiment with the operator during development
+of a new feature.
 
 .. code-block:: bash
 
@@ -89,6 +89,40 @@ development of a new feature.
 
 Note that after running the following command, you will need to switch to
 another terminal unless you run it in the background.
+
+Now that test-operator is automatically deployed in the podified environment,
+running changes locally may be interrupted by the :code:`test-operator-controller-manager`
+pod, which runs by default. To prevent errors, disable test-operator before
+testing local changes by following these steps.
+
+1. Scale down the openstack-operator deployment.
+   This step is necessary because if you only delete the controller managers,
+   the reconcile loop will redeploy them.
+
+.. code-block:: bash
+
+   oc scale deployment openstack-operator-controller-operator -n openstack-operators --replicas=0
+
+2. Delete the openstack-operator and test-operator controller managers
+
+.. code-block:: bash
+
+   oc delete deployment openstack-operator-controller-manager -n openstack-operators
+   oc delete deployment test-operator-controller-manager -n openstack-operators
+
+3. Check deletion of :code:`test-operator-controller-manager`
+
+.. code-block:: bash
+
+   oc get deployment -n openstack-operators | grep test-operator-controller-manager
+
+.. note::
+   If you want to revert the changes, simply scale the
+   openstack-operator controller back to one replica using command
+
+   .. code-block:: bash
+
+      oc scale deployment openstack-operator-controller-operator -n openstack-operators --replicas=1
 
 .. _uninstalling-operator:
 
