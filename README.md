@@ -60,6 +60,10 @@ ENABLE_WEBHOOKS=false make run
 
 **NOTE:** You can also run this in one step by running: `ENABLE_WEBHOOKS=false make install run`
 
+Now that test-operator is part of OpenStack product, you also need to delete
+the test-operator controller manager to test local changes. For more
+information, check out the section *Run Tests via Test Operator*.
+
 
 ## License
 
