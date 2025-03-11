@@ -41,6 +41,8 @@
           type: tobiko
         - name: ansibletest
           type: ansibletest
+        - name: horizontest
+          type: horizontest
 
       # Tempest
       cifmw_run_tempest: true
@@ -70,9 +72,13 @@
       cifmw_test_operator_tempest_tempestconf_config:
         overrides: |
           compute-feature-enabled.dhcp_domain ''
+          dashboard.dashboard_url https://horizon-openstack.apps-crc.testing/dashboard/
+          dashboard.login_url https://horizon-openstack.apps-crc.testing/dashboard/auth/login/
+          dashboard.disable_ssl_certificate_validation True
           identity.v3_endpoint_type public
           service_available.swift false
           service_available.cinder false
+          service_available.horizon True
       cifmw_test_operator_tempest_workflow:
         - stepName: 'full'
         - stepName: 'single-test'
@@ -103,6 +109,13 @@
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
 
+      # Horizontest
+      cifmw_run_horizontest: true
+      cifmw_test_operator_horizontest_auth_url: "https://keystone-public-openstack.apps-crc.testing"
+      cifmw_test_operator_horizontest_dashboard_url: "https://horizon-openstack.apps-crc.testing/"
+      cifmw_test_operator_horizontest_extra_flag: "not pagination and test_users.py"
+      cifmw_test_operator_horizontest_project_name_xpath: //*[@class="context-project"]//ancestor::ul
+
       # Ansibletest
       run_ansibletest: true
       cifmw_test_operator_ansibletest_ansible_git_repo: https://github.com/ansible/test-playbooks
@@ -114,6 +127,15 @@
       cifmw_test_operator_ansibletest_ansible_var_files: |
         ---
         foo: bar
+
+      pre_deploy:
+        - name: 61 HCI pre deploy kustomizations
+          type: playbook
+          source: control_plane_hci_pre_deploy.yml
+        - name: 80 Kustomize OpenStack CR
+          type: playbook
+          source: control_plane_horizon.yml
+
     required-projects: &rp
       - name: openstack-k8s-operators/install_yamls
         override-checkout: main
