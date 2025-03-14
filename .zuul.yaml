@@ -91,6 +91,21 @@
       cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
       cifmw_test_operator_tempest_network_attachments:
         - ctlplane
+      cifmw_test_operator_tempest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - Tempest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: webhook-server-cert
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
 
       # Tobiko
       cifmw_run_tobiko: true
@@ -102,6 +117,21 @@
           testenv: 'sanity'
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
+      cifmw_test_operator_tobiko_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - Tobiko
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: webhook-server-cert
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
 
       # Ansibletest
       run_ansibletest: true
@@ -114,6 +144,21 @@
       cifmw_test_operator_ansibletest_ansible_var_files: |
         ---
         foo: bar
+      cifmw_test_operator_ansibletest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - AnsibleTest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: webhook-server-cert
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
     required-projects: &rp
       - name: openstack-k8s-operators/install_yamls
         override-checkout: main
