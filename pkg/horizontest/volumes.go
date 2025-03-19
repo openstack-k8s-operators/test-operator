@@ -1,9 +1,9 @@
 package horizontest
 
 import (
+	"github.com/openstack-k8s-operators/lib-common/modules/storage"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
-
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -13,6 +13,7 @@ func GetVolumes(
 	logsPVCName string,
 	mountCerts bool,
 	mountKubeconfig bool,
+	svc []storage.PropagationType,
 ) []corev1.Volume {
 
 	var scriptsVolumeDefaultMode int32 = 0755
@@ -107,6 +108,13 @@ func GetVolumes(
 
 		volumes = append(volumes, kubeconfigVolume)
 	}
+
+	for _, exv := range instance.Spec.ExtraMounts {
+		for _, vol := range exv.Propagate(svc) {
+			volumes = append(volumes, vol.Volumes...)
+		}
+	}
+
 	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
 		extraVol := corev1.Volume{
 			Name: vol.Name,
@@ -127,7 +135,13 @@ func GetVolumes(
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool, instance *testv1beta1.HorizonTest) []corev1.VolumeMount {
+func GetVolumeMounts(
+	mountCerts bool,
+	mountKeys bool,
+	mountKubeconfig bool,
+	svc []storage.PropagationType,
+	instance *testv1beta1.HorizonTest,
+) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      util.TestOperatorEphemeralVolumeNameWorkdir,
@@ -213,6 +227,12 @@ func GetVolumeMounts(mountCerts bool, mountKeys bool, mountKubeconfig bool, inst
 		}
 
 		volumeMounts = append(volumeMounts, kubeconfigMount)
+	}
+
+	for _, exv := range instance.Spec.ExtraMounts {
+		for _, vol := range exv.Propagate(svc) {
+			volumeMounts = append(volumeMounts, vol.Mounts...)
+		}
 	}
 
 	for _, vol := range instance.Spec.ExtraConfigmapsMounts {

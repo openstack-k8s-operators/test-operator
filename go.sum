@@ -78,6 +78,8 @@ github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094 h1:J1wuGhVxpsHykZBa6
 github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
 github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20250315090821-34e570d2d5fb h1:UAFYEHnbyhO0+yymquFmIqxc9QGji9mzreuYrDS1Ev4=
 github.com/openstack-k8s-operators/lib-common/modules/common v0.6.1-0.20250315090821-34e570d2d5fb/go.mod h1:1CtBP0MQffdjE6buOv5jP2rB3+h7WH0a11lcyrpmxOk=
+github.com/openstack-k8s-operators/lib-common/modules/storage v0.5.0 h1:iVGCAds5eVjKEoZS0KSBwYziLeLW3ZBs8PqPMrljPcg=
+github.com/openstack-k8s-operators/lib-common/modules/storage v0.5.0/go.mod h1:cGynoLGY9NfyIeWXI3zZ+hgZdHF3SUi8ht5ygZ8CmhI=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
