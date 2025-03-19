@@ -133,7 +133,7 @@ type CommonTestStatus struct {
 	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
 }
 
-type WorkflowCommonParameters struct {
+type WorkflowCommonOptions struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
 	// +optional
