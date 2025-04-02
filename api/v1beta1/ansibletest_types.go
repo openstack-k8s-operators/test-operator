@@ -99,7 +99,7 @@ type AnsibleTestSpec struct {
 }
 
 type AnsibleTestWorkflowSpec struct {
-	WorkflowCommonParameters `json:",inline"`
+	WorkflowCommonOptions `json:",inline"`
 	CommonOpenstackConfig `json:",inline"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
