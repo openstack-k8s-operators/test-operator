@@ -1,6 +1,7 @@
 package ansibletest
 
 import (
+	"github.com/openstack-k8s-operators/lib-common/modules/storage"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	util "github.com/openstack-k8s-operators/test-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -11,6 +12,7 @@ func GetVolumes(
 	instance *testv1beta1.AnsibleTest,
 	logsPVCName string,
 	mountCerts bool,
+	svc []storage.PropagationType,
 	workflowOverrideParams map[string]string,
 	externalWorkflowCounter int,
 ) []corev1.Volume {
@@ -103,6 +105,12 @@ func GetVolumes(
 
 	volumes = append(volumes, keysVolume)
 
+	for _, exv := range instance.Spec.ExtraMounts {
+		for _, vol := range exv.Propagate(svc) {
+			volumes = append(volumes, vol.Volumes...)
+		}
+	}
+
 	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
 		extraVol := corev1.Volume{
 			Name: vol.Name,
@@ -140,7 +148,12 @@ func GetVolumes(
 }
 
 // GetVolumeMounts -
-func GetVolumeMounts(mountCerts bool, instance *testv1beta1.AnsibleTest, externalWorkflowCounter int) []corev1.VolumeMount {
+func GetVolumeMounts(
+	mountCerts bool,
+	svc []storage.PropagationType,
+	instance *testv1beta1.AnsibleTest,
+	externalWorkflowCounter int,
+) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      util.TestOperatorEphemeralVolumeNameWorkdir,
@@ -214,6 +227,12 @@ func GetVolumeMounts(mountCerts bool, instance *testv1beta1.AnsibleTest, externa
 	}
 
 	volumeMounts = append(volumeMounts, computeSSHKeyMount)
+
+	for _, exv := range instance.Spec.ExtraMounts {
+		for _, vol := range exv.Propagate(svc) {
+			volumeMounts = append(volumeMounts, vol.Mounts...)
+		}
+	}
 
 	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
 
