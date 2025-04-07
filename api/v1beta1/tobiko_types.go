@@ -119,7 +119,7 @@ type TobikoSpec struct {
 }
 
 type TobikoWorkflowSpec struct {
-	WorkflowCommonParameters `json:",inline"`
+	WorkflowCommonOptions `json:",inline"`
 
 	// +kubebuilder:default:={limits: {cpu: "8000m", memory: "8Gi"}, requests: {cpu: "4000m", memory: "4Gi"}}
 	// The desired amount of resources that should be assigned to each test pod
