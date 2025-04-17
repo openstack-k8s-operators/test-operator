@@ -227,8 +227,8 @@ type WorkflowTempestconfRunSpec struct {
 // TempestSpec - configuration of execution of tempest. For specific configuration
 // of tempest see TempestRunSpec and for discover-tempest-config see TempestconfRunSpec.
 type WorkflowTempestSpec struct {
-	WorkflowCommonParameters              `json:",inline"`
-	CommonOpenstackConfig      `json:",inline"`
+	WorkflowCommonOptions `json:",inline"`
+	CommonOpenstackConfig `json:",inline"`
 
 	// The desired amount of resources that should be assigned to each test pod
 	// spawned using the Tempest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
