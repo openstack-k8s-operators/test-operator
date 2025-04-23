@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -168,7 +167,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
 
 	default:
-		return ctrl.Result{}, errors.New(ErrReceivedUnexpectedAction)
+		return ctrl.Result{}, ErrReceivedUnexpectedAction
 	}
 
 	serviceLabels := map[string]string{
@@ -209,10 +208,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	mountKeys := false
 
-	mountKubeconfig := false
-	if len(instance.Spec.KubeconfigSecretName) != 0 {
-		mountKubeconfig = true
-	}
+	mountKubeconfig := len(instance.Spec.KubeconfigSecretName) != 0
 
 	// Prepare HorizonTest env vars
 	envVars := r.PrepareHorizonTestEnvVars(instance)
@@ -267,6 +263,7 @@ func (r *HorizonTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// PrepareHorizonTestEnvVars prepares environment variables for HorizonTest execution
 func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 	instance *testv1beta1.HorizonTest,
 ) map[string]env.Setter {

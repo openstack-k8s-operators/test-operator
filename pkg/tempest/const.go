@@ -1,3 +1,4 @@
+// Package tempest provides constants and utilities for OpenStack Tempest testing functionality
 package tempest
 
 import (
