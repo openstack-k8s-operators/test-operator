@@ -76,6 +76,15 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: extraConfigmapsMounts[0].subPath
+      - description: ExtraMounts containing conf files, credentials and storage volumes
+        displayName: Extra Mounts
+        path: extraMounts
+      - displayName: Vol Mounts
+        path: extraMounts[0].extraVol
+      - displayName: Name
+        path: extraMounts[0].name
+      - displayName: Region
+        path: extraMounts[0].region
       - description: This value contains a nodeSelector value that is applied to test
           pods spawned by the test operator.
         displayName: Node Selector
@@ -249,6 +258,19 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: extraConfigmapsMounts[0].subPath
+      - description: ExtraFlag is an extra flag that can be set to modify pytest command
+          to exclude or include particular test(s)
+        displayName: Extra Flag
+        path: extraFlag
+      - description: ExtraMounts containing conf files, credentials and storage volumes
+        displayName: Extra Mounts
+        path: extraMounts
+      - displayName: Vol Mounts
+        path: extraMounts[0].extraVol
+      - displayName: Name
+        path: extraMounts[0].name
+      - displayName: Region
+        path: extraMounts[0].region
       - description: FlavorName is the name of the OpenStack flavor to create for
           Horizon tests.
         displayName: Flavor Name
@@ -296,6 +318,10 @@ spec:
           tests.
         displayName: Project Name
         path: projectName
+      - description: ProjectNameXpath is the xpath to select project name on the horizon
+          dashboard based on the u/s or d/s theme
+        displayName: Project Name Xpath
+        path: projectNameXpath
       - description: RepoUrl is the URL of the Horizon repository.
         displayName: Repo Url
         path: repoUrl
@@ -360,6 +386,15 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: extraConfigmapsMounts[0].subPath
+      - description: ExtraMounts containing conf files, credentials and storage volumes
+        displayName: Extra Mounts
+        path: extraMounts
+      - displayName: Vol Mounts
+        path: extraMounts[0].extraVol
+      - displayName: Name
+        path: extraMounts[0].name
+      - displayName: Region
+        path: extraMounts[0].region
       - description: NetworkAttachments is a list of NetworkAttachment resource names
           to expose the services to the given network
         displayName: Network Attachments
@@ -886,6 +921,15 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: extraConfigmapsMounts[0].subPath
+      - description: ExtraMounts containing conf files, credentials and storage volumes
+        displayName: Extra Mounts
+        path: extraMounts
+      - displayName: Vol Mounts
+        path: extraMounts[0].extraVol
+      - displayName: Name
+        path: extraMounts[0].name
+      - displayName: Region
+        path: extraMounts[0].region
       - description: Name of a secret that contains a kubeconfig. The kubeconfig is
           mounted under /var/lib/tobiko/.kube/config in the test pod.
         displayName: Kubeconfig Secret Name

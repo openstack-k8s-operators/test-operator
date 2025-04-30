@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+	"github.com/openstack-k8s-operators/lib-common/modules/storage"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -84,6 +85,11 @@ type CommonOptions struct {
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting inside the pod
 	ExtraConfigmapsMounts []ExtraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// ExtraMounts containing conf files, credentials and storage volumes
+	ExtraMounts []ExtraVolMounts `json:"extraMounts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -180,4 +186,28 @@ type WorkflowCommonParameters struct {
 	// This value contains a toleration that is applied to pods spawned by the
 	// test pods that are spawned by the test-operator.
 	Tolerations *[]corev1.Toleration `json:"tolerations,omitempty"`
+}
+
+type ExtraVolMounts struct {
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	Name string `json:"name,omitempty"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	Region string `json:"region,omitempty"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Required
+	VolMounts []storage.VolMounts `json:"extraVol"`
+}
+
+// Propagate is a function used to filter VolMounts according to the specified
+// PropagationType array
+func (c *ExtraVolMounts) Propagate(svc []storage.PropagationType) []storage.VolMounts {
+	var vl []storage.VolMounts
+	for _, gv := range c.VolMounts {
+		vl = append(vl, gv.Propagate(svc)...)
+	}
+	return vl
 }
