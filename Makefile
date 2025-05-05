@@ -348,3 +348,13 @@ operator-lint: gowork ## Runs operator-lint
 .PHONY: docs
 docs: ## Create documentation under docs/build/html
 	docs/build-docs.sh
+
+BRANCH ?= 18.0-fr2
+.PHONY: force-bump
+force-bump: ## Force bump operator and lib-common dependencies
+	for dep in $$(cat go.mod | grep openstack-k8s-operators | grep -vE -- 'indirect|test-operator|^replace' | awk '{print $$1}'); do \
+		go get $$dep@$(BRANCH) ; \
+	done
+	for dep in $$(cat api/go.mod | grep openstack-k8s-operators | grep -vE -- 'indirect|test-operator|^replace' | awk '{print $$1}'); do \
+		cd ./api && go get $$dep@$(BRANCH) && cd .. ; \
+	done
