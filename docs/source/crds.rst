@@ -143,3 +143,43 @@ CRs that can use the workflow section:
 * :ref:`tobiko-custom-resource`
 
 * :ref:`ansibletest-custom-resource`
+
+ExtraMounts parameter
+=====================
+To correctly use the :code:`ExtraMounts` parameter, follow these steps:
+
+1. Set the :code:`propagation` field
+
+  Set this field based on the test scope (e.g., Tempest, Tobiko) to
+  control where the mount is applied.
+
+2. Set the :code:`volumes` field
+
+  Define the list of volume sources to be mounted. The name assigned
+  here is later referenced in the :code:`mounts` field.
+
+3. Set the :code:`mounts` field
+
+  Specify where each volume should be mounted in the Pod. Each entry
+  should include the name of a volume from the :code:`volumes` field
+  and the target mount path.
+
+Example of using the :code:`ExtraMounts` parameter:
+
+.. code-block:: yaml
+
+  extraMounts:
+      - name: v1
+        region: r1
+        extraVol:
+          - propagation:
+            - Tempest
+            extraVolType: Ceph
+            volumes:
+            - name: ceph
+              secret:
+                secretName: <existing-secret>
+            mounts:
+            - name: ceph
+              mountPath: "/etc/ceph"
+              readOnly: true
