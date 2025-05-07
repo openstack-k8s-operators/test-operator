@@ -148,21 +148,16 @@ ExtraMounts parameter
 =====================
 To correctly use the :code:`ExtraMounts` parameter, follow these steps:
 
-1. Set the :code:`propagation` field
+1. Set the :code:`propagation` field. Set this field based on the test
+scope (e.g., Tempest, Tobiko) to control where the mount is applied.
 
-  Set this field based on the test scope (e.g., Tempest, Tobiko) to
-  control where the mount is applied.
+2. Set the :code:`volumes` field. Define the list of volume sources
+to be mounted. The name assigned here is later referenced in the
+:code:`mounts` field.
 
-2. Set the :code:`volumes` field
-
-  Define the list of volume sources to be mounted. The name assigned
-  here is later referenced in the :code:`mounts` field.
-
-3. Set the :code:`mounts` field
-
-  Specify where each volume should be mounted in the Pod. Each entry
-  should include the name of a volume from the :code:`volumes` field
-  and the target mount path.
+3. Set the :code:`mounts` field. Specify where each volume should be
+mounted in the Pod. Each entry should include the name of a volume
+from the :code:`volumes` field and the target mount path.
 
 Example of using the :code:`ExtraMounts` parameter:
 
