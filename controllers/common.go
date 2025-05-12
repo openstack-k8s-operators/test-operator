@@ -30,12 +30,11 @@ import (
 )
 
 const (
-	workflowNameSuffix       = "-workflow-counter"
-	podNameStepInfix         = "-workflow-step-"
-	envVarsConfigMapinfix    = "-env-vars-step-"
-	customDataConfigMapinfix = "-custom-data-step-"
+	podNameStepInfix         = "-s"
+	envVarsConfigMapinfix    = "-env-vars-s"
+	customDataConfigMapinfix = "-custom-data-s"
 	workflowStepNumInvalid   = -1
-	workflowStepNameInvalid  = "no-step-name"
+	workflowStepNameInvalid  = "no-name"
 	workflowStepLabel        = "workflowStep"
 	instanceNameLabel        = "instanceName"
 	operatorNameLabel        = "operator"
@@ -387,10 +386,6 @@ func (r *Reconciler) GetPodName(instance interface{}, workflowStepNum int) strin
 	}
 
 	return workflowStepNameInvalid
-}
-
-func (r *Reconciler) GetWorkflowConfigMapName(instance client.Object) string {
-	return instance.GetName() + workflowNameSuffix
 }
 
 func (r *Reconciler) GetPVCLogsName(instance client.Object, workflowStepNum int) string {

@@ -108,6 +108,19 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 		)
 	}
 
+	for _, workflowStep := range r.Spec.Workflow {
+		podNameLength := len(r.Name) + len(workflowStep.StepName) + len("-sXX-")
+
+		if podNameLength >= 63 {
+			allErrs = append(allErrs, &field.Error{
+				Type:     field.ErrorTypeInvalid,
+				BadValue: podNameLength,
+				Detail:   fmt.Sprintf(ErrNameTooLong, "Tempest"),
+			},
+			)
+		}
+	}
+
 	if r.Spec.Privileged {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tempest"))
 	}

@@ -7,6 +7,10 @@ const (
 
 	// ErrDebug
 	ErrDebug = "%s.Spec.Workflow parameter must be empty to run debug mode"
+
+	// ErrNameTooLong
+	ErrNameTooLong = "The combined length of %s pod name exceeds the maximum of 63 " +
+		"characters. Shorten the CR name or workflow stepName to proceed."
 )
 
 const (
