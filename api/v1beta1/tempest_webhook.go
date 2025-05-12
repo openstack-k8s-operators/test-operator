@@ -30,6 +30,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -106,6 +107,28 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 			Detail:   fmt.Sprintf(ErrPrivilegedModeRequired, "Tempest"),
 		},
 		)
+	}
+
+	if len(r.Name) >= validation.DNS1123LabelMaxLength {
+		allErrs = append(allErrs, &field.Error{
+			Type:     field.ErrorTypeInvalid,
+			BadValue: len(r.Name),
+			Detail:   fmt.Sprintf(ErrNameTooLong, "Tempest", validation.DNS1123LabelMaxLength),
+		},
+		)
+	}
+
+	for _, workflowStep := range r.Spec.Workflow {
+		podNameLength := len(r.Name) + len(workflowStep.StepName) + len("-sXX-")
+
+		if podNameLength >= validation.DNS1123LabelMaxLength {
+			allErrs = append(allErrs, &field.Error{
+				Type:     field.ErrorTypeInvalid,
+				BadValue: podNameLength,
+				Detail:   fmt.Sprintf(ErrNameTooLong, "Tempest", validation.DNS1123LabelMaxLength),
+			},
+			)
+		}
 	}
 
 	if r.Spec.Privileged {
