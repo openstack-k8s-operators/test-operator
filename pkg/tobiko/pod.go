@@ -21,14 +21,13 @@ func Pod(
 	mountKubeconfig bool,
 	envVars map[string]env.Setter,
 	containerImage string,
-	privileged bool,
 ) *corev1.Pod {
 
 	runAsUser := int64(42495)
 	runAsGroup := int64(42495)
 
 	capabilities := []corev1.Capability{"NET_ADMIN", "NET_RAW"}
-	securityContext := util.GetSecurityContext(runAsUser, capabilities, privileged)
+	securityContext := util.GetSecurityContext(runAsUser, capabilities, instance.Spec.Privileged)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{

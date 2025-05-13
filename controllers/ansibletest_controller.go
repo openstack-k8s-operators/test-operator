@@ -209,7 +209,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage, err := r.GetContainerImage(ctx, workflowOverrideParams["ContainerImage"], instance)
-	privileged := instance.Spec.Privileged
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -224,7 +223,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		workflowOverrideParams,
 		nextWorkflowStep,
 		containerImage,
-		privileged,
 	)
 
 	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
