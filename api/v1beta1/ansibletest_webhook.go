@@ -25,7 +25,10 @@ package v1beta1
 import (
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -61,7 +64,21 @@ var _ webhook.Validator = &AnsibleTest{}
 func (r *AnsibleTest) ValidateCreate() (admission.Warnings, error) {
 	ansibletestlog.Info("validate create", "name", r.Name)
 
+	var allErrs field.ErrorList
 	var allWarnings admission.Warnings
+
+	for _, workflowStep := range r.Spec.Workflow {
+		podNameLength := len(r.Name) + len(workflowStep.StepName) + len("-sXX-")
+
+		if podNameLength >= 63 {
+			allErrs = append(allErrs, &field.Error{
+				Type:     field.ErrorTypeInvalid,
+				BadValue: podNameLength,
+				Detail:   fmt.Sprintf(ErrNameTooLong, "AnsibleTest"),
+			},
+			)
+		}
+	}
 
 	if r.Spec.Privileged {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "AnsibleTest"))
@@ -69,6 +86,14 @@ func (r *AnsibleTest) ValidateCreate() (admission.Warnings, error) {
 
 	if r.Spec.Privileged && len(r.Spec.Workflow) > 0 && len(r.Spec.SELinuxLevel) == 0 {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnSELinuxLevel, r.Kind))
+	}
+
+	if len(allErrs) > 0 {
+		return allWarnings, apierrors.NewInvalid(
+			schema.GroupKind{
+				Group: GroupVersion.WithKind("AnsibleTest").Group,
+				Kind:  GroupVersion.WithKind("AnsibleTest").Kind,
+			}, r.GetName(), allErrs)
 	}
 
 	return allWarnings, nil

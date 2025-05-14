@@ -75,10 +75,27 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 		})
 	}
 
+	for _, workflowStep := range r.Spec.Workflow {
+		podNameLength := len(r.Name) + len(workflowStep.StepName) + len("-sXX-")
+
+		if podNameLength >= 63 {
+			allErrs = append(allErrs, &field.Error{
+				Type:     field.ErrorTypeInvalid,
+				BadValue: podNameLength,
+				Detail:   fmt.Sprintf(ErrNameTooLong, "Tobiko"),
+			},
+			)
+		}
+	}
+
 	if r.Spec.Privileged {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tobiko"))
 	} else {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOff, "Tobiko"))
+	}
+
+	if r.Spec.Privileged && len(r.Spec.Workflow) > 0 && len(r.Spec.SELinuxLevel) == 0 {
+		allWarnings = append(allWarnings, fmt.Sprintf(WarnSELinuxLevel, r.Kind))
 	}
 
 	if len(allErrs) > 0 {
@@ -87,10 +104,6 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 				Group: GroupVersion.WithKind("Tobiko").Group,
 				Kind:  GroupVersion.WithKind("Tobiko").Kind,
 			}, r.GetName(), allErrs)
-	}
-
-	if r.Spec.Privileged && len(r.Spec.Workflow) > 0 && len(r.Spec.SELinuxLevel) == 0 {
-		allWarnings = append(allWarnings, fmt.Sprintf(WarnSELinuxLevel, r.Kind))
 	}
 
 	return allWarnings, nil
