@@ -309,7 +309,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	podName := r.GetPodName(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
 	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
-	privileged := instance.Spec.Privileged
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -325,7 +324,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		mountKubeconfig,
 		envVars,
 		containerImage,
-		privileged,
 	)
 
 	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
