@@ -87,6 +87,8 @@
             includeList: |
               tempest.api.compute.admin.test_flavors.FlavorsAdminTestJSON.test_create_flavor_using_string_ram
             concurrency: 8
+            externalPlugin:
+              - repository: "https://gitlab.cee.redhat.com/eng/openstack/python-octavia-tests-tempest"
           tempestconfRun:
             collectTiming: true
 
