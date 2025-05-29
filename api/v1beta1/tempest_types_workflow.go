@@ -232,7 +232,6 @@ type WorkflowTempestSpec struct {
 
 	// The desired amount of resources that should be assigned to each test pod
 	// spawned using the Tempest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
-	// +kubebuilder:default:={limits: {cpu: "8000m", memory: "4Gi"}, requests: {cpu: "4000m", memory: "2Gi"}}
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +kubebuilder:validation:Required
