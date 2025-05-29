@@ -147,9 +147,8 @@ type WorkflowCommonOptions struct {
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="local-storage"
 	// StorageClass used to create any test-operator related PVCs.
-	StorageClass *string `json:"storageClass"`
+	StorageClass *string `json:"storageClass,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
