@@ -205,6 +205,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
+	mountAdditionalCerts := instance.Spec.AdditionalCerts
 	podName := r.GetPodName(instance, nextWorkflowStep)
 	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
@@ -219,6 +220,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		podName,
 		logsPVCName,
 		mountCerts,
+		mountAdditionalCerts,
 		envVars,
 		workflowOverrideParams,
 		nextWorkflowStep,
@@ -290,6 +292,14 @@ func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	envVars["POD_ANSIBLE_GIT_REPO"] = env.SetValue(instance.Spec.AnsibleGitRepo)
 	envVars["POD_ANSIBLE_PLAYBOOK"] = env.SetValue(instance.Spec.AnsiblePlaybookPath)
 	envVars["POD_INSTALL_COLLECTIONS"] = env.SetValue(instance.Spec.AnsibleCollections)
+
+	hook := instance.Spec.AnsiblePreTestHook
+
+	if instance.Spec.AdditionalCerts {
+		hook = "sudo /usr/local/bin/kolla_copy_cacerts; " + instance.Spec.AnsiblePreTestHook
+	}
+
+	envVars["POD_ANSIBLE_PRE_TEST_HOOK"] = env.SetValue(hook)
 
 	return envVars, workflowOverrideParams
 }

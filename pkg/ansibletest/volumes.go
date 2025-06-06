@@ -12,6 +12,7 @@ func GetVolumes(
 	instance *testv1beta1.AnsibleTest,
 	logsPVCName string,
 	mountCerts bool,
+	mountAdditionalCerts bool,
 	svc []storage.PropagationType,
 	workflowOverrideParams map[string]string,
 	externalWorkflowCounter int,
@@ -150,6 +151,7 @@ func GetVolumes(
 // GetVolumeMounts -
 func GetVolumeMounts(
 	mountCerts bool,
+	mountAdditionalCerts bool,
 	svc []storage.PropagationType,
 	instance *testv1beta1.AnsibleTest,
 	externalWorkflowCounter int,
@@ -191,23 +193,36 @@ func GetVolumeMounts(
 	}
 
 	if mountCerts {
-		caCertVolumeMount := corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
+		if mountAdditionalCerts {
+			caCertVolumeMount := corev1.VolumeMount{
+				Name:      "ca-certs",
+				MountPath: "/var/lib/config-data/ca-certificates/tls-ca-bundle.pem",
+				ReadOnly:  true,
+				SubPath:   "tls-ca-bundle.pem",
+			}
+
+			volumeMounts = append(volumeMounts, caCertVolumeMount)
+
+		} else {
+
+			caCertVolumeMount := corev1.VolumeMount{
+				Name:      "ca-certs",
+				MountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+				ReadOnly:  true,
+				SubPath:   "tls-ca-bundle.pem",
+			}
+
+			volumeMounts = append(volumeMounts, caCertVolumeMount)
+
+			caCertVolumeMount = corev1.VolumeMount{
+				Name:      "ca-certs",
+				MountPath: "/etc/pki/tls/certs/ca-bundle.trust.crt",
+				ReadOnly:  true,
+				SubPath:   "tls-ca-bundle.pem",
+			}
+
+			volumeMounts = append(volumeMounts, caCertVolumeMount)
 		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
-
-		caCertVolumeMount = corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/tls/certs/ca-bundle.trust.crt",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
-		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
 	}
 
 	workloadSSHKeyMount := corev1.VolumeMount{

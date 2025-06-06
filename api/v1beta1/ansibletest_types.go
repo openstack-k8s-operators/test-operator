@@ -86,6 +86,17 @@ type AnsibleTestSpec struct {
 	AnsibleInventory string `json:"ansibleInventory,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:optional
+	// +kubebuilder:default:=""
+	// AnsiblePreTestHook - string that contains arbitrary shell commands to run before ansible-playbook
+	AnsiblePreTestHook string `json:"ansiblePreTestHook,omitempty"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:optional
+	// +kubebuilder:default:=false
+	AdditionalCerts bool `json:"additionalCerts"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=false
 	// Run ansible playbook with -vvvv

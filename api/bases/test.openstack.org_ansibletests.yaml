@@ -76,6 +76,11 @@ spec:
                 default: ""
                 description: AnsiblePlaybookPath - path to ansible playbook
                 type: string
+              ansiblePreTestHook:
+                default: ""
+                description: AnsiblePreTestHook - string that contains arbitrary shell
+                  commands to run before ansible-playbook
+                type: string
               ansibleVarFiles:
                 default: ""
                 description: AnsibleVarFiles - interface to create ansible var files
