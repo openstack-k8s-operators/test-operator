@@ -111,7 +111,6 @@ type AnsibleTestWorkflowSpec struct {
 
 	// The desired amount of resources that should be assigned to each test pod
 	// spawned using the AnsibleTest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
-	// +kubebuilder:default:={limits: {cpu: "2000m", memory: "2Gi"}, requests: {cpu: "1000m", memory: "2Gi"}}
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
