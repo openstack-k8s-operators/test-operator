@@ -74,6 +74,13 @@ type CommonOptions struct {
 	// +kubebuilder:default:=""
 	// A URL of a container image that should be used by the test-operator for tests execution.
 	ContainerImage string `json:"containerImage"`
+        
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+        // +kubebuilder:validation:Optional
+        // +kubebuilder:default:=""
+        // A flag to indicate whether to update the Tobiko repo for test execution.
+        // If empty or set to "false", no update is performed.
+        TOBIKOUpdateRepo string `json:"tobikoUpdateRepo,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// BackoffLimit allows to define the maximum number of retried executions (defaults to 0).
