@@ -375,6 +375,13 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	envVars["TOBIKO_VERSION"] = env.SetValue(instance.Spec.Version)
 	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(instance.Spec.PytestAddopts)
 
+        updateRepo := instance.Spec.UpdateRepo
+        if updateRepo {
+                envVars["TOBIKO_UPDATE_REPO"] = env.SetValue("True")
+        } else {
+                envVars["TOBIKO_UPDATE_REPO"] = env.SetValue("False")
+        }
+
 	preventCreate := instance.Spec.PreventCreate
 	if preventCreate {
 		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("True")

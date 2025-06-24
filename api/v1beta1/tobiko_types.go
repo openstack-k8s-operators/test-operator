@@ -60,6 +60,12 @@ type TobikoSpec struct {
 	// Boolean specifying whether tobiko tests create new resources or re-use those previously created
 	PreventCreate bool `json:"preventCreate"`
 
+        // +kubebuilder:validation:Optional
+        // +operator-sdk:csv:customresourcedefinitions:type=spec
+        // +kubebuilder:default:=false
+        // Boolean flag to indicate whether to update the Tobiko repo before running tests.
+        UpdateRepo bool `json:"updateRepo"`
+
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=4
@@ -139,6 +145,11 @@ type TobikoWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Boolean specifying whether tobiko tests create new resources or re-use those previously created
 	PreventCreate *bool `json:"preventCreate,omitempty"`
+
+	// +kubebuilder:validation:Optional
+        // +operator-sdk:csv:customresourcedefinitions:type=spec
+        // Boolean flag to indicate whether to update the Tobiko repo before running tests.
+        UpdateRepo *bool `json:"updateRepo,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
