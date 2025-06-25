@@ -372,6 +372,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetPodName(instance, workflowStepNum))
 
 	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
+	envVars["TOBIKO_UPDATE_REPO"] = env.SetValue(strconv.FormatBool(instance.Spec.UpdateRepo))
 	envVars["TOBIKO_VERSION"] = env.SetValue(instance.Spec.Version)
 	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(instance.Spec.PytestAddopts)
 
