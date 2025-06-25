@@ -281,6 +281,8 @@ func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	debug := instance.Spec.Debug
 	if debug {
 		envVars["POD_DEBUG"] = env.SetValue("true")
+	} else {
+		envVars["POD_DEBUG"] = env.SetValue("false")
 	}
 
 	// strings
