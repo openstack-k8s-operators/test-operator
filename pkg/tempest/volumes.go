@@ -114,7 +114,14 @@ func GetVolumes(
 
 	for _, exv := range instance.Spec.ExtraMounts {
 		for _, vol := range exv.Propagate(svc) {
-			volumes = append(volumes, vol.Volumes...)
+			for _, v := range vol.Volumes {
+				volumeSource, _ := v.ToCoreVolumeSource()
+				convertedVolume := corev1.Volume{
+					Name:         v.Name,
+					VolumeSource: *volumeSource,
+				}
+				volumes = append(volumes, convertedVolume)
+			}
 		}
 	}
 
