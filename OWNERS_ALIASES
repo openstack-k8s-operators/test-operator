@@ -11,9 +11,10 @@ aliases:
   - stuggi
   test-approvers:
   - lpiwowar
-  - kopecmartin
   - arxcruz
-  test-reviewers:
   - kstrenkova
+  test-reviewers:
   - evallesp
   - frenzyfriday
+  - sdatko
+  - adrianfusco
