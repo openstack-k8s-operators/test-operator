@@ -22,9 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
 	CommonOptions `json:",inline"`
@@ -63,7 +60,7 @@ type TobikoSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=4
-	// Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
+	// Number of processes/workers used to run tobiko tests - value 0 results in automatic decision
 	NumProcesses uint8 `json:"numProcesses"`
 
 	// +kubebuilder:validation:Optional
@@ -98,11 +95,10 @@ type TobikoSpec struct {
 	// set this option to true.
 	Parallel bool `json:"parallel"`
 
-	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
-	// in the test pod.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
+	// in the test pod.
 	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -111,10 +107,10 @@ type TobikoSpec struct {
 	// the services to the given network
 	NetworkAttachments []string `json:"networkAttachments,omitempty"`
 
-	// A parameter  that contains a workflow definition.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	// A parameter  that contains a workflow definition.
 	Workflow []TobikoWorkflowSpec `json:"workflow,omitempty"`
 }
 
@@ -171,17 +167,19 @@ type TobikoWorkflowSpec struct {
 	// Public Key
 	PublicKey string `json:"publicKey,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
 	// in the test pod.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 
-	// A parameter that contains a definition of a single workflow step.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MaxLength:=100
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=""
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	// +kubebuilder:default:=""
+	// A parameter that contains a definition of a single workflow step.
 	StepName string `json:"stepName"`
 }
 

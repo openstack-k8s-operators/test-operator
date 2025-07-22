@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 /*
-This file contains an extension of the Tempest CR. Ultimataly it is a copy of
+This file contains an extension of the Tempest CR. Ultimately it is a copy of
 tempest_types.go that removes all default values for each config options. This
-is necessary to be able to detect when the user explicitly set a value in the
-`workflow` setcion.
+is necessary to be able to detect when the user explicitly sets a value in the
+`workflow` section.
 */
 
 package v1beta1
@@ -99,7 +99,7 @@ type ExtraImagesFlavorType struct {
 
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// How many vcpus should be be allocated when this flavor is used
+	// How many vcpus should be allocated when this flavor is used
 	Vcpus int64 `json:"vcpus"`
 
 	// +kubebuilder:validation:Optional
@@ -286,7 +286,7 @@ type TempestconfRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=""
-	// A content of accounts.yaml that is passed to tempest via --test-acounts
+	// A content of accounts.yaml that is passed to tempest via --test-accounts
 	TestAccounts string `json:"testAccounts"`
 
 	// +kubebuilder:validation:Optional
@@ -439,7 +439,7 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// Workflow - can be used to specify a multiple executions of tempest with
+	// Workflow - can be used to specify multiple executions of tempest with
 	// a different configuration in a single CR. Accepts a list of dictionaries
 	// where each member of the list accepts the same values as the Tempest CR
 	// does in the `spec`` section. Values specified using the workflow section have

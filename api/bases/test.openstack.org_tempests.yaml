@@ -1393,7 +1393,7 @@ spec:
                               description: Cloud that should be used for authentication
                               type: string
                             vcpus:
-                              description: How many vcpus should be be allocated when
+                              description: How many vcpus should be allocated when
                                 this flavor is used
                               format: int64
                               type: integer
@@ -1584,7 +1584,7 @@ spec:
                   testAccounts:
                     default: ""
                     description: A content of accounts.yaml that is passed to tempest
-                      via --test-acounts
+                      via --test-accounts
                     type: string
                   timeout:
                     default: 0
@@ -1642,7 +1642,7 @@ spec:
                 type: array
               workflow:
                 description: |-
-                  Workflow - can be used to specify a multiple executions of tempest with
+                  Workflow - can be used to specify multiple executions of tempest with
                   a different configuration in a single CR. Accepts a list of dictionaries
                   where each member of the list accepts the same values as the Tempest CR
                   does in the `spec`` section. Values specified using the workflow section have
@@ -1862,7 +1862,7 @@ spec:
                             - repository
                             type: object
                           type: array
-                        extraImagesType:
+                        extraImages:
                           description: |-
                             Extra images that should be downloaded inside the test pod and uploaded to
                             openstack.
@@ -1916,7 +1916,7 @@ spec:
                                     description: Cloud that should be used for authentication
                                     type: string
                                   vcpus:
-                                    description: How many vcpus should be be allocated
+                                    description: How many vcpus should be allocated
                                       when this flavor is used
                                     format: int64
                                     type: integer
@@ -2080,7 +2080,7 @@ spec:
                           type: boolean
                         testAccounts:
                           description: A content of accounts.yaml that is passed to
-                            tempest via --test-acounts
+                            tempest via --test-accounts
                           type: string
                         timeout:
                           description: |-

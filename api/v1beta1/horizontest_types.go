@@ -22,9 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // HorizonTestSpec defines the desired state of HorizonTest
 type HorizonTestSpec struct {
 	CommonOptions `json:",inline"`
@@ -42,92 +39,92 @@ type HorizonTestSpec struct {
 	// This allows the user to debug any potential troubles with `oc rsh`.
 	Debug bool `json:"debug"`
 
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// ExtraFlag is an extra flag that can be set to modify pytest command to
 	// exclude or include particular test(s)
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ExtraFlag string `json:"extraFlag"`
 
-	// ProjectNameXpath is the xpath to select project name
-	// on the horizon dashboard based on the u/s or d/s theme
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// ProjectNameXpath is the xpath to select project name
+	// on the horizon dashboard based on the u/s or d/s theme
 	ProjectNameXpath string `json:"projectNameXpath"`
 
-	// AdminUsername is the username for the OpenStack admin user.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="admin"
+	// AdminUsername is the username for the OpenStack admin user.
 	AdminUsername string `json:"adminUsername"`
 
-	// AdminPassword is the password for the OpenStack admin user.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="admin"
+	// AdminPassword is the password for the OpenStack admin user.
 	AdminPassword string `json:"adminPassword"`
 
-	// DashboardUrl is the URL of the Horizon dashboard.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// DashboardUrl is the URL of the Horizon dashboard.
 	DashboardUrl string `json:"dashboardUrl"`
 
-	// AuthUrl is the authentication URL for OpenStack.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// AuthUrl is the authentication URL for OpenStack.
 	AuthUrl string `json:"authUrl"`
 
-	// RepoUrl is the URL of the Horizon repository.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="https://review.opendev.org/openstack/horizon"
+	// RepoUrl is the URL of the Horizon repository.
 	RepoUrl string `json:"repoUrl"`
 
-	// HorizonRepoBranch is the branch of the Horizon repository to checkout.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="master"
+	// HorizonRepoBranch is the branch of the Horizon repository to checkout.
 	HorizonRepoBranch string `json:"horizonRepoBranch"`
 
-	// ImageUrl is the URL to download the Cirros image.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
+	// ImageUrl is the URL to download the Cirros image.
 	ImageUrl string `json:"imageUrl"`
 
-	// ProjectName is the name of the OpenStack project for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="horizontest"
+	// ProjectName is the name of the OpenStack project for Horizon tests.
 	ProjectName string `json:"projectName"`
 
-	// User is the username under which the Horizon tests will run.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="horizontest"
+	// User is the username under which the Horizon tests will run.
 	User string `json:"user"`
 
-	// Password is the password for the user running the Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="horizontest"
+	// Password is the password for the user running the Horizon tests.
 	Password string `json:"password"`
 
-	// FlavorName is the name of the OpenStack flavor to create for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="m1.tiny"
+	// FlavorName is the name of the OpenStack flavor to create for Horizon tests.
 	FlavorName string `json:"flavorName"`
 
-	// LogsDirectoryName is the name of the directory to store test logs.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="horizon"
+	// LogsDirectoryName is the name of the directory to store test logs.
 	LogsDirectoryName string `json:"logsDirectoryName"`
 
-	// HorizonTestDir is the directory path for Horizon tests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="/var/lib/horizontest"
+	// HorizonTestDir is the directory path for Horizon tests.
 	HorizonTestDir string `json:"horizonTestDir"`
 
 	// +kubebuilder:validation:Optional
@@ -136,10 +133,10 @@ type HorizonTestSpec struct {
 	// Parallel
 	Parallel bool `json:"parallel"`
 
-	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/horizontest/.kube/config
-	// in the test pod.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/horizontest/.kube/config
+	// in the test pod.
 	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 }
 

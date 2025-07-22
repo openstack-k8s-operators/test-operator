@@ -55,13 +55,13 @@ spec:
                 type: string
               ansibleCollections:
                 default: ""
-                description: AnsibleCollections - extra ansible collections to instal
-                  in additionn to the ones exist in the requirements.yaml
+                description: |-
+                  AnsibleCollections - extra ansible collections to install in addition
+                  to the ones existing in the requirements.yaml
                 type: string
               ansibleExtraVars:
                 default: ""
                 description: AnsibleExtraVars - string to pass parameters to ansible
-                  using
                 type: string
               ansibleGitRepo:
                 default: ""
@@ -78,8 +78,10 @@ spec:
                 type: string
               ansibleVarFiles:
                 default: ""
-                description: AnsibleVarFiles - interface to create ansible var files
-                  Those get added to the
+                description: |-
+                  AnsibleVarFiles - interface to create ansible var files. Those get added
+                  to the service config dir in /etc/test_operator/<file> and passed to the
+                  ansible command using -e @/etc/test_operator/<file>
                 type: string
               backoffLimit:
                 default: 0
@@ -1334,8 +1336,9 @@ spec:
                         operator.
                       type: string
                     ansibleCollections:
-                      description: AnsibleCollections - extra ansible collections
-                        to instal in additionn to the ones exist in the requirements.yaml
+                      description: |-
+                        AnsibleCollections - extra ansible collections to install in addition
+                        to the ones existing in the requirements.yaml
                       type: string
                     ansibleExtraVars:
                       description: AnsibleExtraVars - interface to pass parameters
@@ -1353,8 +1356,9 @@ spec:
                       type: string
                     ansibleVarFiles:
                       description: |-
-                        AnsibleVarFiles - interface to create ansible var files Those get added to the
-                        service config dir in /etc/test_operator/<file> and passed to the ansible command using -e @/etc/test_operator/<file>
+                        AnsibleVarFiles - interface to create ansible var files. Those get added
+                        to the service config dir in /etc/test_operator/<file> and passed to the
+                        ansible command using -e @/etc/test_operator/<file>
                       type: string
                     backoffLimit:
                       default: 0

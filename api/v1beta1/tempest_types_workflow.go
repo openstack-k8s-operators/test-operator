@@ -81,7 +81,7 @@ type WorkflowTempestRunSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Extra images that should be downloaded inside the test pod and uploaded to
 	// openstack.
-	ExtraImages *[]ExtraImagesType `json:"extraImagesType,omitempty"`
+	ExtraImages *[]ExtraImagesType `json:"extraImages,omitempty"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config
@@ -149,7 +149,7 @@ type WorkflowTempestconfRunSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// A content of accounts.yaml that is passed to tempest via --test-acounts
+	// A content of accounts.yaml that is passed to tempest via --test-accounts
 	TestAccounts *string `json:"testAccounts,omitempty"`
 
 	// +kubebuilder:validation:Optional
