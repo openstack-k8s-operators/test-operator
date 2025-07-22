@@ -1164,6 +1164,7 @@ spec:
                 description: |-
                   Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
                   in the test pod.
+                maxLength: 253
                 type: string
               networkAttachments:
                 description: |-
@@ -1388,6 +1389,7 @@ spec:
                       description: |-
                         Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
                         in the test pod.
+                      maxLength: 253
                       type: string
                     networkAttachments:
                       description: |-
@@ -1488,10 +1490,9 @@ spec:
                           type: object
                       type: object
                     stepName:
-                      default: ""
                       description: A parameter that contains a definition of a single
                         workflow step.
-                      maxLength: 100
+                      pattern: ^[a-z0-9-]+$
                       type: string
                     storageClass:
                       description: StorageClass used to create any test-operator related

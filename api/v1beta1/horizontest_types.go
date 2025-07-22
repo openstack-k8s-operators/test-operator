@@ -52,28 +52,35 @@ type HorizonTestSpec struct {
 	ProjectNameXpath string `json:"projectNameXpath"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="admin"
 	// AdminUsername is the username for the OpenStack admin user.
 	AdminUsername string `json:"adminUsername"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="admin"
 	// AdminPassword is the password for the OpenStack admin user.
 	AdminPassword string `json:"adminPassword"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Format=uri
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// DashboardUrl is the URL of the Horizon dashboard.
 	DashboardUrl string `json:"dashboardUrl"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Format=uri
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// AuthUrl is the authentication URL for OpenStack.
 	AuthUrl string `json:"authUrl"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Format=uri
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="https://review.opendev.org/openstack/horizon"
 	// RepoUrl is the URL of the Horizon repository.
@@ -86,6 +93,7 @@ type HorizonTestSpec struct {
 	HorizonRepoBranch string `json:"horizonRepoBranch"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=uri
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
 	// ImageUrl is the URL to download the Cirros image.
@@ -98,12 +106,14 @@ type HorizonTestSpec struct {
 	ProjectName string `json:"projectName"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="horizontest"
 	// User is the username under which the Horizon tests will run.
 	User string `json:"user"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="horizontest"
 	// Password is the password for the user running the Horizon tests.

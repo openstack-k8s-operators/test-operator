@@ -96,6 +96,7 @@ type TobikoSpec struct {
 	Parallel bool `json:"parallel"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
 	// in the test pod.
@@ -168,17 +169,15 @@ type TobikoWorkflowSpec struct {
 	PublicKey string `json:"publicKey,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	// Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
 	// in the test pod.
 	KubeconfigSecretName string `json:"kubeconfigSecretName,omitempty"`
 
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MaxLength:=100
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=""
+	// +kubebuilder:validation:Pattern:=^[a-z0-9-]+$
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	// +kubebuilder:default:=""
 	// A parameter that contains a definition of a single workflow step.
 	StepName string `json:"stepName"`
 }
