@@ -267,6 +267,14 @@ type WorkflowTempestSpec struct {
 	RerunOverrideStatus *bool `json:"rerunOverrideStatus,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=uri
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// An URL pointing to an archive that contains the saved stestr timing data.
+	// This data is used to optimize the tests order, which helps to reduce the
+	// total Tempest execution time.
+	TimingDataUrl *string `json:"timingDataUrl,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
 	// the services to the given network

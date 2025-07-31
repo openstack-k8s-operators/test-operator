@@ -593,6 +593,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	envVars["TEMPEST_CLEANUP"] = r.GetDefaultBool(instance.Spec.Cleanup)
 	envVars["TEMPEST_RERUN_FAILED_TESTS"] = r.GetDefaultBool(instance.Spec.RerunFailedTests)
 	envVars["TEMPEST_RERUN_OVERRIDE_STATUS"] = r.GetDefaultBool(instance.Spec.RerunOverrideStatus)
+	envVars["TEMPEST_TIMING_DATA_URL"] = instance.Spec.TimingDataUrl
 
 	cms := []util.Template{
 		// ConfigMap

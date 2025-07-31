@@ -1630,6 +1630,13 @@ spec:
                       executed with --verbose
                     type: boolean
                 type: object
+              timingDataUrl:
+                description: |-
+                  An URL pointing to an archive that contains the saved stestr timing data.
+                  This data is used to optimize the tests order, which helps to reduce the
+                  total Tempest execution time.
+                format: uri
+                type: string
               tolerations:
                 description: |-
                   This value contains a toleration that is applied to pods spawned by the
@@ -2152,6 +2159,13 @@ spec:
                             be executed with --verbose
                           type: boolean
                       type: object
+                    timingDataUrl:
+                      description: |-
+                        An URL pointing to an archive that contains the saved stestr timing data.
+                        This data is used to optimize the tests order, which helps to reduce the
+                        total Tempest execution time.
+                      format: uri
+                      type: string
                     tolerations:
                       description: |-
                         This value contains a toleration that is applied to pods spawned by the
