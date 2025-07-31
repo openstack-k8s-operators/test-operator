@@ -428,6 +428,15 @@ type TempestSpec struct {
 	Cleanup bool `json:"cleanup"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=uri
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=""
+	// URL that points to the stestr timing data in job logs. Once it is set
+	// the timing data will be reused which will result in saving time by
+	// optimizing the test order.
+	TimingDataUrl string `json:"timingDataUrl"`
+
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
 	// the services to the given network

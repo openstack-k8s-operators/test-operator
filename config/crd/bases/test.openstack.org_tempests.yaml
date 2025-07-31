@@ -1617,6 +1617,14 @@ spec:
                       executed with --verbose
                     type: boolean
                 type: object
+              timingDataUrl:
+                default: ""
+                description: |-
+                  URL that points to the stestr timing data in job logs. Once it is set
+                  the timing data will be reused which will result in saving time by
+                  optimizing the test order.
+                format: uri
+                type: string
               tolerations:
                 description: |-
                   This value contains a toleration that is applied to pods spawned by the
