@@ -1599,6 +1599,13 @@ spec:
                       executed with --verbose
                     type: boolean
                 type: object
+              timingData:
+                default: false
+                description: |-
+                  A boolean that enables saving stestr timing data to a persistent volume.
+                  When true, subsequent Tempest test runs save time by reusing this data
+                  to optimize the test order.
+                type: boolean
               tolerations:
                 description: |-
                   This value contains a toleration that is applied to pods spawned by the

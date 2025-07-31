@@ -427,6 +427,10 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	instanceNamespace := instance.GetNamespace()
 	pvcName := r.GetPVCLogsName(instance, workflowStepNum)
 
+	if _, ok := labels["stestrTimingDataLabel"]; ok {
+		pvcName = "tempest-stestr-timing-data"
+	}
+
 	pvvc := &corev1.PersistentVolumeClaim{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instanceNamespace, Name: pvcName}, pvvc)
 	if err == nil {
