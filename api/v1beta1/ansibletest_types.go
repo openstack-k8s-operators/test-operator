@@ -22,9 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // AnsibleTestSpec defines the desired state of AnsibleTest
 type AnsibleTestSpec struct {
 	CommonOptions         `json:",inline"`
@@ -35,66 +32,70 @@ type AnsibleTestSpec struct {
 	// spawned using the AnsibleTest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="dataplane-ansible-ssh-private-key-secret"
 	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
 	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=""
 	// WorkloadSSHKeySecretName is the name of the k8s secret that contains an ssh key for the ansible workload.
 	// The key is mounted to ~/test_keypair.key in the ansible pod
 	WorkloadSSHKeySecretName string `json:"workloadSSHKeySecretName"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default:=""
+	// +kubebuilder:validation:Format=uri
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// AnsibleGitRepo - git repo to clone into container
 	AnsibleGitRepo string `json:"ansibleGitRepo"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=""
 	// AnsiblePlaybookPath - path to ansible playbook
 	AnsiblePlaybookPath string `json:"ansiblePlaybookPath"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
 	// +kubebuilder:default:=""
-	// AnsibleCollections - extra ansible collections to instal in additionn to the ones exist in the requirements.yaml
-	AnsibleCollections string `json:"ansibleCollections,omitempty"`
+	// AnsibleCollections - extra ansible collections to install in addition
+	// to the ones existing in the requirements.yaml
+	AnsibleCollections string `json:"ansibleCollections"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
 	// +kubebuilder:default:=""
-	// AnsibleVarFiles - interface to create ansible var files Those get added to the
-	AnsibleVarFiles string `json:"ansibleVarFiles,omitempty"`
+	// AnsibleVarFiles - interface to create ansible var files. Those get added
+	// to the service config dir in /etc/test_operator/<file> and passed to the
+	// ansible command using -e @/etc/test_operator/<file>
+	AnsibleVarFiles string `json:"ansibleVarFiles"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
 	// +kubebuilder:default:=""
-	// AnsibleExtraVars - string to pass parameters to ansible using
-	AnsibleExtraVars string `json:"ansibleExtraVars,omitempty"`
+	// AnsibleExtraVars - string to pass parameters to ansible
+	AnsibleExtraVars string `json:"ansibleExtraVars"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
 	// +kubebuilder:default:=""
 	// AnsibleInventory - string that contains the inventory file content
-	AnsibleInventory string `json:"ansibleInventory,omitempty"`
+	AnsibleInventory string `json:"ansibleInventory"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// Run ansible playbook with -vvvv
 	Debug bool `json:"debug"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// A parameter that contains a workflow definition.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
+	// A parameter that contains a workflow definition.
 	Workflow []AnsibleTestWorkflowSpec `json:"workflow,omitempty"`
 }
 
@@ -102,9 +103,9 @@ type AnsibleTestWorkflowSpec struct {
 	WorkflowCommonOptions `json:",inline"`
 	CommonOpenstackConfig `json:",inline"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MaxLength:=100
+	// +kubebuilder:validation:Pattern:=^[a-z0-9-]+$
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Name of a workflow step. The step name will be used for example to create
 	// a logs directory.
 	StepName string `json:"stepName"`
@@ -113,51 +114,56 @@ type AnsibleTestWorkflowSpec struct {
 	// spawned using the AnsibleTest CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
 	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// WorkloadSSHKeySecretName is the name of the k8s secret that contains an ssh key for the ansible workload.
 	// The key is mounted to ~/test_keypair.key in the ansible pod
 	WorkloadSSHKeySecretName string `json:"workloadSSHKeySecretName"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=uri
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// AnsibleGitRepo - git repo to clone into container
 	AnsibleGitRepo string `json:"ansibleGitRepo,omitempty"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// AnsiblePlaybookPath - path to ansible playbook
 	AnsiblePlaybookPath string `json:"ansiblePlaybookPath,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
-	// AnsibleCollections - extra ansible collections to instal in additionn to the ones exist in the requirements.yaml
+	// AnsibleCollections - extra ansible collections to install in addition
+	// to the ones existing in the requirements.yaml
 	AnsibleCollections string `json:"ansibleCollections,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
-	// AnsibleVarFiles - interface to create ansible var files Those get added to the
-	// service config dir in /etc/test_operator/<file> and passed to the ansible command using -e @/etc/test_operator/<file>
+	// AnsibleVarFiles - interface to create ansible var files. Those get added
+	// to the service config dir in /etc/test_operator/<file> and passed to the
+	// ansible command using -e @/etc/test_operator/<file>
 	AnsibleVarFiles string `json:"ansibleVarFiles,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
 	// AnsibleExtraVars - interface to pass parameters to ansible using -e
 	AnsibleExtraVars string `json:"ansibleExtraVars,omitempty"`
 
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
 	// AnsibleInventory - string that contains the inventory file content
 	AnsibleInventory string `json:"ansibleInventory,omitempty"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Run ansible playbook with -vvvv
 	Debug bool `json:"debug,omitempty"`
 }

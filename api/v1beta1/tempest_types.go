@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 /*
-This file contains an extension of the Tempest CR. Ultimataly it is a copy of
+This file contains an extension of the Tempest CR. Ultimately it is a copy of
 tempest_types.go that removes all default values for each config options. This
-is necessary to be able to detect when the user explicitly set a value in the
-`workflow` setcion.
+is necessary to be able to detect when the user explicitly sets a value in the
+`workflow` section.
 */
 
 package v1beta1
@@ -38,11 +38,15 @@ const (
 // inside the test pod and uploaded to openstack
 type ExtraImagesType struct {
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Format=uri
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// URL that points to a location where the image is located
 	URL string `json:"URL"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern:="^[a-z0-9._-]+$"
 	// Name of the image
 	Name string `json:"name"`
 
@@ -83,23 +87,29 @@ type ExtraImagesType struct {
 
 type ExtraImagesFlavorType struct {
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern:="^[a-z0-9._-]+$"
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Name of the flavor that should be created
 	Name string `json:"name"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// How much RAM should be allocated when this flavor is used
 	RAM int64 `json:"RAM"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// How much disk space should be allocated when this flavor is used
 	Disk int64 `json:"disk"`
 
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// How many vcpus should be be allocated when this flavor is used
+	// How many vcpus should be allocated when this flavor is used
 	Vcpus int64 `json:"vcpus"`
 
 	// +kubebuilder:validation:Optional
@@ -119,11 +129,13 @@ type ExtraImagesFlavorType struct {
 // from an external resource
 type ExternalPluginType struct {
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Format=uri
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// URL that points to a git repository containing an external plugin.
 	Repository string `json:"repository"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=uri
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// URL that points to a repository that contains a change that should be
 	// applied to the repository defined by Repository (ChangeRefspec must be
@@ -131,6 +143,7 @@ type ExternalPluginType struct {
 	ChangeRepository string `json:"changeRepository,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// ChangeRefspec specifies which change the remote repository should be
 	// checked out to (ChangeRepository must be defined as well).
@@ -160,6 +173,8 @@ type TempestRunSpec struct {
 	ExpectedFailuresList string `json:"expectedFailuresList"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=128
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=0
 	// Concurrency value that is passed to tempest via --concurrency
@@ -286,7 +301,7 @@ type TempestconfRunSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=""
-	// A content of accounts.yaml that is passed to tempest via --test-acounts
+	// A content of accounts.yaml that is passed to tempest via --test-accounts
 	TestAccounts string `json:"testAccounts"`
 
 	// +kubebuilder:validation:Optional
@@ -324,6 +339,7 @@ type TempestconfRunSpec struct {
 	Image string `json:"image"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=0
 	// The content of this variable will be passed to discover-tempest-config via
@@ -331,6 +347,7 @@ type TempestconfRunSpec struct {
 	FlavorMinMem int64 `json:"flavorMinMem"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=0
 	// The content of this variable will be passed to discover-tempest-config via
@@ -365,8 +382,9 @@ type TempestconfRunSpec struct {
 	// that executes discover-tempest-config (override values).
 	Overrides string `json:"overrides"`
 
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=0
 	// The content of this variable will be passed to discover-tempest-config via
 	// --timeout
@@ -439,7 +457,7 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// Workflow - can be used to specify a multiple executions of tempest with
+	// Workflow - can be used to specify multiple executions of tempest with
 	// a different configuration in a single CR. Accepts a list of dictionaries
 	// where each member of the list accepts the same values as the Tempest CR
 	// does in the `spec`` section. Values specified using the workflow section have

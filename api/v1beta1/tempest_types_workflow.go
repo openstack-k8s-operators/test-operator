@@ -40,6 +40,8 @@ type WorkflowTempestRunSpec struct {
 	ExpectedFailuresList *string `json:"expectedFailuresList,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=128
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Concurrency value that is passed to tempest via --concurrency
 	Concurrency *int64 `json:"concurrency,omitempty"`
@@ -81,7 +83,7 @@ type WorkflowTempestRunSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Extra images that should be downloaded inside the test pod and uploaded to
 	// openstack.
-	ExtraImages *[]ExtraImagesType `json:"extraImagesType,omitempty"`
+	ExtraImages *[]ExtraImagesType `json:"extraImages,omitempty"`
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config
@@ -149,7 +151,7 @@ type WorkflowTempestconfRunSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// A content of accounts.yaml that is passed to tempest via --test-acounts
+	// A content of accounts.yaml that is passed to tempest via --test-accounts
 	TestAccounts *string `json:"testAccounts,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -182,12 +184,14 @@ type WorkflowTempestconfRunSpec struct {
 	Image *string `json:"image,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-mem
 	FlavorMinMem *int64 `json:"flavorMinMem,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// The content of this variable will be passed to discover-tempest-config via
 	// --flavor-min-disk
@@ -218,6 +222,7 @@ type WorkflowTempestconfRunSpec struct {
 	Overrides *string `json:"overrides,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// The content of this variable will be passed to discover-tempest-config via
 	// --timeout
@@ -235,8 +240,7 @@ type WorkflowTempestSpec struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MaxLength:=100
-	// +kubebuilder:validation:Pattern:=^[a-z0-9]
+	// +kubebuilder:validation:Pattern:=^[a-z0-9-]+$
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// Name of a workflow step. The step name will be used for example to create
 	// a logs directory.
