@@ -227,6 +227,26 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	} else if (ctrlResult != ctrl.Result{}) {
 		return ctrlResult, nil
 	}
+
+	// PersistentVolumeClaim for timing data
+	if instance.Spec.TimingData {
+		serviceLabels["stestrTimingDataLabel"] = "stestr-timing-data"
+
+		ctrlResult, err = r.EnsureLogsPVCExists(
+			ctx,
+			instance,
+			helper,
+			serviceLabels,
+			instance.Spec.StorageClass,
+			workflowStepNum,
+		)
+
+		if err != nil {
+			return ctrlResult, err
+		} else if (ctrlResult != ctrl.Result{}) {
+			return ctrlResult, nil
+		}
+	}
 	// Create PersistentVolumeClaim - end
 
 	mountSSHKey := false
@@ -591,6 +611,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 
 	envVars["TEMPEST_DEBUG_MODE"] = r.GetDefaultBool(instance.Spec.Debug)
 	envVars["TEMPEST_CLEANUP"] = r.GetDefaultBool(instance.Spec.Cleanup)
+	envVars["TEMPEST_TIMING_DATA"] = r.GetDefaultBool(instance.Spec.TimingData)
 
 	cms := []util.Template{
 		// ConfigMap

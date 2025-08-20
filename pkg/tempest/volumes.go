@@ -78,6 +78,20 @@ func GetVolumes(
 		},
 	}
 
+	if instance.Spec.TimingData {
+		timingDataVolume := corev1.Volume{
+			Name: "stestr-timing-data",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "tempest-stestr-timing-data",
+					ReadOnly:  false,
+				},
+			},
+		}
+
+		volumes = append(volumes, timingDataVolume)
+	}
+
 	if mountCerts {
 		caCertsVolume := corev1.Volume{
 			Name: "ca-certs",
@@ -190,6 +204,16 @@ func GetVolumeMounts(
 			ReadOnly:  false,
 			SubPath:   "secure.yaml",
 		},
+	}
+
+	if instance.Spec.TimingData {
+		timingDataVolumeMount := corev1.VolumeMount{
+			Name:      "stestr-timing-data",
+			MountPath: "/var/lib/tempest/.stestr-reuse",
+			ReadOnly:  false,
+		}
+
+		volumeMounts = append(volumeMounts, timingDataVolumeMount)
 	}
 
 	if mountCerts {

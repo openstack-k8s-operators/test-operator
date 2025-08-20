@@ -429,6 +429,14 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:=false
+	// A boolean that enables saving stestr timing data to a persistent volume.
+	// When true, subsequent Tempest test runs save time by reusing this data
+	// to optimize the test order.
+	TimingData bool `json:"timingData"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
 	// the services to the given network
 	NetworkAttachments []string `json:"networkAttachments,omitempty"`
