@@ -1294,6 +1294,22 @@ spec:
                 default: py3
                 description: Test environment
                 type: string
+              tobikoPatch:
+                description: Optional patch to apply to the Tobiko repository.
+                properties:
+                  refspec:
+                    description: |-
+                      Refspec specifies which change the remote repository should be
+                      checked out to.
+                    type: string
+                  repository:
+                    description: URL of the Tobiko repository that a patch will be
+                      applied to.
+                    format: uri
+                    type: string
+                required:
+                - repository
+                type: object
               tolerations:
                 description: |-
                   This value contains a toleration that is applied to pods spawned by the
@@ -1501,6 +1517,23 @@ spec:
                     testenv:
                       description: Test environment
                       type: string
+                    tobikoPatch:
+                      description: Optional patch to apply to the Tobiko repository
+                        for this step.
+                      properties:
+                        refspec:
+                          description: |-
+                            Refspec specifies which change the remote repository should be
+                            checked out to.
+                          type: string
+                        repository:
+                          description: URL of the Tobiko repository that a patch will
+                            be applied to.
+                          format: uri
+                          type: string
+                      required:
+                      - repository
+                      type: object
                     tolerations:
                       description: |-
                         This value contains a toleration that is applied to pods spawned by the
