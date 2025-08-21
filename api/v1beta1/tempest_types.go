@@ -429,6 +429,23 @@ type TempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:="false"
+	// Activate tempest re-run feature. When activated, tempest will perform
+	// another run of the tests that failed during the first execution.
+	// The value shall be either "true" or "false".
+	RerunFailedTests string `json:"rerunFailedTests"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:default:="false"
+	// Allow override of exit status with the tempest re-run feature.
+	// When activated, the original return value of the tempest run will be
+	// overriden with the result of the tempest run on limited set of tests.
+	// The value shall be either "true" or "false".
+	RerunOverrideStatus string `json:"rerunOverrideStatus"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// NetworkAttachments is a list of NetworkAttachment resource names to expose
 	// the services to the given network
 	NetworkAttachments []string `json:"networkAttachments,omitempty"`

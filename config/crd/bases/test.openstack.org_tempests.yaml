@@ -1221,6 +1221,21 @@ spec:
                   needed for certain test-operator functionalities to work properly (e.g.:
                   extraRPMs in Tempest CR, or certain set of tobiko tests).
                 type: boolean
+              rerunFailedTests:
+                default: "false"
+                description: |-
+                  Activate tempest re-run feature. When activated, tempest will perform
+                  another run of the tests that failed during the first execution.
+                  The value shall be either "true" or "false".
+                type: string
+              rerunOverrideStatus:
+                default: "false"
+                description: |-
+                  Allow override of exit status with the tempest re-run feature.
+                  When activated, the original return value of the tempest run will be
+                  overriden with the result of the tempest run on limited set of tests.
+                  The value shall be either "true" or "false".
+                type: string
               resources:
                 default:
                   limits:

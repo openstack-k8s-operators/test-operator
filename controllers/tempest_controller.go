@@ -591,6 +591,8 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 
 	envVars["TEMPEST_DEBUG_MODE"] = r.GetDefaultBool(instance.Spec.Debug)
 	envVars["TEMPEST_CLEANUP"] = r.GetDefaultBool(instance.Spec.Cleanup)
+	envVars["TEMPEST_RERUN_FAILED_TESTS"] = instance.Spec.RerunFailedTests
+	envVars["TEMPEST_RERUN_OVERRIDE_STATUS"] = instance.Spec.RerunOverrideStatus
 
 	cms := []util.Template{
 		// ConfigMap
