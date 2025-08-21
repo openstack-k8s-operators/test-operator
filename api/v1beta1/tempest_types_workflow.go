@@ -255,18 +255,16 @@ type WorkflowTempestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=false
 	// Activate tempest re-run feature. When activated, tempest will perform
 	// another run of the tests that failed during the first execution.
-	RerunFailedTests bool `json:"rerunFailedTests"`
+	RerunFailedTests *bool `json:"rerunFailedTests,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:=false
 	// Allow override of exit status with the tempest re-run feature.
 	// When activated, the original return value of the tempest run will be
 	// overridden with a result of the tempest run on the set of failed tests.
-	RerunOverrideStatus bool `json:"rerunOverrideStatus"`
+	RerunOverrideStatus *bool `json:"rerunOverrideStatus,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
