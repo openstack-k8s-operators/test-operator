@@ -1,3 +1,4 @@
+// Package ansibletest provides constants and utilities for Ansible-based testing functionality
 package ansibletest
 
 import (
