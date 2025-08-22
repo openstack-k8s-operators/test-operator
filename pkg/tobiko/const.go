@@ -1,3 +1,4 @@
+// Package tobiko provides constants and utilities for OpenStack Tobiko testing functionality
 package tobiko
 
 import (

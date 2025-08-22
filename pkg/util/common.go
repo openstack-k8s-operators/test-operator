@@ -1,4 +1,5 @@
-package util
+// Package util provides common utility functions and constants for test operations
+package util //nolint:revive // util is a legitimate package name for utility functions
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/storage"
@@ -11,10 +12,10 @@ const (
 	// CM is needed by some test frameworks (e.g., HorizonTest and Tobiko)
 	TestOperatorCloudsConfigMapName = "test-operator-clouds-config"
 
-	// TestOperatorEphemeralVolumeNameWorkdir
+	// TestOperatorEphemeralVolumeNameWorkdir is the name of the ephemeral workdir volume
 	TestOperatorEphemeralVolumeNameWorkdir = "test-operator-ephemeral-workdir"
 
-	// TestOperatorEphemeralVolumeNameTmp
+	// TestOperatorEphemeralVolumeNameTmp is the name of the ephemeral temporary volume
 	TestOperatorEphemeralVolumeNameTmp = "test-operator-ephemeral-temporary"
 
 	// ExtraVolTypeUndefined can be used to label an extraMount which is
@@ -22,6 +23,7 @@ const (
 	ExtraVolTypeUndefined storage.ExtraVolType = "Undefined"
 )
 
+// GetSecurityContext returns a security context with the specified configuration
 func GetSecurityContext(
 	runAsUser int64,
 	addCapabilities []corev1.Capability,

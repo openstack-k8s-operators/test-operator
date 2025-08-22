@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -183,7 +182,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
 
 	default:
-		return ctrl.Result{}, errors.New(ErrReceivedUnexpectedAction)
+		return ctrl.Result{}, ErrReceivedUnexpectedAction
 	}
 
 	serviceLabels := map[string]string{
@@ -276,7 +275,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 				condition.NetworkAttachmentsReadyCondition,
 				condition.NetworkAttachmentsReadyMessage)
 		} else {
-			err := fmt.Errorf(ErrNetworkAttachments, instance.Spec.NetworkAttachments)
+			err := fmt.Errorf("%w: %s", ErrNetworkAttachmentsMismatch, instance.Spec.NetworkAttachments)
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				condition.NetworkAttachmentsReadyCondition,
 				condition.ErrorReason,
@@ -299,10 +298,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		mountKeys = true
 	}
 
-	mountKubeconfig := false
-	if len(instance.Spec.KubeconfigSecretName) != 0 {
-		mountKubeconfig = true
-	}
+	mountKubeconfig := len(instance.Spec.KubeconfigSecretName) != 0
 
 	// Prepare Tobiko env vars
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, nextWorkflowStep)
@@ -358,7 +354,7 @@ func (r *TobikoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// This function prepares env variables for a single workflow step.
+// PrepareTobikoEnvVars prepares environment variables for a single workflow step
 func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	ctx context.Context,
 	labels map[string]string,

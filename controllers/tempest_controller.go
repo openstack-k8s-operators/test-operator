@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -41,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// TempestReconciler reconciles a Tempest object
 type TempestReconciler struct {
 	Reconciler
 }
@@ -196,7 +196,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
 
 	default:
-		return ctrl.Result{}, errors.New(ErrReceivedUnexpectedAction)
+		return ctrl.Result{}, ErrReceivedUnexpectedAction
 	}
 
 	serviceLabels := map[string]string{
@@ -352,7 +352,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 				condition.NetworkAttachmentsReadyCondition,
 				condition.NetworkAttachmentsReadyMessage)
 		} else {
-			err := fmt.Errorf(ErrNetworkAttachments, instance.Spec.NetworkAttachments)
+			err := fmt.Errorf("%w: %s", ErrNetworkAttachmentsMismatch, instance.Spec.NetworkAttachments)
 			instance.Status.Conditions.Set(condition.FalseCondition(
 				condition.NetworkAttachmentsReadyCondition,
 				condition.ErrorReason,
