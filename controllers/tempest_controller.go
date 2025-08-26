@@ -591,6 +591,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 
 	envVars["TEMPEST_DEBUG_MODE"] = r.GetDefaultBool(instance.Spec.Debug)
 	envVars["TEMPEST_CLEANUP"] = r.GetDefaultBool(instance.Spec.Cleanup)
+	envVars["TEMPEST_TIMING_DATA_URL"] = instance.Spec.TimingDataUrl
 
 	cms := []util.Template{
 		// ConfigMap
