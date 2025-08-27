@@ -843,6 +843,16 @@ func (in *WorkflowTempestSpec) DeepCopyInto(out *WorkflowTempestSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.RerunFailedTests != nil {
+		in, out := &in.RerunFailedTests, &out.RerunFailedTests
+		*out = new(bool)
+		**out = **in
+	}
+	if in.RerunOverrideStatus != nil {
+		in, out := &in.RerunOverrideStatus, &out.RerunOverrideStatus
+		*out = new(bool)
+		**out = **in
+	}
 	if in.NetworkAttachments != nil {
 		in, out := &in.NetworkAttachments, &out.NetworkAttachments
 		*out = new([]string)

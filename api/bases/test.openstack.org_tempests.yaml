@@ -1758,13 +1758,11 @@ spec:
                         of tobiko tests).
                       type: boolean
                     rerunFailedTests:
-                      default: false
                       description: |-
                         Activate tempest re-run feature. When activated, tempest will perform
                         another run of the tests that failed during the first execution.
                       type: boolean
                     rerunOverrideStatus:
-                      default: false
                       description: |-
                         Allow override of exit status with the tempest re-run feature.
                         When activated, the original return value of the tempest run will be
