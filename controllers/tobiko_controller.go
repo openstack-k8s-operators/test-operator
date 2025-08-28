@@ -389,6 +389,11 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	envVars["TOBIKO_DEBUG_MODE"] = env.SetValue(r.GetDefaultBool(instance.Spec.Debug))
 	// Prepare env vars - end
 
+	if instance.Spec.Patch != (testv1beta1.PatchType{}) {
+		envVars["TOBIKO_PATCH_REPOSITORY"] = env.SetValue(instance.Spec.Patch.Repository)
+		envVars["TOBIKO_PATCH_REFSPEC"] = env.SetValue(instance.Spec.Patch.Refspec)
+	}
+
 	// Prepare custom data
 	customData := make(map[string]string)
 	customData["tobiko.conf"] = instance.Spec.Config

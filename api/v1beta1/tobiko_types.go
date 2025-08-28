@@ -22,6 +22,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type PatchType struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Format=uri
+	// URL of the Tobiko repository that a patch will be applied to.
+	Repository string `json:"repository,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// Refspec specifies which change the remote repository should be
+	// checked out to.
+	Refspec string `json:"refspec,omitempty"`
+}
+
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
 	CommonOptions `json:",inline"`
@@ -68,6 +80,11 @@ type TobikoSpec struct {
 	// +kubebuilder:default:=""
 	// Tobiko version
 	Version string `json:"version"`
+
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// Optional patch to apply to the Tobiko repository.
+	Patch PatchType `json:"patch"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -154,6 +171,11 @@ type TobikoWorkflowSpec struct {
 	Version string `json:"version,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// Optional patch to apply to the Tobiko repository for this step.
+	Patch *PatchType `json:"patch,omitempty"`
+
+        // +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// tobiko.conf
 	Config string `json:"config,omitempty"`
