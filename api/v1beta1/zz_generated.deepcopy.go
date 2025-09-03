@@ -853,6 +853,11 @@ func (in *WorkflowTempestSpec) DeepCopyInto(out *WorkflowTempestSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.TimingDataUrl != nil {
+		in, out := &in.TimingDataUrl, &out.TimingDataUrl
+		*out = new(string)
+		**out = **in
+	}
 	if in.NetworkAttachments != nil {
 		in, out := &in.NetworkAttachments, &out.NetworkAttachments
 		*out = new([]string)
