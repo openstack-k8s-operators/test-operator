@@ -38,7 +38,7 @@ type AnsibleTestSpec struct {
 	// +kubebuilder:default:="dataplane-ansible-ssh-private-key-secret"
 	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
-	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
+	ComputeSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxLength=253
@@ -119,7 +119,7 @@ type AnsibleTestWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// ComputeSSHKeySecretName is the name of the k8s secret that contains an ssh key for computes.
 	// The key is mounted to ~/.ssh/id_ecdsa in the ansible pod
-	ComputesSSHKeySecretName string `json:"computeSSHKeySecretName"`
+	ComputeSSHKeySecretName string `json:"computeSSHKeySecretName"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxLength=253

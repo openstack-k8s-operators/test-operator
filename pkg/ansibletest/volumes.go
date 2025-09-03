@@ -85,7 +85,7 @@ func GetVolumes(
 		Name: "compute-ssh-secret",
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName:  workflowOverrideParams["ComputesSSHKeySecretName"],
+				SecretName:  workflowOverrideParams["ComputeSSHKeySecretName"],
 				DefaultMode: &privateKeyMode,
 			},
 		},
