@@ -274,7 +274,7 @@ func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 
 	// volumes workflow override
 	workflowOverrideParams["WorkloadSSHKeySecretName"] = instance.Spec.WorkloadSSHKeySecretName
-	workflowOverrideParams["ComputesSSHKeySecretName"] = instance.Spec.ComputesSSHKeySecretName
+	workflowOverrideParams["ComputeSSHKeySecretName"] = instance.Spec.ComputeSSHKeySecretName
 	workflowOverrideParams["ContainerImage"] = instance.Spec.ContainerImage
 
 	// bool
