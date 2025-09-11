@@ -26,11 +26,11 @@ spec:
           test operator.
         displayName: SELinux Level
         path: SELinuxLevel
-      - description: AnsibleCollections - extra ansible collections to instal in additionn
-          to the ones exist in the requirements.yaml
+      - description: AnsibleCollections - extra ansible collections to install in
+          addition to the ones existing in the requirements.yaml
         displayName: Ansible Collections
         path: ansibleCollections
-      - description: AnsibleExtraVars - string to pass parameters to ansible using
+      - description: AnsibleExtraVars - string to pass parameters to ansible
         displayName: Ansible Extra Vars
         path: ansibleExtraVars
       - description: AnsibleGitRepo - git repo to clone into container
@@ -42,8 +42,9 @@ spec:
       - description: AnsiblePlaybookPath - path to ansible playbook
         displayName: Ansible Playbook Path
         path: ansiblePlaybookPath
-      - description: AnsibleVarFiles - interface to create ansible var files Those
-          get added to the
+      - description: AnsibleVarFiles - interface to create ansible var files. Those
+          get added to the service config dir in /etc/test_operator/<file> and passed
+          to the ansible command using -e @/etc/test_operator/<file>
         displayName: Ansible Var Files
         path: ansibleVarFiles
       - description: BackoffLimit allows to define the maximum number of retried executions
@@ -122,8 +123,8 @@ spec:
           test operator.
         displayName: SELinux Level
         path: workflow[0].SELinuxLevel
-      - description: AnsibleCollections - extra ansible collections to instal in additionn
-          to the ones exist in the requirements.yaml
+      - description: AnsibleCollections - extra ansible collections to install in
+          addition to the ones existing in the requirements.yaml
         displayName: Ansible Collections
         path: workflow[0].ansibleCollections
       - description: AnsibleExtraVars - interface to pass parameters to ansible using
@@ -139,7 +140,7 @@ spec:
       - description: AnsiblePlaybookPath - path to ansible playbook
         displayName: Ansible Playbook Path
         path: workflow[0].ansiblePlaybookPath
-      - description: AnsibleVarFiles - interface to create ansible var files Those
+      - description: AnsibleVarFiles - interface to create ansible var files. Those
           get added to the service config dir in /etc/test_operator/<file> and passed
           to the ansible command using -e @/etc/test_operator/<file>
         displayName: Ansible Var Files
@@ -425,6 +426,15 @@ spec:
           extraRPMs in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
+      - description: Activate tempest re-run feature. When activated, tempest will
+          perform another run of the tests that failed during the first execution.
+        displayName: Rerun Failed Tests
+        path: rerunFailedTests
+      - description: Allow override of exit status with the tempest re-run feature.
+          When activated, the original return value of the tempest run will be overridden
+          with a result of the tempest run on the set of failed tests.
+        displayName: Rerun Override Status
+        path: rerunOverrideStatus
       - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: storageClass
@@ -489,7 +499,7 @@ spec:
       - description: Cloud that should be used for authentication
         displayName: Os Cloud
         path: tempestRun.extraImages[0].flavor.osCloud
-      - description: How many vcpus should be be allocated when this flavor is used
+      - description: How many vcpus should be allocated when this flavor is used
         displayName: Vcpus
         path: tempestRun.extraImages[0].flavor.vcpus
       - description: Timeout duration for an image to reach the active state after
@@ -603,7 +613,7 @@ spec:
           --retry-image
         displayName: Retry Image
         path: tempestconfRun.retryImage
-      - description: A content of accounts.yaml that is passed to tempest via --test-acounts
+      - description: A content of accounts.yaml that is passed to tempest via --test-accounts
         displayName: Test Accounts
         path: tempestconfRun.testAccounts
       - description: The content of this variable will be passed to discover-tempest-config
@@ -614,11 +624,16 @@ spec:
           --verbose
         displayName: Verbose
         path: tempestconfRun.verbose
+      - description: An URL pointing to an archive that contains the saved stestr
+          timing data. This data is used to optimize the tests order, which helps
+          to reduce the total Tempest execution time.
+        displayName: Timing Data Url
+        path: timingDataUrl
       - description: This value contains a toleration that is applied to pods spawned
           by the test pods that are spawned by the test-operator.
         displayName: Tolerations
         path: tolerations
-      - description: Workflow - can be used to specify a multiple executions of tempest
+      - description: Workflow - can be used to specify multiple executions of tempest
           with a different configuration in a single CR. Accepts a list of dictionaries
           where each member of the list accepts the same values as the Tempest CR
           does in the `spec`` section. Values specified using the workflow section
@@ -690,6 +705,15 @@ spec:
           in Tempest CR, or certain set of tobiko tests).'
         displayName: Privileged
         path: workflow[0].privileged
+      - description: Activate tempest re-run feature. When activated, tempest will
+          perform another run of the tests that failed during the first execution.
+        displayName: Rerun Failed Tests
+        path: workflow[0].rerunFailedTests
+      - description: Allow override of exit status with the tempest re-run feature.
+          When activated, the original return value of the tempest run will be overridden
+          with a result of the tempest run on the set of failed tests.
+        displayName: Rerun Override Status
+        path: workflow[0].rerunOverrideStatus
       - description: Name of a workflow step. The step name will be used for example
           to create a logs directory.
         displayName: Step Name
@@ -730,44 +754,44 @@ spec:
       - description: Extra images that should be downloaded inside the test pod and
           uploaded to openstack.
         displayName: Extra Images
-        path: workflow[0].tempestRun.extraImagesType
+        path: workflow[0].tempestRun.extraImages
       - description: ID that should be assigned to the newly created image
         displayName: ID
-        path: workflow[0].tempestRun.extraImagesType.ID
+        path: workflow[0].tempestRun.extraImages.ID
       - description: URL that points to a location where the image is located
         displayName: URL
-        path: workflow[0].tempestRun.extraImagesType.URL
+        path: workflow[0].tempestRun.extraImages.URL
       - description: Image container format
         displayName: Container Format
-        path: workflow[0].tempestRun.extraImagesType.containerFormat
+        path: workflow[0].tempestRun.extraImages.containerFormat
       - description: Image disk format
         displayName: Disk Format
-        path: workflow[0].tempestRun.extraImagesType.diskFormat
+        path: workflow[0].tempestRun.extraImages.diskFormat
       - description: ID that should be assigned to the newly created flavor
         displayName: ID
-        path: workflow[0].tempestRun.extraImagesType.flavor.ID
+        path: workflow[0].tempestRun.extraImages.flavor.ID
       - description: How much RAM should be allocated when this flavor is used
         displayName: RAM
-        path: workflow[0].tempestRun.extraImagesType.flavor.RAM
+        path: workflow[0].tempestRun.extraImages.flavor.RAM
       - description: How much disk space should be allocated when this flavor is used
         displayName: Disk
-        path: workflow[0].tempestRun.extraImagesType.flavor.disk
+        path: workflow[0].tempestRun.extraImages.flavor.disk
       - description: Name of the flavor that should be created
         displayName: Name
-        path: workflow[0].tempestRun.extraImagesType.flavor.name
+        path: workflow[0].tempestRun.extraImages.flavor.name
       - description: Cloud that should be used for authentication
         displayName: Os Cloud
-        path: workflow[0].tempestRun.extraImagesType.flavor.osCloud
-      - description: How many vcpus should be be allocated when this flavor is used
+        path: workflow[0].tempestRun.extraImages.flavor.osCloud
+      - description: How many vcpus should be allocated when this flavor is used
         displayName: Vcpus
-        path: workflow[0].tempestRun.extraImagesType.flavor.vcpus
+        path: workflow[0].tempestRun.extraImages.flavor.vcpus
       - description: Timeout duration for an image to reach the active state after
           its creation
         displayName: Image Creation Timeout
-        path: workflow[0].tempestRun.extraImagesType.imageCreationTimeout
+        path: workflow[0].tempestRun.extraImages.imageCreationTimeout
       - description: Cloud that should be used for authentication
         displayName: Os Cloud
-        path: workflow[0].tempestRun.extraImagesType.osCloud
+        path: workflow[0].tempestRun.extraImages.osCloud
       - description: A list URLs that point to RPMs that should be downloaded and
           installed inside the tempest test pod.
         displayName: Extra RPMs
@@ -872,7 +896,7 @@ spec:
           --retry-image
         displayName: Retry Image
         path: workflow[0].tempestconfRun.retryImage
-      - description: A content of accounts.yaml that is passed to tempest via --test-acounts
+      - description: A content of accounts.yaml that is passed to tempest via --test-accounts
         displayName: Test Accounts
         path: workflow[0].tempestconfRun.testAccounts
       - description: The content of this variable will be passed to discover-tempest-config
@@ -883,6 +907,11 @@ spec:
           --verbose
         displayName: Verbose
         path: workflow[0].tempestconfRun.verbose
+      - description: An URL pointing to an archive that contains the saved stestr
+          timing data. This data is used to optimize the tests order, which helps
+          to reduce the total Tempest execution time.
+        displayName: Timing Data Url
+        path: workflow[0].timingDataUrl
       - description: This value contains a toleration that is applied to pods spawned
           by the test pods that are spawned by the test-operator.
         displayName: Tolerations
@@ -945,7 +974,7 @@ spec:
         displayName: Node Selector
         path: nodeSelector
       - description: Number of processes/workers used to run tobiko tests - value
-          0 results in automatic decission
+          0 results in automatic decision
         displayName: Num Processes
         path: numProcesses
       - description: By default test-operator executes the test-pods sequentially
@@ -953,6 +982,9 @@ spec:
           in parallel set this option to true.
         displayName: Parallel
         path: parallel
+      - description: Optional patch to apply to the Tobiko repository.
+        displayName: Patch
+        path: patch
       - description: Boolean specifying whether tobiko tests create new resources
           or re-use those previously created
         displayName: Prevent Create
@@ -1041,6 +1073,9 @@ spec:
           0 results in automatic decission
         displayName: Num Processes
         path: workflow[0].numProcesses
+      - description: Optional patch to apply to the Tobiko repository for this step.
+        displayName: Patch
+        path: workflow[0].patch
       - description: Boolean specifying whether tobiko tests create new resources
           or re-use those previously created
         displayName: Prevent Create
