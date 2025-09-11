@@ -93,17 +93,19 @@ func GetVolumes(
 
 	volumes = append(volumes, keysVolume)
 
-	keysVolume = corev1.Volume{
-		Name: "workload-ssh-secret",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  workflowOverrideParams["WorkloadSSHKeySecretName"],
-				DefaultMode: &privateKeyMode,
+	if workflowOverrideParams["WorkloadSSHKeySecretName"] != "" {
+		keysVolume = corev1.Volume{
+			Name: "workload-ssh-secret",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  workflowOverrideParams["WorkloadSSHKeySecretName"],
+					DefaultMode: &privateKeyMode,
+				},
 			},
-		},
-	}
+		}
 
-	volumes = append(volumes, keysVolume)
+		volumes = append(volumes, keysVolume)
+	}
 
 	for _, exv := range instance.Spec.ExtraMounts {
 		for _, vol := range exv.Propagate(svc) {
