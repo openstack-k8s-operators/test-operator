@@ -38,7 +38,20 @@ spec:
   # or certain set tobiko tests).
   #
   # privileged: false
-
+  #
+  # extraMounts:
+  #   - extraVol:
+  #     - propagation:
+  #         - Tempest
+  #       extraVolType: ConfigMap
+  #       volumes:
+  #         - name: configmap-volume
+  #           configMap:
+  #             name: configmap-name
+  #       mounts:
+  #         - name: configmap-volume
+  #           mountPath: "/etc/config"
+  #
   # resources:
   #   limits:
   #     cpu: 8000m

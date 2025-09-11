@@ -22,6 +22,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// WARNING: This parameter will be deprecated!
+// Please use ExtraMounts parameter instead!
 type ExtraConfigmapsMounts struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Required
@@ -84,6 +86,8 @@ type CommonOptions struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting inside the pod
+	// WARNING: This parameter will be deprecated!
+	// Please use ExtraMounts parameter instead!
 	ExtraConfigmapsMounts []ExtraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -172,6 +176,8 @@ type WorkflowCommonOptions struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
 	// Extra configmaps for mounting inside the pod
+	// WARNING: This parameter will be deprecated!
+	// Please use ExtraMounts parameter instead!
 	ExtraConfigmapsMounts *[]ExtraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
 	// +kubebuilder:validation:Optional

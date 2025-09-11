@@ -18,6 +18,19 @@ spec:
   # of tobiko tests).
   #
   # privileged: false
+  #
+  # extraMounts:
+  #   - extraVol:
+  #     - propagation:
+  #         - Tobiko
+  #       extraVolType: ConfigMap
+  #       volumes:
+  #         - name: configmap-volume
+  #           configMap:
+  #             name: configmap-name
+  #       mounts:
+  #         - name: configmap-volume
+  #           mountPath: "/etc/config"
 
   # storageClass: local-storage
   # parallel: false
