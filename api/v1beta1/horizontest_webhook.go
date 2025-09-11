@@ -63,6 +63,11 @@ func (r *HorizonTest) ValidateCreate() (admission.Warnings, error) {
 
 	var allWarnings admission.Warnings
 
+	if len(r.Spec.ExtraConfigmapsMounts) > 0 {
+		allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be" +
+			"deprecated! Please use ExtraMounts parameter instead!")
+	}
+
 	if r.Spec.Privileged {
 		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "HorizonTest"))
 	}
