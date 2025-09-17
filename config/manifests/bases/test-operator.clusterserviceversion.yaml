@@ -56,7 +56,7 @@ spec:
       - description: ComputeSSHKeySecretName is the name of the k8s secret that contains
           an ssh key for computes. The key is mounted to ~/.ssh/id_ecdsa in the ansible
           pod
-        displayName: Computes SSHKey Secret Name
+        displayName: Compute SSHKey Secret Name
         path: computeSSHKeySecretName
       - description: A URL of a container image that should be used by the test-operator
           for tests execution.
@@ -65,7 +65,8 @@ spec:
       - description: Run ansible playbook with -vvvv
         displayName: Debug
         path: debug
-      - description: Extra configmaps for mounting inside the pod
+      - description: 'Extra configmaps for mounting inside the pod WARNING: This parameter
+          will be deprecated! Please use ExtraMounts parameter instead!'
         displayName: Extra Configmaps Mounts
         path: extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -154,7 +155,7 @@ spec:
       - description: ComputeSSHKeySecretName is the name of the k8s secret that contains
           an ssh key for computes. The key is mounted to ~/.ssh/id_ecdsa in the ansible
           pod
-        displayName: Computes SSHKey Secret Name
+        displayName: Compute SSHKey Secret Name
         path: workflow[0].computeSSHKeySecretName
       - description: A URL of a container image that should be used by the test-operator
           for tests execution.
@@ -163,7 +164,8 @@ spec:
       - description: Run ansible playbook with -vvvv
         displayName: Debug
         path: workflow[0].debug
-      - description: Extra configmaps for mounting inside the pod
+      - description: 'Extra configmaps for mounting inside the pod WARNING: This parameter
+          will be deprecated! Please use ExtraMounts parameter instead!'
         displayName: Extra Configmaps Mounts
         path: workflow[0].extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -247,7 +249,8 @@ spec:
       - description: DashboardUrl is the URL of the Horizon dashboard.
         displayName: Dashboard Url
         path: dashboardUrl
-      - description: Extra configmaps for mounting inside the pod
+      - description: 'Extra configmaps for mounting inside the pod WARNING: This parameter
+          will be deprecated! Please use ExtraMounts parameter instead!'
         displayName: Extra Configmaps Mounts
         path: extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -375,7 +378,8 @@ spec:
           This allows the user to debug any potential troubles with `oc rsh`.
         displayName: Debug
         path: debug
-      - description: Extra configmaps for mounting inside the pod
+      - description: 'Extra configmaps for mounting inside the pod WARNING: This parameter
+          will be deprecated! Please use ExtraMounts parameter instead!'
         displayName: Extra Configmaps Mounts
         path: extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -664,7 +668,8 @@ spec:
           for tests execution.
         displayName: Container Image
         path: workflow[0].containerImage
-      - description: Extra configmaps for mounting inside the pod
+      - description: 'Extra configmaps for mounting inside the pod WARNING: This parameter
+          will be deprecated! Please use ExtraMounts parameter instead!'
         displayName: Extra Configmaps Mounts
         path: workflow[0].extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -938,7 +943,8 @@ spec:
           for tests execution.
         displayName: Container Image
         path: containerImage
-      - description: Extra configmaps for mounting inside the pod
+      - description: 'Extra configmaps for mounting inside the pod WARNING: This parameter
+          will be deprecated! Please use ExtraMounts parameter instead!'
         displayName: Extra Configmaps Mounts
         path: extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
@@ -1043,7 +1049,8 @@ spec:
           for tests execution.
         displayName: Container Image
         path: workflow[0].containerImage
-      - description: Extra configmaps for mounting inside the pod
+      - description: 'Extra configmaps for mounting inside the pod WARNING: This parameter
+          will be deprecated! Please use ExtraMounts parameter instead!'
         displayName: Extra Configmaps Mounts
         path: workflow[0].extraConfigmapsMounts
       - description: Path within the container at which the volume should be mounted.
