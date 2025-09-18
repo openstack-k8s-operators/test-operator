@@ -219,14 +219,16 @@ func GetVolumeMounts(
 		volumeMounts = append(volumeMounts, caCertVolumeMount)
 	}
 
-	workloadSSHKeyMount := corev1.VolumeMount{
-		Name:      "workload-ssh-secret",
-		MountPath: "/var/lib/ansible/test_keypair.key",
-		SubPath:   "ssh-privatekey",
-		ReadOnly:  true,
-	}
+	if instance.Spec.WorkloadSSHKeySecretName != "" {
+		workloadSSHKeyMount := corev1.VolumeMount{
+			Name:      "workload-ssh-secret",
+			MountPath: "/var/lib/ansible/test_keypair.key",
+			SubPath:   "ssh-privatekey",
+			ReadOnly:  true,
+		}
 
-	volumeMounts = append(volumeMounts, workloadSSHKeyMount)
+		volumeMounts = append(volumeMounts, workloadSSHKeyMount)
+	}
 
 	computeSSHKeyMount := corev1.VolumeMount{
 		Name:      "compute-ssh-secret",
