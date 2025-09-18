@@ -17,7 +17,6 @@ func Pod(
 	logsPVCName string,
 	mountCerts bool,
 	envVars map[string]env.Setter,
-	workflowOverrideParams map[string]string,
 	externalWorkflowCounter int,
 	containerImage string,
 ) *corev1.Pod {
@@ -60,7 +59,6 @@ func Pod(
 				logsPVCName,
 				mountCerts,
 				AnsibleTestPropagation,
-				workflowOverrideParams,
 				externalWorkflowCounter,
 			),
 		},

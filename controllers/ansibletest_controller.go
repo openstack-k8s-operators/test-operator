@@ -206,9 +206,9 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	podName := r.GetPodName(instance, nextWorkflowStep)
-	envVars, workflowOverrideParams := r.PrepareAnsibleEnv(instance)
+	envVars := r.PrepareAnsibleEnv(instance)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
-	containerImage, err := r.GetContainerImage(ctx, workflowOverrideParams["ContainerImage"], instance)
+	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -220,7 +220,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		logsPVCName,
 		mountCerts,
 		envVars,
-		workflowOverrideParams,
 		nextWorkflowStep,
 		containerImage,
 	)
@@ -267,23 +266,12 @@ func (r *AnsibleTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // This function prepares env variables for a single workflow step.
 func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	instance *testv1beta1.AnsibleTest,
-) (map[string]env.Setter, map[string]string) {
+) map[string]env.Setter {
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
-	workflowOverrideParams := make(map[string]string)
-
-	// volumes workflow override
-	workflowOverrideParams["WorkloadSSHKeySecretName"] = instance.Spec.WorkloadSSHKeySecretName
-	workflowOverrideParams["ComputeSSHKeySecretName"] = instance.Spec.ComputeSSHKeySecretName
-	workflowOverrideParams["ContainerImage"] = instance.Spec.ContainerImage
 
 	// bool
-	debug := instance.Spec.Debug
-	if debug {
-		envVars["POD_DEBUG"] = env.SetValue("true")
-	} else {
-		envVars["POD_DEBUG"] = env.SetValue("false")
-	}
+	envVars["POD_DEBUG"] = env.SetValue(strconv.FormatBool(instance.Spec.Debug))
 
 	// strings
 	envVars["POD_ANSIBLE_EXTRA_VARS"] = env.SetValue(instance.Spec.AnsibleExtraVars)
@@ -293,5 +281,5 @@ func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	envVars["POD_ANSIBLE_PLAYBOOK"] = env.SetValue(instance.Spec.AnsiblePlaybookPath)
 	envVars["POD_INSTALL_COLLECTIONS"] = env.SetValue(instance.Spec.AnsibleCollections)
 
-	return envVars, workflowOverrideParams
+	return envVars
 }
