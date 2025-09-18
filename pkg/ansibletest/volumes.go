@@ -13,7 +13,6 @@ func GetVolumes(
 	logsPVCName string,
 	mountCerts bool,
 	svc []storage.PropagationType,
-	workflowOverrideParams map[string]string,
 	externalWorkflowCounter int,
 ) []corev1.Volume {
 
@@ -85,7 +84,7 @@ func GetVolumes(
 		Name: "compute-ssh-secret",
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName:  workflowOverrideParams["ComputeSSHKeySecretName"],
+				SecretName:  instance.Spec.ComputeSSHKeySecretName,
 				DefaultMode: &privateKeyMode,
 			},
 		},
@@ -93,12 +92,12 @@ func GetVolumes(
 
 	volumes = append(volumes, keysVolume)
 
-	if workflowOverrideParams["WorkloadSSHKeySecretName"] != "" {
+	if instance.Spec.WorkloadSSHKeySecretName != "" {
 		keysVolume = corev1.Volume{
 			Name: "workload-ssh-secret",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  workflowOverrideParams["WorkloadSSHKeySecretName"],
+					SecretName:  instance.Spec.WorkloadSSHKeySecretName,
 					DefaultMode: &privateKeyMode,
 				},
 			},
@@ -219,14 +218,16 @@ func GetVolumeMounts(
 		volumeMounts = append(volumeMounts, caCertVolumeMount)
 	}
 
-	workloadSSHKeyMount := corev1.VolumeMount{
-		Name:      "workload-ssh-secret",
-		MountPath: "/var/lib/ansible/test_keypair.key",
-		SubPath:   "ssh-privatekey",
-		ReadOnly:  true,
-	}
+	if instance.Spec.WorkloadSSHKeySecretName != "" {
+		workloadSSHKeyMount := corev1.VolumeMount{
+			Name:      "workload-ssh-secret",
+			MountPath: "/var/lib/ansible/test_keypair.key",
+			SubPath:   "ssh-privatekey",
+			ReadOnly:  true,
+		}
 
-	volumeMounts = append(volumeMounts, workloadSSHKeyMount)
+		volumeMounts = append(volumeMounts, workloadSSHKeyMount)
+	}
 
 	computeSSHKeyMount := corev1.VolumeMount{
 		Name:      "compute-ssh-secret",
