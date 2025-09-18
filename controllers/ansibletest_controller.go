@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package controllers implements the Kubernetes controllers for managing test framework operations
 package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// AnsibleTestReconciler reconciles an AnsibleTest object
 type AnsibleTestReconciler struct {
 	Reconciler
 }
@@ -175,7 +176,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
 
 	default:
-		return ctrl.Result{}, errors.New(ErrReceivedUnexpectedAction)
+		return ctrl.Result{}, ErrReceivedUnexpectedAction
 	}
 
 	serviceLabels := map[string]string{
@@ -264,7 +265,7 @@ func (r *AnsibleTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// This function prepares env variables for a single workflow step.
+// PrepareAnsibleEnv prepares environment variables for a single workflow step
 func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	instance *testv1beta1.AnsibleTest,
 ) (map[string]env.Setter, map[string]string) {

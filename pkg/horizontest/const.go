@@ -1,3 +1,4 @@
+// Package horizontest provides constants and utilities for horizon testing functionality
 package horizontest
 
 import (
@@ -5,6 +6,7 @@ import (
 )
 
 const (
+	// ServiceName is the name of the horizon test service
 	ServiceName = "horizontest"
 
 	// HorizonTest is the definition of the horizontest group
