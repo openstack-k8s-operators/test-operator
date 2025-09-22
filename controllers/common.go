@@ -44,17 +44,22 @@ const (
 )
 
 const (
-	ErrNetworkAttachments       = "not all pods have interfaces with ips as configured in NetworkAttachments: %s"
-	ErrReceivedUnexpectedAction = "unexpected action received"
-	ErrConfirmLockOwnership     = "can not confirm ownership of %s lock"
+	// ErrConfirmLockOwnership is the error message for lock ownership confirmation failures
+	ErrConfirmLockOwnership = "can not confirm ownership of %s lock"
 )
 
 const (
-	InfoWaitingOnPod      = "Waiting on either pod to finish or release of the lock."
-	InfoTestingCompleted  = "Testing completed. All pods spawned by the test-operator finished."
-	InfoCreatingFirstPod  = "Creating first test pod (workflow step %d)."
-	InfoCreatingNextPod   = "Creating next test pod (workflow step %d)."
+	// InfoWaitingOnPod is the info message when waiting for pod completion or lock release
+	InfoWaitingOnPod = "Waiting on either pod to finish or release of the lock."
+	// InfoTestingCompleted is the info message when all testing is completed
+	InfoTestingCompleted = "Testing completed. All pods spawned by the test-operator finished."
+	// InfoCreatingFirstPod is the info message when creating the first test pod
+	InfoCreatingFirstPod = "Creating first test pod (workflow step %d)."
+	// InfoCreatingNextPod is the info message when creating subsequent test pods
+	InfoCreatingNextPod = "Creating next test pod (workflow step %d)."
+	// InfoCanNotAcquireLock is the info message when lock acquisition fails
 	InfoCanNotAcquireLock = "Can not acquire %s lock."
+	// InfoCanNotReleaseLock is the info message when lock release fails
 	InfoCanNotReleaseLock = "Can not release %s lock."
 )
 
@@ -64,6 +69,22 @@ const (
 	RequeueAfterValue = time.Second * 60
 )
 
+// Static error definitions for test operations
+var (
+	// ErrReceivedUnexpectedAction indicates that an unexpected action was received.
+	ErrReceivedUnexpectedAction = errors.New("unexpected action received")
+
+	// ErrFailedToDeleteLock indicates that the test-operator-lock could not be deleted.
+	ErrFailedToDeleteLock = errors.New("failed to delete test-operator-lock")
+
+	// ErrNetworkAttachmentsMismatch indicates that not all pods have interfaces with IPs as configured in NetworkAttachments.
+	ErrNetworkAttachmentsMismatch = errors.New("not all pods have interfaces with ips as configured in NetworkAttachments")
+
+	// ErrLockFieldMissing indicates that a required field is missing in the lock config map.
+	ErrLockFieldMissing = errors.New("field is missing in the config map")
+)
+
+// Reconciler provides common functionality for all test framework reconcilers
 type Reconciler struct {
 	Client  client.Client
 	Kclient kubernetes.Interface
@@ -232,6 +253,7 @@ func (r *Reconciler) GetLastPod(
 	return maxPod, nil
 }
 
+// GetEnvVarsConfigMapName returns the name of the environment variables ConfigMap for the given instance and workflow step
 func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {
 	if _, ok := instance.(*v1beta1.Tobiko); ok {
 		return "not-implemented"
@@ -242,6 +264,7 @@ func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {
 	return "not-implemented"
 }
 
+// GetCustomDataConfigMapName returns the name of the custom data ConfigMap for the given instance and workflow step
 func GetCustomDataConfigMapName(instance interface{}, workflowStepNum int) string {
 	if _, ok := instance.(*v1beta1.Tobiko); ok {
 		return "not-implemented"
@@ -252,6 +275,7 @@ func GetCustomDataConfigMapName(instance interface{}, workflowStepNum int) strin
 	return "not-implemented"
 }
 
+// GetContainerImage returns the container image to use for the given instance, either from the provided parameter or from configuration
 func (r *Reconciler) GetContainerImage(
 	ctx context.Context,
 	containerImage string,
@@ -347,6 +371,7 @@ func (r *Reconciler) GetContainerImage(
 	return "", nil
 }
 
+// GetPodName returns the name of the pod for the given instance and workflow step
 func (r *Reconciler) GetPodName(instance interface{}, workflowStepNum int) string {
 	if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
 		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
@@ -388,6 +413,7 @@ func (r *Reconciler) GetPodName(instance interface{}, workflowStepNum int) strin
 	return workflowStepNameInvalid
 }
 
+// GetPVCLogsName returns the name of the PVC for logs for the given instance and workflow step
 func (r *Reconciler) GetPVCLogsName(instance client.Object, workflowStepNum int) string {
 	instanceName := instance.GetName()
 	instanceCreationTimestamp := instance.GetCreationTimestamp().Format(time.UnixDate)
@@ -397,6 +423,7 @@ func (r *Reconciler) GetPVCLogsName(instance client.Object, workflowStepNum int)
 	return instanceName + "-" + workflowStep + "-" + nameSuffix
 }
 
+// CheckSecretExists checks if a secret with the given name exists in the same namespace as the instance
 func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Object, secretName string) bool {
 	secret := &corev1.Secret{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: secretName}, secret)
@@ -407,6 +434,7 @@ func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Obje
 	return true
 }
 
+// GetStringHash returns a hash of the given string with the specified length
 func GetStringHash(str string, hashLength int) string {
 	hash := sha256.New()
 	hash.Write([]byte(str))
@@ -416,6 +444,7 @@ func GetStringHash(str string, hashLength int) string {
 	return hashString[:hashLength]
 }
 
+// EnsureLogsPVCExists ensures that a PVC for logs exists for the given instance and workflow step
 func (r *Reconciler) EnsureLogsPVCExists(
 	ctx context.Context,
 	instance client.Object,
@@ -464,18 +493,22 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	return ctrlResult, nil
 }
 
+// GetClient returns the Kubernetes client
 func (r *Reconciler) GetClient() client.Client {
 	return r.Client
 }
 
+// GetLogger returns the logger instance
 func (r *Reconciler) GetLogger() logr.Logger {
 	return r.Log
 }
 
+// GetScheme returns the runtime scheme
 func (r *Reconciler) GetScheme() *runtime.Scheme {
 	return r.Scheme
 }
 
+// GetDefaultBool returns the string representation of a boolean value with default handling
 func (r *Reconciler) GetDefaultBool(variable bool) string {
 	if variable {
 		return "true"
@@ -484,6 +517,7 @@ func (r *Reconciler) GetDefaultBool(variable bool) string {
 	return "false"
 }
 
+// GetDefaultInt returns the string representation of an integer value with optional default value
 func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) string {
 	if variable != 0 {
 		return strconv.FormatInt(variable, 10)
@@ -494,6 +528,7 @@ func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) strin
 	return ""
 }
 
+// GetLockInfo retrieves the lock information ConfigMap for the given instance
 func (r *Reconciler) GetLockInfo(ctx context.Context, instance client.Object) (*corev1.ConfigMap, error) {
 	cm := &corev1.ConfigMap{}
 	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: testOperatorLockName}
@@ -503,17 +538,13 @@ func (r *Reconciler) GetLockInfo(ctx context.Context, instance client.Object) (*
 	}
 
 	if _, ok := cm.Data[testOperatorLockOnwerField]; !ok {
-		errMsg := fmt.Sprintf(
-			"%s field is missing in the %s config map",
-			testOperatorLockOnwerField, testOperatorLockName,
-		)
-
-		return cm, errors.New(errMsg)
+		return cm, fmt.Errorf("%w: %s field is missing in the %s config map", ErrLockFieldMissing, testOperatorLockOnwerField, testOperatorLockName)
 	}
 
 	return cm, err
 }
 
+// AcquireLock attempts to acquire a lock for the given instance to prevent concurrent operations
 func (r *Reconciler) AcquireLock(
 	ctx context.Context,
 	instance client.Object,
@@ -552,6 +583,7 @@ func (r *Reconciler) AcquireLock(
 	return false, err
 }
 
+// ReleaseLock releases the lock for the given instance
 func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (bool, error) {
 	Log := r.GetLogger()
 
@@ -585,9 +617,10 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 		Log.Info("Waiting for the test-operator-lock deletion!")
 	}
 
-	return false, errors.New("failed to delete test-operator-lock")
+	return false, ErrFailedToDeleteLock
 }
 
+// PodExists checks if a pod exists for the given instance and workflow step
 func (r *Reconciler) PodExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
 	pod := &corev1.Pod{}
 	podName := r.GetPodName(instance, workflowStepNum)
@@ -606,6 +639,7 @@ func (r *Reconciler) setConfigOverwrite(customData map[string]string, configOver
 	}
 }
 
+// GetCommonRbacRules returns the common RBAC rules for test operations, with optional privileged permissions
 func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
 	rbacPolicyRule := rbacv1.PolicyRule{
 		APIGroups:     []string{"security.openshift.io"},
@@ -623,7 +657,7 @@ func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{rbacPolicyRule}
 }
 
-// Some frameworks like (e.g., Tobiko and Horizon) require password value to be
+// EnsureCloudsConfigMapExists ensures that frameworks like Tobiko and Horizon have password values
 // present in clouds.yaml. This code ensures that we set a default value of
 // 12345678 when password value is missing in the clouds.yaml
 func EnsureCloudsConfigMapExists(
@@ -692,6 +726,7 @@ func EnsureCloudsConfigMapExists(
 	return ctrl.Result{}, nil
 }
 
+// IsEmpty checks if the provided value is empty based on its type
 func IsEmpty(value interface{}) bool {
 	if v, ok := value.(reflect.Value); ok {
 		switch v.Kind() {
