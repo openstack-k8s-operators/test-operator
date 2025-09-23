@@ -77,8 +77,14 @@ spec:
                   This allows the user to debug any potential troubles with `oc rsh`.
                 type: boolean
               extraConfigmapsMounts:
-                description: Extra configmaps for mounting inside the pod
+                description: |-
+                  Extra configmaps for mounting inside the pod
+                  WARNING: This parameter will be deprecated!
+                  Please use ExtraMounts parameter instead!
                 items:
+                  description: |-
+                    WARNING: This parameter will be deprecated!
+                    Please use ExtraMounts parameter instead!
                   properties:
                     mountPath:
                       description: Path within the container at which the volume should
@@ -1440,8 +1446,14 @@ spec:
                         by the test-operator for tests execution.
                       type: string
                     extraConfigmapsMounts:
-                      description: Extra configmaps for mounting inside the pod
+                      description: |-
+                        Extra configmaps for mounting inside the pod
+                        WARNING: This parameter will be deprecated!
+                        Please use ExtraMounts parameter instead!
                       items:
+                        description: |-
+                          WARNING: This parameter will be deprecated!
+                          Please use ExtraMounts parameter instead!
                         properties:
                           mountPath:
                             description: Path within the container at which the volume
