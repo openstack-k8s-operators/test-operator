@@ -33,6 +33,9 @@ spec:
       - description: AnsibleExtraVars - string to pass parameters to ansible
         displayName: Ansible Extra Vars
         path: ansibleExtraVars
+      - description: AnsibleGitBranch - git branch to check out in the cloned repo
+        displayName: Ansible Git Branch
+        path: ansibleGitBranch
       - description: AnsibleGitRepo - git repo to clone into container
         displayName: Ansible Git Repo
         path: ansibleGitRepo
@@ -132,6 +135,9 @@ spec:
           -e
         displayName: Ansible Extra Vars
         path: workflow[0].ansibleExtraVars
+      - description: AnsibleGitBranch - git branch to check out in the cloned repo
+        displayName: Ansible Git Branch
+        path: workflow[0].ansibleGitBranch
       - description: AnsibleGitRepo - git repo to clone into container
         displayName: Ansible Git Repo
         path: workflow[0].ansibleGitRepo

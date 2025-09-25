@@ -279,6 +279,7 @@ func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	envVars["POD_ANSIBLE_FILE_EXTRA_VARS"] = env.SetValue(instance.Spec.AnsibleVarFiles)
 	envVars["POD_ANSIBLE_INVENTORY"] = env.SetValue(instance.Spec.AnsibleInventory)
 	envVars["POD_ANSIBLE_GIT_REPO"] = env.SetValue(instance.Spec.AnsibleGitRepo)
+	envVars["POD_ANSIBLE_GIT_BRANCH"] = env.SetValue(instance.Spec.AnsibleGitBranch)
 	envVars["POD_ANSIBLE_PLAYBOOK"] = env.SetValue(instance.Spec.AnsiblePlaybookPath)
 	envVars["POD_INSTALL_COLLECTIONS"] = env.SetValue(instance.Spec.AnsibleCollections)
 
