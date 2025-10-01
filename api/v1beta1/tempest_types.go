@@ -522,3 +522,8 @@ func (instance Tempest) RbacNamespace() string {
 func (instance Tempest) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *Tempest) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}
