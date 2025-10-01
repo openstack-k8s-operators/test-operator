@@ -31,8 +31,8 @@ import (
 
 const (
 	podNameStepInfix         = "-s"
-	envVarsConfigMapinfix    = "-env-vars-s"
-	customDataConfigMapinfix = "-custom-data-s"
+	envVarsConfigMapInfix    = "-env-vars-s"
+	customDataConfigMapInfix = "-custom-data-s"
 	workflowStepNumInvalid   = -1
 	workflowStepNameInvalid  = "no-name"
 	workflowStepLabel        = "workflowStep"
@@ -40,7 +40,7 @@ const (
 	operatorNameLabel        = "operator"
 
 	testOperatorLockName       = "test-operator-lock"
-	testOperatorLockOnwerField = "owner"
+	testOperatorLockOwnerField = "owner"
 )
 
 const (
@@ -180,7 +180,7 @@ func (r *Reconciler) NextAction(
 			return Failure, workflowStepIdx, err
 		}
 
-		// If the last pod is not in Failed or Succeded state -> Wait
+		// If the last pod is not in Failed or Succeeded state -> Wait
 		lastPodFinished := lastPod.Status.Phase == corev1.PodFailed || lastPod.Status.Phase == corev1.PodSucceeded
 		if !lastPodFinished {
 			return Wait, workflowStepIdx, nil
@@ -193,7 +193,7 @@ func (r *Reconciler) NextAction(
 			return CreateNextPod, workflowStepIdx, nil
 		}
 
-		// Otherwise if the pod is in Failed or Succeded stated and it IS the
+		// Otherwise if the pod is in Failed or Succeeded state and it IS the
 		// last pod -> EndTesting
 		if lastPodFinished && isLastPodIndex(workflowStepIdx, workflowLength) {
 			return EndTesting, workflowStepIdx, nil
@@ -258,7 +258,7 @@ func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {
 	if _, ok := instance.(*v1beta1.Tobiko); ok {
 		return "not-implemented"
 	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		return typedInstance.Name + envVarsConfigMapinfix + strconv.Itoa(workflowStepNum)
+		return typedInstance.Name + envVarsConfigMapInfix + strconv.Itoa(workflowStepNum)
 	}
 
 	return "not-implemented"
@@ -269,7 +269,7 @@ func GetCustomDataConfigMapName(instance interface{}, workflowStepNum int) strin
 	if _, ok := instance.(*v1beta1.Tobiko); ok {
 		return "not-implemented"
 	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		return typedInstance.Name + customDataConfigMapinfix + strconv.Itoa(workflowStepNum)
+		return typedInstance.Name + customDataConfigMapInfix + strconv.Itoa(workflowStepNum)
 	}
 
 	return "not-implemented"
@@ -537,8 +537,8 @@ func (r *Reconciler) GetLockInfo(ctx context.Context, instance client.Object) (*
 		return cm, err
 	}
 
-	if _, ok := cm.Data[testOperatorLockOnwerField]; !ok {
-		return cm, fmt.Errorf("%w: %s field is missing in the %s config map", ErrLockFieldMissing, testOperatorLockOnwerField, testOperatorLockName)
+	if _, ok := cm.Data[testOperatorLockOwnerField]; !ok {
+		return cm, fmt.Errorf("%w: %s field is missing in the %s config map", ErrLockFieldMissing, testOperatorLockOwnerField, testOperatorLockName)
 	}
 
 	return cm, err
@@ -561,7 +561,7 @@ func (r *Reconciler) AcquireLock(
 	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
 		cm := map[string]string{
-			testOperatorLockOnwerField: instanceGUID,
+			testOperatorLockOwnerField: instanceGUID,
 		}
 
 		cms := []util.Template{
@@ -576,7 +576,7 @@ func (r *Reconciler) AcquireLock(
 		return err == nil, err
 	}
 
-	if cm.Data[testOperatorLockOnwerField] == instanceGUID {
+	if cm.Data[testOperatorLockOwnerField] == instanceGUID {
 		return true, nil
 	}
 
@@ -595,7 +595,7 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	}
 
 	// Lock can be only released by the instance that created it
-	if cm.Data[testOperatorLockOnwerField] != string(instance.GetUID()) {
+	if cm.Data[testOperatorLockOwnerField] != string(instance.GetUID()) {
 		return false, nil
 	}
 
@@ -604,7 +604,7 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 		return false, nil
 	}
 
-	// Check whether the lock was successfully deleted deleted
+	// Check whether the lock was successfully deleted
 	maxRetries := 10
 	lockDeletionSleepPeriod := 10
 	for i := 0; i < maxRetries; i++ {

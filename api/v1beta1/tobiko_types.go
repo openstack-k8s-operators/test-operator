@@ -128,7 +128,7 @@ type TobikoSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
-	// A parameter  that contains a workflow definition.
+	// A parameter that contains a workflow definition.
 	Workflow []TobikoWorkflowSpec `json:"workflow,omitempty"`
 }
 
@@ -156,7 +156,7 @@ type TobikoWorkflowSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// Number of processes/workers used to run tobiko tests - value 0 results in automatic decission
+	// Number of processes/workers used to run tobiko tests - value 0 results in automatic decision
 	NumProcesses *uint8 `json:"numProcesses,omitempty"`
 
 	// +kubebuilder:validation:Optional
@@ -175,7 +175,7 @@ type TobikoWorkflowSpec struct {
 	// Optional patch to apply to the Tobiko repository for this step.
 	Patch *PatchType `json:"patch,omitempty"`
 
-        // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// tobiko.conf
 	Config string `json:"config,omitempty"`

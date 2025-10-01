@@ -89,7 +89,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		instance.Status.Conditions = condition.Conditions{}
 	}
 
-	// Save a copy of the condtions so that we can restore the LastTransitionTime
+	// Save a copy of the conditions so that we can restore the LastTransitionTime
 	// when a condition's state doesn't change.
 	savedConditions := instance.Status.Conditions.DeepCopy()
 
@@ -172,7 +172,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	case CreateNextPod:
 		// Confirm that we still hold the lock. This needs to be checked in order
 		// to prevent situation when somebody / something deleted the lock and it
-		// got claimedy by another instance.
+		// got claimed by another instance.
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
 		if !lockAcquired {
 			Log.Error(err, ErrConfirmLockOwnership, testOperatorLockName)

@@ -87,7 +87,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		instance.Status.Conditions = condition.Conditions{}
 	}
 
-	// Save a copy of the condtions so that we can restore the LastTransitionTime
+	// Save a copy of the conditions so that we can restore the LastTransitionTime
 	// when a condition's state doesn't change.
 	savedConditions := instance.Status.Conditions.DeepCopy()
 
@@ -227,7 +227,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
 	if err != nil {
-		// Creation of the ansibleTests pod was not successfull.
+		// Creation of the ansibleTests pod was not successful.
 		// Release the lock and allow other controllers to spawn
 		// a pod.
 		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {

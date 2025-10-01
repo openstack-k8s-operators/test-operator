@@ -35,7 +35,7 @@ spec:
   # default capabilities on top of capabilities that are usually needed by the test
   # pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed for
   # certain test-operator functionalities to work properly (e.g.: extraRPMs in Tempest CR,
-  # or certain set tobiko tests).
+  # or a certain set of tobiko tests).
   #
   # privileged: false
   #
@@ -86,16 +86,16 @@ spec:
     # extraImages:
     #   - URL: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
     #     name: cirros-0.6.2-test-operator
-    #       flavor:
-    #         name: cirros-0.6.2-test-operator-flavor
-    #         RAM: 512
-    #         disk: 20
-    #         vcpus: 1
+    #     flavor:
+    #       name: cirros-0.6.2-test-operator-flavor
+    #       RAM: 512
+    #       disk: 20
+    #       vcpus: 1
 
     # extraRPMs:
     # ----------
     # A list of URLs that point to RPMs that should be installed before
-    # the execution of tempest. WARNING! This parameter has no efect when used
+    # the execution of tempest. WARNING! This parameter has no effect when used
     # in combination with externalPlugin parameter.
     # extraRPMs:
     #   - https://cbs.centos.org/kojifiles/packages/python-sshtunnel/0.4.0/12.el9s/noarch/python3-sshtunnel-0.4.0-12.el9s.noarch.rpm
@@ -124,7 +124,7 @@ spec:
     # as /etc/test_operator/deployer_input.yaml
     # deployerInput: |
     #   [section]
-    #   value1 = exmaple_value2
+    #   value1 = example_value2
     #   value2 = example_value2
 
     # The following text will be mounted to the tempest pod
@@ -167,11 +167,11 @@ spec:
   # tempestconfRun sections.
   #
   # workflow:
-  #   - stepName: firstStep
+  #   - stepName: first-step
   #     tempestRun:
   #       includeList: |
   #         tempest.api.*
-  #   - stepName: secondStep
+  #   - stepName: second-step
   #     tempestRun:
   #       includeList: |
   #         neutron_tempest_plugin.*
