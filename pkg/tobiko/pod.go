@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Pod - prepare pod to run Tempest tests
+// Pod - prepare pod to run Tobiko tests
 func Pod(
 	instance *testv1beta1.Tobiko,
 	labels map[string]string,
