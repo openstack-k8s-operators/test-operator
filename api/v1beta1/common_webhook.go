@@ -2,7 +2,7 @@ package v1beta1
 
 const (
 	// ErrPrivilegedModeRequired
-	ErrPrivilegedModeRequired = "%s.Spec.Privileged is requied in order to successfully " +
+	ErrPrivilegedModeRequired = "%s.Spec.Privileged is required in order to successfully " +
 		"execute tests with the provided configuration."
 
 	// ErrDebug

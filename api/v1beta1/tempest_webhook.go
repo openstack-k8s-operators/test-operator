@@ -132,13 +132,13 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 
 		if workflowStep.ExtraConfigmapsMounts != nil {
 			allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be" +
-				"deprecated! Please use ExtraMounts parameter instead!")
+				" deprecated! Please use ExtraMounts parameter instead!")
 		}
 	}
 
 	if len(r.Spec.ExtraConfigmapsMounts) > 0 {
 		allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be" +
-			"deprecated! Please use ExtraMounts parameter instead!")
+			" deprecated! Please use ExtraMounts parameter instead!")
 	}
 
 	if r.Spec.Privileged {

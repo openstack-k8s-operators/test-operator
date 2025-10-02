@@ -61,4 +61,4 @@ HorizonTest Image
 
   An image that installs horizon directly from the source code downloaded from
   `x/horizon <https://opendev.org/openstack/horizon.git>`_ repository and prepares
-  the enviroment for selenium tests to run
+  the environment for selenium tests to run

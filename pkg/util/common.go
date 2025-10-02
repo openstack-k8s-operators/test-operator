@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	// TestOperatorCloudsConfigMapName is name of the ConfigMap which contains
+	// TestOperatorCloudsConfigMapName is the name of the ConfigMap which contains
 	// modified clouds.yaml obtained from openstack-config ConfigMap. The modified
 	// CM is needed by some test frameworks (e.g., HorizonTest and Tobiko)
 	TestOperatorCloudsConfigMapName = "test-operator-clouds-config"
@@ -46,7 +46,7 @@ func GetSecurityContext(
 
 	if privileged {
 		// Sometimes we require the test pods run sudo to be able to install
-		// additional packages or run commands with elevated priveleges (e.g.,
+		// additional packages or run commands with elevated privileges (e.g.,
 		// tcpdump in case of Tobiko)
 		securityContext.RunAsNonRoot = &falseVar
 

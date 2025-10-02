@@ -264,7 +264,7 @@ associated with the test run.
 
 .. note::
    Please keep in mind that all resources created by the test operator are bound
-   to the CR. Once you remove the CR (e.g.::code:`tempest/tempest-tests`), then
+   to the CR. Once you remove the CR (e.g. :code:`tempest/tempest-tests`), then
    you also remove the PV containing the logs.
 
 If you want to retrieve the logs from the pv, you can follow these steps:

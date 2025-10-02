@@ -92,7 +92,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		instance.Status.Conditions = condition.Conditions{}
 	}
 
-	// Save a copy of the condtions so that we can restore the LastTransitionTime
+	// Save a copy of the conditions so that we can restore the LastTransitionTime
 	// when a condition's state doesn't change.
 	savedConditions := instance.Status.Conditions.DeepCopy()
 
@@ -310,7 +310,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
 	if err != nil {
-		// Creation of the tempest pod was not successfull.
+		// Creation of the tempest pod was not successful.
 		// Release the lock and allow other controllers to spawn
 		// a pod.
 		if lockReleased, lockErr := r.ReleaseLock(ctx, instance); lockReleased {
@@ -560,7 +560,7 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 }
 
 // Create ConfigMaps:
-//   - %-env-vars contians all the environment variables that are needed for
+//   - %-env-vars contains all the environment variables that are needed for
 //     execution of the tempest container
 //   - %-config contains all the files that are needed for the execution of
 //     the tempest container
