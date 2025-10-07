@@ -63,6 +63,7 @@ func (r *TobikoReconciler) GetLogger(ctx context.Context) logr.Logger {
 func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
 	Log := r.GetLogger(ctx)
 
+	// Fetch the Tobiko instance
 	instance := &testv1beta1.Tobiko{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
