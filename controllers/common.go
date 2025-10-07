@@ -508,15 +508,6 @@ func (r *Reconciler) GetScheme() *runtime.Scheme {
 	return r.Scheme
 }
 
-// GetDefaultBool returns the string representation of a boolean value with default handling
-func (r *Reconciler) GetDefaultBool(variable bool) string {
-	if variable {
-		return "true"
-	}
-
-	return "false"
-}
-
 // GetDefaultInt returns the string representation of an integer value with optional default value
 func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) string {
 	if variable != 0 {

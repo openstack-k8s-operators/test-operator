@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
@@ -289,7 +290,7 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 	envVars["PASSWORD"] = env.SetValue("horizontest")
 	envVars["FLAVOR_NAME"] = env.SetValue("m1.tiny")
 	envVars["HORIZON_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
-	envVars["HORIZONTEST_DEBUG_MODE"] = env.SetValue(r.GetDefaultBool(instance.Spec.Debug))
+	envVars["HORIZONTEST_DEBUG_MODE"] = env.SetValue(strconv.FormatBool(instance.Spec.Debug))
 	envVars["EXTRA_FLAG"] = env.SetValue(instance.Spec.ExtraFlag)
 	envVars["PROJECT_NAME_XPATH"] = env.SetValue(instance.Spec.ProjectNameXpath)
 

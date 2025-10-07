@@ -443,7 +443,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	}
 
 	for key, value := range tempestBoolEnvVars {
-		envVars[key] = r.GetDefaultBool(value)
+		envVars[key] = strconv.FormatBool(value)
 	}
 
 	// Int
@@ -534,7 +534,7 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 	}
 
 	for key, value := range tempestconfBoolEnvVars {
-		envVars[key] = r.GetDefaultBool(value)
+		envVars[key] = strconv.FormatBool(value)
 	}
 
 	tempestconfIntEnvVars := map[string]int64{
@@ -591,10 +591,10 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	r.setTempestconfConfigVars(envVars, customData, instance)
 	r.setConfigOverwrite(customData, instance.Spec.ConfigOverwrite)
 
-	envVars["TEMPEST_DEBUG_MODE"] = r.GetDefaultBool(instance.Spec.Debug)
-	envVars["TEMPEST_CLEANUP"] = r.GetDefaultBool(instance.Spec.Cleanup)
-	envVars["TEMPEST_RERUN_FAILED_TESTS"] = r.GetDefaultBool(instance.Spec.RerunFailedTests)
-	envVars["TEMPEST_RERUN_OVERRIDE_STATUS"] = r.GetDefaultBool(instance.Spec.RerunOverrideStatus)
+	envVars["TEMPEST_DEBUG_MODE"] = strconv.FormatBool(instance.Spec.Debug)
+	envVars["TEMPEST_CLEANUP"] = strconv.FormatBool(instance.Spec.Cleanup)
+	envVars["TEMPEST_RERUN_FAILED_TESTS"] = strconv.FormatBool(instance.Spec.RerunFailedTests)
+	envVars["TEMPEST_RERUN_OVERRIDE_STATUS"] = strconv.FormatBool(instance.Spec.RerunOverrideStatus)
 	envVars["TEMPEST_TIMING_DATA_URL"] = instance.Spec.TimingDataUrl
 
 	cms := []util.Template{

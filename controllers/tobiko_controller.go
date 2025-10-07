@@ -384,7 +384,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	}
 
 	envVars["TOBIKO_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
-	envVars["TOBIKO_DEBUG_MODE"] = env.SetValue(r.GetDefaultBool(instance.Spec.Debug))
+	envVars["TOBIKO_DEBUG_MODE"] = env.SetValue(strconv.FormatBool(instance.Spec.Debug))
 	// Prepare env vars - end
 
 	if instance.Spec.Patch != (testv1beta1.PatchType{}) {
