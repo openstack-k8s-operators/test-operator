@@ -10,8 +10,8 @@ spec:
       subPath: this.conf
       mountPath: /var/conf
   debug: true
-  storageClass: "local-storage"
-  workloadSSHKeySecretName: 'open-ssh-keys'
+  storageClass: local-storage
+  workloadSSHKeySecretName: open-ssh-keys
   ansiblePlaybookPath: playbooks/my_playbook.yaml
   ansibleGitRepo: https://github.com/myansible/project
   # containerImage:
@@ -29,7 +29,7 @@ spec:
   # pods with allowedPrivilegedEscalation: true and the default capabilities on
   # top of capabilities that are usually needed by the test pods (NET_ADMIN, NET_RAW).
   # This parameter is deemed insecure but it is needed for certain test-operator
-  # functionalities to work properly (e.g.: extraRPMs in Tempest CR, or certain set
+  # functionalities to work properly (e.g.: extraRPMs in Tempest CR, or a certain set
   # of tobiko tests).
   #
   # privileged: false
@@ -55,7 +55,7 @@ spec:
   #     cpu: 2000m
   #     memory: 2Gi
   workflow:
-    - stepName: beststep
+    - stepName: best-step
       ansibleExtraVars: ' -e manual_run=false '
-    - stepName: laststep
+    - stepName: last-step
       ansibleExtraVars: ' -e manual_run=false '

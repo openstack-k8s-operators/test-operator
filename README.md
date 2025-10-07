@@ -38,7 +38,7 @@ pre-commit install --install-hooks
 2. Execute pre-commit checks
 
 ```bash
-pre-commit run --show-diff-on-failure --color=always --all-files --show-diff-on-failure --verbose
+pre-commit run --show-diff-on-failure --color=always --all-files --verbose
 ```
 
 ### Test It Out

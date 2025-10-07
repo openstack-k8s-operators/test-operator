@@ -14,13 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-This file contains an extension of the Tempest CR. Ultimately it is a copy of
-tempest_types.go that removes all default values for each config options. This
-is necessary to be able to detect when the user explicitly sets a value in the
-`workflow` section.
-*/
-
 package v1beta1
 
 import (
@@ -151,7 +144,7 @@ type ExternalPluginType struct {
 }
 
 // TempestRunSpec - is used to configure execution of tempest. Please refer to
-// Please refer to https://docs.openstack.org/tempest/latest/ for the further
+// Please refer to https://docs.openstack.org/tempest/latest/ for further
 // explanation of the CLI parameters.
 type TempestRunSpec struct {
 	// +kubebuilder:validation:Optional
@@ -225,7 +218,7 @@ type TempestRunSpec struct {
 }
 
 // TempestconfRunSpec - is used to configure execution of discover-tempest-config
-// Please refer to https://docs.opendev.org/openinfra/python-tempestconf for the
+// Please refer to https://docs.opendev.org/openinfra/python-tempestconf for
 // further explanation of the CLI parameters.
 type TempestconfRunSpec struct {
 	// +kubebuilder:validation:Optional
@@ -483,7 +476,7 @@ type TempestSpec struct {
 	// Workflow - can be used to specify multiple executions of tempest with
 	// a different configuration in a single CR. Accepts a list of dictionaries
 	// where each member of the list accepts the same values as the Tempest CR
-	// does in the `spec`` section. Values specified using the workflow section have
+	// does in the `spec` section. Values specified using the workflow section have
 	// a higher precedence than the values specified higher in the Tempest CR
 	// hierarchy.
 	Workflow []WorkflowTempestSpec `json:"workflow,omitempty"`

@@ -58,7 +58,7 @@ type AnsibleTestSpec struct {
 	// +kubebuilder:validation:Format=string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// AnsibleGitBranch - git branch to check out in the cloned repo
-	AnsibleGitBranch string `json:"ansibleGitBranch,omitEmpty"`
+	AnsibleGitBranch string `json:"ansibleGitBranch,omitempty"`
 
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -144,7 +144,7 @@ type AnsibleTestWorkflowSpec struct {
 	// +kubebuilder:validation:Format=string
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// AnsibleGitBranch - git branch to check out in the cloned repo
-	AnsibleGitBranch string `json:"ansibleGitBranch,omitEmpty"`
+	AnsibleGitBranch string `json:"ansibleGitBranch,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

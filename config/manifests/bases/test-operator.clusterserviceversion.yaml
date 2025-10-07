@@ -108,7 +108,7 @@ spec:
           default capabilities on top of capabilities that are usually needed by the
           test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it
           is needed for certain test-operator functionalities to work properly (e.g.:
-          extraRPMs in Tempest CR, or certain set of tobiko tests).'
+          extraRPMs in Tempest CR, or a certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: StorageClass used to create any test-operator related PVCs.
@@ -200,7 +200,7 @@ spec:
           capabilities on top of capabilities that are usually needed by the test
           pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
           for certain test-operator functionalities to work properly (e.g.: extraRPMs
-          in Tempest CR, or certain set of tobiko tests).'
+          in Tempest CR, or a certain set of tobiko tests).'
         displayName: Privileged
         path: workflow[0].privileged
       - description: Name of a workflow step. The step name will be used for example
@@ -321,7 +321,7 @@ spec:
           default capabilities on top of capabilities that are usually needed by the
           test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it
           is needed for certain test-operator functionalities to work properly (e.g.:
-          extraRPMs in Tempest CR, or certain set of tobiko tests).'
+          extraRPMs in Tempest CR, or a certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: ProjectName is the name of the OpenStack project for Horizon
@@ -433,7 +433,7 @@ spec:
           default capabilities on top of capabilities that are usually needed by the
           test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it
           is needed for certain test-operator functionalities to work properly (e.g.:
-          extraRPMs in Tempest CR, or certain set of tobiko tests).'
+          extraRPMs in Tempest CR, or a certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: Activate tempest re-run feature. When activated, tempest will
@@ -646,7 +646,7 @@ spec:
       - description: Workflow - can be used to specify multiple executions of tempest
           with a different configuration in a single CR. Accepts a list of dictionaries
           where each member of the list accepts the same values as the Tempest CR
-          does in the `spec`` section. Values specified using the workflow section
+          does in the `spec` section. Values specified using the workflow section
           have a higher precedence than the values specified higher in the Tempest
           CR hierarchy.
         displayName: Workflow
@@ -713,7 +713,7 @@ spec:
           capabilities on top of capabilities that are usually needed by the test
           pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
           for certain test-operator functionalities to work properly (e.g.: extraRPMs
-          in Tempest CR, or certain set of tobiko tests).'
+          in Tempest CR, or a certain set of tobiko tests).'
         displayName: Privileged
         path: workflow[0].privileged
       - description: Activate tempest re-run feature. When activated, tempest will
@@ -803,7 +803,7 @@ spec:
       - description: Cloud that should be used for authentication
         displayName: Os Cloud
         path: workflow[0].tempestRun.extraImages.osCloud
-      - description: A list URLs that point to RPMs that should be downloaded and
+      - description: A list of URLs that point to RPMs that should be downloaded and
           installed inside the tempest test pod.
         displayName: Extra RPMs
         path: workflow[0].tempestRun.extraRPMs
@@ -1010,7 +1010,7 @@ spec:
           default capabilities on top of capabilities that are usually needed by the
           test pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it
           is needed for certain test-operator functionalities to work properly (e.g.:
-          extraRPMs in Tempest CR, or certain set of tobiko tests).'
+          extraRPMs in Tempest CR, or a certain set of tobiko tests).'
         displayName: Privileged
         path: privileged
       - description: Public Key
@@ -1033,7 +1033,7 @@ spec:
       - description: Tobiko version
         displayName: Version
         path: version
-      - description: A parameter  that contains a workflow definition.
+      - description: A parameter that contains a workflow definition.
         displayName: Workflow
         path: workflow
         x-descriptors:
@@ -1083,7 +1083,7 @@ spec:
         displayName: Node Selector
         path: workflow[0].nodeSelector
       - description: Number of processes/workers used to run tobiko tests - value
-          0 results in automatic decission
+          0 results in automatic decision
         displayName: Num Processes
         path: workflow[0].numProcesses
       - description: Optional patch to apply to the Tobiko repository for this step.
@@ -1101,7 +1101,7 @@ spec:
           capabilities on top of capabilities that are usually needed by the test
           pods (NET_ADMIN, NET_RAW). This parameter is deemed insecure but it is needed
           for certain test-operator functionalities to work properly (e.g.: extraRPMs
-          in Tempest CR, or certain set of tobiko tests).'
+          in Tempest CR, or a certain set of tobiko tests).'
         displayName: Privileged
         path: workflow[0].privileged
       - description: Public Key

@@ -14,12 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+This file contains an extension of the Tempest CR. Ultimately it is a copy of
+tempest_types.go that removes all default values for each config options. This
+is necessary to be able to detect when the user explicitly sets a value in the
+`workflow` section.
+*/
+
 package v1beta1
 
 import corev1 "k8s.io/api/core/v1"
 
-// TempestRunSpec - is used to configure execution of tempest. Please refer to
-// Please refer to https://docs.openstack.org/tempest/latest/ for the further
+// WorkflowTempestRunSpec - is used to configure execution of tempest.
+// Please refer to https://docs.openstack.org/tempest/latest/ for further
 // explanation of the CLI parameters.
 type WorkflowTempestRunSpec struct {
 	// +kubebuilder:validation:Optional
@@ -75,7 +82,7 @@ type WorkflowTempestRunSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// A list URLs that point to RPMs that should be downloaded and installed
+	// A list of URLs that point to RPMs that should be downloaded and installed
 	// inside the tempest test pod.
 	ExtraRPMs *[]string `json:"extraRPMs,omitempty"`
 
@@ -86,8 +93,8 @@ type WorkflowTempestRunSpec struct {
 	ExtraImages *[]ExtraImagesType `json:"extraImages,omitempty"`
 }
 
-// TempestconfRunSpec - is used to configure execution of discover-tempest-config
-// Please refer to https://docs.opendev.org/openinfra/python-tempestconf for the
+// WorkflowTempestconfRunSpec - is used to configure execution of discover-tempest-config
+// Please refer to https://docs.opendev.org/openinfra/python-tempestconf for
 // further explanation of the CLI parameters.
 type WorkflowTempestconfRunSpec struct {
 	// +kubebuilder:validation:Optional
