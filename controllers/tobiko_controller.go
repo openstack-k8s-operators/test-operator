@@ -304,9 +304,9 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	// Prepare Tobiko env vars
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, nextWorkflowStep)
-	podName := r.GetPodName(instance, nextWorkflowStep)
+	podName := GetPodName(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
-	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	containerImage, err := r.GetContainerImage(ctx, instance)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -367,7 +367,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
 	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetPodName(instance, workflowStepNum))
+	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(GetPodName(instance, workflowStepNum))
 
 	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
 	envVars["TOBIKO_VERSION"] = env.SetValue(instance.Spec.Version)

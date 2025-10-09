@@ -288,9 +288,9 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	customDataConfigMapName := GetCustomDataConfigMapName(instance, nextWorkflowStep)
 	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, nextWorkflowStep)
-	podName := r.GetPodName(instance, nextWorkflowStep)
+	podName := GetPodName(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
-	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	containerImage, err := r.GetContainerImage(ctx, instance)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -465,7 +465,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		envVars["TEMPEST_EXTERNAL_PLUGIN_REFSPEC"] += externalPluginDictionary.ChangeRefspec + ","
 	}
 
-	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetPodName(instance, workflowStepNum)
+	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = GetPodName(instance, workflowStepNum)
 
 	extraImages := tRun.ExtraImages
 	for _, extraImageDict := range extraImages {
@@ -619,4 +619,14 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	}
 
 	return configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
+}
+
+// GetEnvVarsConfigMapName returns the name of the environment variables ConfigMap for the given instance and workflow step
+func GetEnvVarsConfigMapName(instance *testv1beta1.Tempest, workflowStepNum int) string {
+	return instance.Name + envVarsConfigMapInfix + strconv.Itoa(workflowStepNum)
+}
+
+// GetCustomDataConfigMapName returns the name of the custom data ConfigMap for the given instance and workflow step
+func GetCustomDataConfigMapName(instance *testv1beta1.Tempest, workflowStepNum int) string {
+	return instance.Name + customDataConfigMapInfix + strconv.Itoa(workflowStepNum)
 }
