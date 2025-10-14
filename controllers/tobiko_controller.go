@@ -306,7 +306,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, nextWorkflowStep)
 	podName := r.GetPodName(instance, nextWorkflowStep)
 	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
-	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	containerImage, err := r.GetContainerImage(ctx, instance)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
