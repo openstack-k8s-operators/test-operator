@@ -215,7 +215,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	envVars := r.PrepareHorizonTestEnvVars(instance)
 	podName := r.GetPodName(instance, 0)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
-	containerImage, err := r.GetContainerImage(ctx, instance.Spec.ContainerImage, instance)
+	containerImage, err := r.GetContainerImage(ctx, instance)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
