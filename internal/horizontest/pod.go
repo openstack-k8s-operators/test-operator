@@ -36,7 +36,7 @@ func Pod(
 		PodRunAsUser,
 		instance.Spec.SELinuxLevel,
 		instance.Spec.Tolerations,
-		GetVolumeMounts(mountCerts, mountKubeconfig, HorizonTestPropagation, instance),
+		GetVolumeMounts(instance, mountCerts, mountKubeconfig, HorizonTestPropagation),
 		GetVolumes(instance, logsPVCName, mountCerts, mountKubeconfig, HorizonTestPropagation),
 	)
 }

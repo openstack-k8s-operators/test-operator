@@ -38,7 +38,7 @@ func Pod(
 		PodRunAsUser,
 		instance.Spec.SELinuxLevel,
 		instance.Spec.Tolerations,
-		GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig, TobikoPropagation, instance),
+		GetVolumeMounts(instance, mountCerts, mountKeys, mountKubeconfig, TobikoPropagation),
 		GetVolumes(instance, logsPVCName, mountCerts, mountKeys, mountKubeconfig, TobikoPropagation),
 	)
 }

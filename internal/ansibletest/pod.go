@@ -36,7 +36,7 @@ func Pod(
 		PodRunAsUser,
 		instance.Spec.SELinuxLevel,
 		instance.Spec.Tolerations,
-		GetVolumeMounts(mountCerts, AnsibleTestPropagation, instance, externalWorkflowCounter),
+		GetVolumeMounts(instance, mountCerts, AnsibleTestPropagation, externalWorkflowCounter),
 		GetVolumes(instance, logsPVCName, mountCerts, AnsibleTestPropagation, externalWorkflowCounter),
 	)
 }

@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// GetVolumes -
+// GetVolumes - returns a list of volumes for the test pod
 func GetVolumes(
 	instance *testv1beta1.HorizonTest,
 	logsPVCName string,
@@ -16,222 +16,62 @@ func GetVolumes(
 	svc []storage.PropagationType,
 ) []corev1.Volume {
 
-	var scriptsVolumeDefaultMode int32 = 0755
-	var scriptsVolumeConfidentialMode int32 = 0420
-	var tlsCertificateMode int32 = 0444
-	var publicInfoMode int32 = 0744
+	horizonTestConfig := "horizontest-config"
 
 	volumes := []corev1.Volume{
-		{
-			Name: "horizontest-config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &scriptsVolumeDefaultMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "horizontest-config",
-					},
-				},
-			},
-		},
-		{
-			Name: util.TestOperatorCloudsConfigMapName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &scriptsVolumeConfidentialMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: util.TestOperatorCloudsConfigMapName,
-					},
-				},
-			},
-		},
-		{
-			Name: "openstack-config-secret",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: &tlsCertificateMode,
-					SecretName:  "openstack-config-secret",
-				},
-			},
-		},
-		{
-			Name: "test-operator-logs",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: logsPVCName,
-					ReadOnly:  false,
-				},
-			},
-		},
-		{
-			Name: util.TestOperatorEphemeralVolumeNameWorkdir,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
-			Name: util.TestOperatorEphemeralVolumeNameTmp,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
+		util.CreateConfigMapVolume(horizonTestConfig, instance.Name+horizonTestConfig, util.ScriptsVolumeDefaultMode),
+		util.CreateOpenstackConfigMapVolume(util.TestOperatorCloudsConfigMapName),
+		util.CreateOpenstackConfigSecretVolume(),
+		util.CreateLogsPVCVolume(logsPVCName),
+		util.CreateWorkdirVolume(),
+		util.CreateTmpVolume(),
 	}
 
 	if mountCerts {
-		caCertsVolume := corev1.Volume{
-			Name: "ca-certs",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: &scriptsVolumeConfidentialMode,
-					SecretName:  "combined-ca-bundle",
-				},
-			},
-		}
-
-		volumes = append(volumes, caCertsVolume)
+		volumes = util.AppendCACertsVolume(volumes)
 	}
 
 	if mountKubeconfig {
-		kubeconfigVolume := corev1.Volume{
-			Name: "kubeconfig",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: instance.Spec.KubeconfigSecretName,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "config",
-							Path: "config",
-						},
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, kubeconfigVolume)
+		volumes = util.AppendKubeconfigVolume(volumes, instance.Spec.KubeconfigSecretName)
 	}
 
-	for _, exv := range instance.Spec.ExtraMounts {
-		for _, vol := range exv.Propagate(svc) {
-			for _, v := range vol.Volumes {
-				volumeSource, _ := v.ToCoreVolumeSource()
-				convertedVolume := corev1.Volume{
-					Name:         v.Name,
-					VolumeSource: *volumeSource,
-				}
-				volumes = append(volumes, convertedVolume)
-			}
-		}
-	}
-
-	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
-		extraVol := corev1.Volume{
-			Name: vol.Name,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &publicInfoMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: vol.Name,
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, extraVol)
-	}
+	volumes = util.AppendExtraMountsVolumes(volumes, instance.Spec.ExtraMounts, svc)
+	volumes = util.AppendExtraConfigmapsVolumes(volumes, instance.Spec.ExtraConfigmapsMounts, util.PublicInfoMode)
 
 	return volumes
 }
 
-// GetVolumeMounts -
+// GetVolumeMounts - returns a list of volume mounts for the test container
 func GetVolumeMounts(
+	instance *testv1beta1.HorizonTest,
 	mountCerts bool,
 	mountKubeconfig bool,
 	svc []storage.PropagationType,
-	instance *testv1beta1.HorizonTest,
 ) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      util.TestOperatorEphemeralVolumeNameWorkdir,
-			MountPath: "/var/lib/horizontest",
-			ReadOnly:  false,
-		},
-		{
-			Name:      util.TestOperatorEphemeralVolumeNameTmp,
-			MountPath: "/tmp",
-			ReadOnly:  false,
-		},
-		{
-			Name:      "test-operator-logs",
-			MountPath: "/var/lib/horizontest/external_files",
-			ReadOnly:  false,
-		},
-		{
-			Name:      util.TestOperatorCloudsConfigMapName,
-			MountPath: "/var/lib/horizontest/.config/openstack/clouds.yaml",
-			SubPath:   "clouds.yaml",
-			ReadOnly:  true,
-		},
-		{
-			Name:      util.TestOperatorCloudsConfigMapName,
-			MountPath: "/etc/openstack/clouds.yaml",
-			SubPath:   "clouds.yaml",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "openstack-config-secret",
-			MountPath: "/etc/openstack/secure.yaml",
-			ReadOnly:  false,
-			SubPath:   "secure.yaml",
-		},
+		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/horizontest", false),
+		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameTmp, "/tmp", false),
+		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/horizontest/external_files", false),
+		util.CreateTestOperatorCloudsConfigVolumeMount("/var/lib/horizontest/.config/openstack/clouds.yaml"),
+		util.CreateTestOperatorCloudsConfigVolumeMount("/etc/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigSecretVolumeMount("/etc/openstack/secure.yaml"),
 	}
 
 	if mountCerts {
-		caCertVolumeMount := corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
-		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
-
-		caCertVolumeMount = corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/tls/certs/ca-bundle.trust.crt",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
-		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
+		volumeMounts = append(volumeMounts,
+			util.CreateCACertVolumeMount("/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"),
+			util.CreateCACertVolumeMount("/etc/pki/tls/certs/ca-bundle.trust.crt"),
+		)
 	}
 
 	if mountKubeconfig {
-		kubeconfigMount := corev1.VolumeMount{
-			Name:      "kubeconfig",
-			MountPath: "/var/lib/horizontest/.kube/config",
-			SubPath:   "config",
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, kubeconfigMount)
+		volumeMounts = append(volumeMounts,
+			util.CreateVolumeMountWithSubPath("kubeconfig", "/var/lib/horizontest/.kube/config", "config", true),
+		)
 	}
 
-	for _, exv := range instance.Spec.ExtraMounts {
-		for _, vol := range exv.Propagate(svc) {
-			volumeMounts = append(volumeMounts, vol.Mounts...)
-		}
-	}
-
-	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
-
-		extraMounts := corev1.VolumeMount{
-			Name:      vol.Name,
-			MountPath: vol.MountPath,
-			SubPath:   vol.SubPath,
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, extraMounts)
-	}
+	volumeMounts = util.AppendExtraMountsVolumeMounts(volumeMounts, instance.Spec.ExtraMounts, svc)
+	volumeMounts = util.AppendExtraConfigmapsVolumeMounts(volumeMounts, instance.Spec.ExtraConfigmapsMounts)
 
 	return volumeMounts
 }

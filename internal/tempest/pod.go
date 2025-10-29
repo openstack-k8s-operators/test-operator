@@ -55,7 +55,7 @@ func Pod(
 		PodRunAsUser,
 		instance.Spec.SELinuxLevel,
 		instance.Spec.Tolerations,
-		GetVolumeMounts(mountCerts, mountSSHKey, TempestPropagation, instance),
+		GetVolumeMounts(instance, mountCerts, mountSSHKey, TempestPropagation),
 		GetVolumes(instance, customDataConfigMapName, logsPVCName, mountCerts, mountSSHKey, TempestPropagation),
 	)
 }
