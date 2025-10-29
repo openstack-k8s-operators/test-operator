@@ -7,7 +7,7 @@ DOCS_DIR="./docs"
 
 python -m venv ${TEMP_VENV_ENV} && source ${TEMP_VENV_ENV}/bin/activate
 
-pip install -c ${UPPER_CONSTRAINTS_FILE:-https://releases.openstack.org/constraints/upper/master} -r ${DOCS_DIR}/requirements.txt
+pip install -c ${UPPER_CONSTRAINTS_FILE:-https://releases.openstack.org/constraints/upper/2025.2} -r ${DOCS_DIR}/requirements.txt
 
 # Run linter on docs, skipping antsibull-docs output as it isn't up to spec
 doc8 --config ${DOCS_DIR}/doc8.ini ${DOCS_DIR}/source
