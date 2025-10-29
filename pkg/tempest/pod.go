@@ -51,7 +51,7 @@ func Pod(
 					Image:           containerImage,
 					Args:            []string{},
 					Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
-					VolumeMounts:    GetVolumeMounts(mountCerts, mountSSHKey, TempestPropagation, instance),
+					VolumeMounts:    GetVolumeMounts(instance, mountCerts, mountSSHKey, TempestPropagation),
 					SecurityContext: &securityContext,
 					Resources:       instance.Spec.Resources,
 					EnvFrom: []corev1.EnvFromSource{

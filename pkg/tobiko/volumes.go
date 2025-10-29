@@ -7,7 +7,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// GetVolumes -
+const (
+	tobikoConfig     = "tobiko-config"
+	tobikoPrivateKey = "tobiko-private-key"
+	tobikoPublicKey  = "tobiko-public-key"
+)
+
+// GetVolumes - returns a list of volumes for the test pod
 func GetVolumes(
 	instance *testv1beta1.Tobiko,
 	logsPVCName string,
@@ -17,281 +23,76 @@ func GetVolumes(
 	svc []storage.PropagationType,
 ) []corev1.Volume {
 
-	var scriptsVolumeDefaultMode int32 = 0755
-	var scriptsVolumeConfidentialMode int32 = 0420
-	var privateKeyMode int32 = 0600
-	var publicKeyMode int32 = 0644
-	var tlsCertificateMode int32 = 0444
-	var publicInfoMode int32 = 0744
-
 	volumes := []corev1.Volume{
-		{
-			Name: "tobiko-config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &scriptsVolumeDefaultMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "tobiko-config",
-					},
-				},
-			},
-		},
-		{
-			Name: util.TestOperatorCloudsConfigMapName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &scriptsVolumeConfidentialMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: util.TestOperatorCloudsConfigMapName,
-					},
-				},
-			},
-		},
-		{
-			Name: "openstack-config-secret",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: &tlsCertificateMode,
-					SecretName:  "openstack-config-secret",
-				},
-			},
-		},
-		{
-			Name: "test-operator-logs",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: logsPVCName,
-					ReadOnly:  false,
-				},
-			},
-		},
-		{
-			Name: util.TestOperatorEphemeralVolumeNameWorkdir,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
-			Name: util.TestOperatorEphemeralVolumeNameTmp,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
+		util.CreateConfigMapVolume(tobikoConfig, instance.Name+tobikoConfig, util.ScriptsVolumeDefaultMode),
+		util.CreateOpenstackConfigMapVolume(util.TestOperatorCloudsConfigMapName),
+		util.CreateOpenstackConfigSecretVolume(),
+		util.CreateLogsPVCVolume(logsPVCName),
+		util.CreateWorkdirVolume(),
+		util.CreateTmpVolume(),
 	}
 
 	if mountCerts {
-		caCertsVolume := corev1.Volume{
-			Name: "ca-certs",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: &scriptsVolumeConfidentialMode,
-					SecretName:  "combined-ca-bundle",
-				},
-			},
-		}
-
-		volumes = append(volumes, caCertsVolume)
+		volumes = util.AppendCACertsVolume(volumes)
 	}
 
 	if mountKeys {
-		keysVolume := corev1.Volume{
-			Name: "tobiko-private-key",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &privateKeyMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "tobiko-private-key",
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, keysVolume)
-
-		keysVolume = corev1.Volume{
-			Name: "tobiko-public-key",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &publicKeyMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "tobiko-public-key",
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, keysVolume)
+		volumes = append(volumes,
+			util.CreateConfigMapVolume(tobikoPrivateKey, instance.Name+tobikoPrivateKey, util.PrivateKeyMode),
+			util.CreateConfigMapVolume(tobikoPublicKey, instance.Name+tobikoPublicKey, util.PublicKeyMode),
+		)
 	}
 
 	if mountKubeconfig {
-		kubeconfigVolume := corev1.Volume{
-			Name: "kubeconfig",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: instance.Spec.KubeconfigSecretName,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "config",
-							Path: "config",
-						},
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, kubeconfigVolume)
+		volumes = util.AppendKubeconfigVolume(volumes, instance.Spec.KubeconfigSecretName)
 	}
 
-	for _, exv := range instance.Spec.ExtraMounts {
-		for _, vol := range exv.Propagate(svc) {
-			for _, v := range vol.Volumes {
-				volumeSource, _ := v.ToCoreVolumeSource()
-				convertedVolume := corev1.Volume{
-					Name:         v.Name,
-					VolumeSource: *volumeSource,
-				}
-				volumes = append(volumes, convertedVolume)
-			}
-		}
-	}
-
-	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
-		extraVol := corev1.Volume{
-			Name: vol.Name,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &publicInfoMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: vol.Name,
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, extraVol)
-	}
+	volumes = util.AppendExtraMountsVolumes(volumes, instance.Spec.ExtraMounts, svc)
+	volumes = util.AppendExtraConfigmapsVolumes(volumes, instance.Spec.ExtraConfigmapsMounts, util.PublicInfoMode)
 
 	return volumes
 }
 
-// GetVolumeMounts -
+// GetVolumeMounts - returns a list of volume mounts for the test container
 func GetVolumeMounts(
+	instance *testv1beta1.Tobiko,
 	mountCerts bool,
 	mountKeys bool,
 	mountKubeconfig bool,
 	svc []storage.PropagationType,
-	instance *testv1beta1.Tobiko,
 ) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      util.TestOperatorEphemeralVolumeNameWorkdir,
-			MountPath: "/var/lib/tobiko",
-			ReadOnly:  false,
-		},
-		{
-			Name:      util.TestOperatorEphemeralVolumeNameTmp,
-			MountPath: "/tmp",
-			ReadOnly:  false,
-		},
-		{
-			Name:      "test-operator-logs",
-			MountPath: "/var/lib/tobiko/external_files",
-			ReadOnly:  false,
-		},
-		{
-			Name:      util.TestOperatorCloudsConfigMapName,
-			MountPath: "/var/lib/tobiko/.config/openstack/clouds.yaml",
-			SubPath:   "clouds.yaml",
-			ReadOnly:  true,
-		},
-		{
-			Name:      util.TestOperatorCloudsConfigMapName,
-			MountPath: "/etc/openstack/clouds.yaml",
-			SubPath:   "clouds.yaml",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "openstack-config-secret",
-			MountPath: "/etc/openstack/secure.yaml",
-			ReadOnly:  false,
-			SubPath:   "secure.yaml",
-		},
-		{
-			Name:      "tobiko-config",
-			MountPath: "/etc/tobiko/tobiko.conf",
-			SubPath:   "tobiko.conf",
-			ReadOnly:  false,
-		},
+		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/tobiko", false),
+		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameTmp, "/tmp", false),
+		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/tobiko/external_files", false),
+		util.CreateTestOperatorCloudsConfigVolumeMount("/var/lib/tobiko/.config/openstack/clouds.yaml"),
+		util.CreateTestOperatorCloudsConfigVolumeMount("/etc/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigSecretVolumeMount("/etc/openstack/secure.yaml"),
+		util.CreateVolumeMountWithSubPath(tobikoConfig, "/etc/tobiko/tobiko.conf", "tobiko.conf", false),
 	}
 
 	if mountCerts {
-		caCertVolumeMount := corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
-		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
-
-		caCertVolumeMount = corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/tls/certs/ca-bundle.trust.crt",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
-		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
+		volumeMounts = append(volumeMounts,
+			util.CreateCACertVolumeMount("/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"),
+			util.CreateCACertVolumeMount("/etc/pki/tls/certs/ca-bundle.trust.crt"),
+		)
 	}
 
 	if mountKeys {
-		keysMount := corev1.VolumeMount{
-			Name:      "tobiko-private-key",
-			MountPath: "/etc/test_operator/id_ecdsa",
-			SubPath:   "id_ecdsa",
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, keysMount)
-
-		keysMount = corev1.VolumeMount{
-			Name:      "tobiko-public-key",
-			MountPath: "/etc/test_operator/id_ecdsa.pub",
-			SubPath:   "id_ecdsa.pub",
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, keysMount)
+		volumeMounts = append(volumeMounts,
+			util.CreateVolumeMountWithSubPath(tobikoPrivateKey, "/etc/test_operator/id_ecdsa", "id_ecdsa", true),
+			util.CreateVolumeMountWithSubPath(tobikoPublicKey, "/etc/test_operator/id_ecdsa.pub", "id_ecdsa.pub", true),
+		)
 	}
 
 	if mountKubeconfig {
-		kubeconfigMount := corev1.VolumeMount{
-			Name:      "kubeconfig",
-			MountPath: "/var/lib/tobiko/.kube/config",
-			SubPath:   "config",
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, kubeconfigMount)
+		volumeMounts = append(volumeMounts,
+			util.CreateVolumeMountWithSubPath("kubeconfig", "/var/lib/tobiko/.kube/config", "config", true),
+		)
 	}
 
-	for _, exv := range instance.Spec.ExtraMounts {
-		for _, vol := range exv.Propagate(svc) {
-			volumeMounts = append(volumeMounts, vol.Mounts...)
-		}
-	}
-
-	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
-
-		extraMounts := corev1.VolumeMount{
-			Name:      vol.Name,
-			MountPath: vol.MountPath,
-			SubPath:   vol.SubPath,
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, extraMounts)
-	}
+	volumeMounts = util.AppendExtraMountsVolumeMounts(volumeMounts, instance.Spec.ExtraMounts, svc)
+	volumeMounts = util.AppendExtraConfigmapsVolumeMounts(volumeMounts, instance.Spec.ExtraConfigmapsMounts)
 
 	return volumeMounts
 }

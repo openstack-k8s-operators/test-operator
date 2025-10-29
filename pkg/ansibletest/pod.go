@@ -49,7 +49,7 @@ func Pod(
 					Image:           containerImage,
 					Args:            []string{},
 					Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
-					VolumeMounts:    GetVolumeMounts(mountCerts, AnsibleTestPropagation, instance, externalWorkflowCounter),
+					VolumeMounts:    GetVolumeMounts(instance, mountCerts, AnsibleTestPropagation, externalWorkflowCounter),
 					SecurityContext: &securityContext,
 					Resources:       instance.Spec.Resources,
 				},

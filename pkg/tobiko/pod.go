@@ -52,7 +52,7 @@ func Pod(
 					Image:           containerImage,
 					Args:            []string{},
 					Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
-					VolumeMounts:    GetVolumeMounts(mountCerts, mountKeys, mountKubeconfig, TobikoPropagation, instance),
+					VolumeMounts:    GetVolumeMounts(instance, mountCerts, mountKeys, mountKubeconfig, TobikoPropagation),
 					SecurityContext: &securityContext,
 					Resources:       instance.Spec.Resources,
 				},
