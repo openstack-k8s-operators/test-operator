@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"crypto/sha256"
@@ -15,7 +16,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
-	v1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -30,15 +30,13 @@ import (
 )
 
 const (
-	podNameStepInfix         = "-s"
-	envVarsConfigMapInfix    = "-env-vars-s"
-	customDataConfigMapInfix = "-custom-data-s"
-	workflowStepNumInvalid   = -1
-	workflowStepNameInvalid  = "no-name"
-	workflowStepLabel        = "workflowStep"
-	instanceNameLabel        = "instanceName"
-	operatorNameLabel        = "operator"
-
+	podNameStepInfix           = "-s"
+	envVarsConfigMapInfix      = "-env-vars-s"
+	customDataConfigMapInfix   = "-custom-data-s"
+	workflowStepNameInvalid    = "no-name"
+	workflowStepLabel          = "workflowStep"
+	instanceNameLabel          = "instanceName"
+	operatorNameLabel          = "operator"
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOwnerField = "owner"
 )
@@ -82,6 +80,15 @@ var (
 
 	// ErrLockFieldMissing indicates that a required field is missing in the lock config map.
 	ErrLockFieldMissing = errors.New("field is missing in the config map")
+
+	// ErrFieldExpectedStruct indicates attempting to access a field on a non-struct type.
+	ErrFieldExpectedStruct = errors.New("field cannot be accessed: expected struct")
+
+	// ErrFieldNilPointer indicates attempting to dereference a nil pointer.
+	ErrFieldNilPointer = errors.New("field cannot be accessed: nil pointer")
+
+	// ErrFieldNotFound indicates a field name does not exist on the struct.
+	ErrFieldNotFound = errors.New("field not found")
 )
 
 // Reconciler provides common functionality for all test framework reconcilers
@@ -253,164 +260,68 @@ func (r *Reconciler) GetLastPod(
 	return maxPod, nil
 }
 
-// GetEnvVarsConfigMapName returns the name of the environment variables ConfigMap for the given instance and workflow step
-func GetEnvVarsConfigMapName(instance interface{}, workflowStepNum int) string {
-	if _, ok := instance.(*v1beta1.Tobiko); ok {
-		return "not-implemented"
-	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		return typedInstance.Name + envVarsConfigMapInfix + strconv.Itoa(workflowStepNum)
-	}
-
-	return "not-implemented"
-}
-
-// GetCustomDataConfigMapName returns the name of the custom data ConfigMap for the given instance and workflow step
-func GetCustomDataConfigMapName(instance interface{}, workflowStepNum int) string {
-	if _, ok := instance.(*v1beta1.Tobiko); ok {
-		return "not-implemented"
-	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		return typedInstance.Name + customDataConfigMapInfix + strconv.Itoa(workflowStepNum)
-	}
-
-	return "not-implemented"
-}
-
 // GetContainerImage returns the container image to use for the given instance, either from the provided parameter or from configuration
 func (r *Reconciler) GetContainerImage(
 	ctx context.Context,
-	containerImage string,
 	instance interface{},
 ) (string, error) {
-	cm := &corev1.ConfigMap{}
-	testOperatorConfigMapName := "test-operator-config"
-	if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		if len(containerImage) > 0 {
-			return containerImage, nil
-		}
+	v := reflect.ValueOf(instance)
 
-		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		err := r.Client.Get(ctx, objectKey, cm)
-		if err != nil {
-			return "", err
-		}
-
-		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", ""), nil
-
-		}
-
-		if cmImage, exists := cm.Data["tempest-image"]; exists {
-			return cmImage, nil
-		}
-
-		return util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", ""), nil
-	} else if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
-		if len(containerImage) > 0 {
-			return containerImage, nil
-		}
-
-		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		err := r.Client.Get(ctx, objectKey, cm)
-		if err != nil {
-			return "", err
-		}
-
-		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", ""), nil
-
-		}
-
-		if cmImage, exists := cm.Data["tobiko-image"]; exists {
-			return cmImage, nil
-		}
-
-		return util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", ""), nil
-	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
-		if len(containerImage) > 0 {
-			return containerImage, nil
-		}
-
-		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		err := r.Client.Get(ctx, objectKey, cm)
-		if err != nil {
-			return "", err
-		}
-
-		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", ""), nil
-
-		}
-
-		if cmImage, exists := cm.Data["horizontest-image"]; exists {
-			return cmImage, nil
-		}
-
-		return util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", ""), nil
-	} else if typedInstance, ok := instance.(*v1beta1.AnsibleTest); ok {
-		if len(containerImage) > 0 {
-			return containerImage, nil
-		}
-
-		objectKey := client.ObjectKey{Namespace: typedInstance.Namespace, Name: testOperatorConfigMapName}
-		err := r.Client.Get(ctx, objectKey, cm)
-		if err != nil {
-			return "", err
-		}
-
-		if cm.Data == nil {
-			return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", ""), nil
-		}
-
-		if cmImage, exists := cm.Data["ansibletest-image"]; exists {
-			return cmImage, nil
-		}
-
-		return util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", ""), nil
+	spec, err := SafetyCheck(v, "Spec")
+	if err != nil {
+		return "", err
 	}
 
-	return "", nil
+	containerImage := GetStringField(spec, "ContainerImage")
+	if containerImage != "" {
+		return containerImage, nil
+	}
+
+	namespace := GetStringField(v, "Namespace")
+	kind := GetStringField(v, "Kind")
+
+	cm := &corev1.ConfigMap{}
+	objectKey := client.ObjectKey{Namespace: namespace, Name: "test-operator-config"}
+	if err := r.Client.Get(ctx, objectKey, cm); err != nil {
+		return "", err
+	}
+
+	imageKey := strings.ToLower(kind) + "-image"
+	if cm.Data != nil {
+		if image, exists := cm.Data[imageKey]; exists && image != "" {
+			return image, nil
+		}
+	}
+
+	relatedImage := "RELATED_IMAGE_TEST_" + strings.ToUpper(kind) + "_IMAGE_URL_DEFAULT"
+	return util.GetEnvVar(relatedImage, ""), nil
 }
 
 // GetPodName returns the name of the pod for the given instance and workflow step
-func (r *Reconciler) GetPodName(instance interface{}, workflowStepNum int) string {
-	if typedInstance, ok := instance.(*v1beta1.Tobiko); ok {
-		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
-			return typedInstance.Name
-		}
+func (r *Reconciler) GetPodName(instance interface{}, stepNum int) string {
+	v := reflect.ValueOf(instance)
 
-		workflowStepName := workflowStepNameInvalid
-		if workflowStepNum < len(typedInstance.Spec.Workflow) {
-			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
-		}
-
-		return typedInstance.Name + podNameStepInfix + fmt.Sprintf("%02d", workflowStepNum) + "-" + workflowStepName
-	} else if typedInstance, ok := instance.(*v1beta1.Tempest); ok {
-		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
-			return typedInstance.Name
-		}
-
-		workflowStepName := workflowStepNameInvalid
-		if workflowStepNum < len(typedInstance.Spec.Workflow) {
-			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
-		}
-
-		return typedInstance.Name + podNameStepInfix + fmt.Sprintf("%02d", workflowStepNum) + "-" + workflowStepName
-	} else if typedInstance, ok := instance.(*v1beta1.HorizonTest); ok {
-		return typedInstance.Name
-	} else if typedInstance, ok := instance.(*v1beta1.AnsibleTest); ok {
-		if len(typedInstance.Spec.Workflow) == 0 || workflowStepNum == workflowStepNumInvalid {
-			return typedInstance.Name
-		}
-
-		workflowStepName := workflowStepNameInvalid
-		if workflowStepNum < len(typedInstance.Spec.Workflow) {
-			workflowStepName = typedInstance.Spec.Workflow[workflowStepNum].StepName
-		}
-
-		return typedInstance.Name + podNameStepInfix + fmt.Sprintf("%02d", workflowStepNum) + "-" + workflowStepName
+	name := GetStringField(v, "Name")
+	spec, err := SafetyCheck(v, "Spec")
+	if err != nil {
+		return name
 	}
 
-	return workflowStepNameInvalid
+	workflow, err := SafetyCheck(spec, "Workflow")
+	if err != nil || workflow.Len() == 0 {
+		return name
+	}
+
+	// Get workflow step name
+	stepName := workflowStepNameInvalid
+	if stepNum >= 0 && stepNum < workflow.Len() {
+		stepName = GetStringField(workflow.Index(stepNum), "StepName")
+		if stepName == "" {
+			stepName = workflowStepNameInvalid
+		}
+	}
+
+	return name + podNameStepInfix + fmt.Sprintf("%02d", stepNum) + "-" + stepName
 }
 
 // GetPVCLogsName returns the name of the PVC for logs for the given instance and workflow step
@@ -491,11 +402,6 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	}
 
 	return ctrlResult, nil
-}
-
-// GetClient returns the Kubernetes client
-func (r *Reconciler) GetClient() client.Client {
-	return r.Client
 }
 
 // GetLogger returns the logger instance
@@ -624,12 +530,6 @@ func (r *Reconciler) PodExists(ctx context.Context, instance client.Object, work
 	return true
 }
 
-func (r *Reconciler) setConfigOverwrite(customData map[string]string, configOverwrite map[string]string) {
-	for key, data := range configOverwrite {
-		customData[key] = data
-	}
-}
-
 // GetCommonRbacRules returns the common RBAC rules for test operations, with optional privileged permissions
 func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
 	rbacPolicyRule := rbacv1.PolicyRule{
@@ -715,6 +615,37 @@ func EnsureCloudsConfigMapExists(
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// GetStringField returns reflect string field safely
+func GetStringField(v reflect.Value, fieldName string) string {
+	field, err := SafetyCheck(v, fieldName)
+	if err != nil || field.Kind() != reflect.String {
+		return ""
+	}
+
+	return field.String()
+}
+
+// SafetyCheck returns reflect value after checking its validity
+func SafetyCheck(v reflect.Value, fieldName string) (reflect.Value, error) {
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return reflect.Value{}, fmt.Errorf("%s: %w", fieldName, ErrFieldNilPointer)
+		}
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		return reflect.Value{}, fmt.Errorf("%s: %w, got %s", fieldName, ErrFieldExpectedStruct, v.Kind())
+	}
+
+	field := v.FieldByName(fieldName)
+	if !field.IsValid() {
+		return reflect.Value{}, fmt.Errorf("%s: %w", fieldName, ErrFieldNotFound)
+	}
+
+	return field, nil
 }
 
 // IsEmpty checks if the provided value is empty based on its type
