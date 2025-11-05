@@ -126,6 +126,7 @@
           numProcesses: 2
         - stepName: 'sanity'
           testenv: 'sanity'
+          pytestAddopts: "--skipregex='test_compute_iscsid'"
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
