@@ -144,7 +144,6 @@ func GetVolumes(
 // GetVolumeMounts -
 func GetVolumeMounts(
 	mountCerts bool,
-	mountKeys bool,
 	mountKubeconfig bool,
 	svc []storage.PropagationType,
 	instance *testv1beta1.HorizonTest,
@@ -203,26 +202,6 @@ func GetVolumeMounts(
 		}
 
 		volumeMounts = append(volumeMounts, caCertVolumeMount)
-	}
-
-	if mountKeys {
-		keysMount := corev1.VolumeMount{
-			Name:      "horizontest-private-key",
-			MountPath: "/etc/test_operator/id_ecdsa",
-			SubPath:   "id_ecdsa",
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, keysMount)
-
-		keysMount = corev1.VolumeMount{
-			Name:      "horizontest-public-key",
-			MountPath: "/etc/test_operator/id_ecdsa.pub",
-			SubPath:   "id_ecdsa.pub",
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, keysMount)
 	}
 
 	if mountKubeconfig {
