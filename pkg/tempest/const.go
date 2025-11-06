@@ -3,6 +3,7 @@ package tempest
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/storage"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -11,7 +12,18 @@ const (
 
 	// Tempest is the definition of the tempest group
 	Tempest storage.PropagationType = "Tempest"
+
+	// PodRunAsUser is the UID to run the Tempest pod as
+	PodRunAsUser = int64(42480)
+
+	// PodRunAsGroup is the GID to run the Tempest pod as
+	PodRunAsGroup = int64(42480)
 )
 
-// TempestPropagation is the definition of the Tempest propagation service
-var TempestPropagation = []storage.PropagationType{Tempest}
+var (
+	// TempestPropagation is the definition of the Tempest propagation service
+	TempestPropagation = []storage.PropagationType{Tempest}
+
+	// PodCapabilities defines the Linux capabilities for Tempest pods
+	PodCapabilities = []corev1.Capability{}
+)

@@ -2,8 +2,10 @@
 package util //nolint:revive // util is a legitimate package name for utility functions
 
 import (
+	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/storage"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -66,4 +68,69 @@ func GetSecurityContext(
 	}
 
 	return securityContext
+}
+
+// BuildTestPod creates a pod with common structure used by all test frameworks
+func BuildTestPod(
+	annotations map[string]string,
+	capabilities []corev1.Capability,
+	containerImage string,
+	containerName string,
+	envFromSource []corev1.EnvFromSource,
+	envVars map[string]env.Setter,
+	labels map[string]string,
+	namespace string,
+	nodeSelector map[string]string,
+	podName string,
+	privileged bool,
+	resources corev1.ResourceRequirements,
+	runAsGroup int64,
+	runAsUser int64,
+	seLinuxLevel string,
+	tolerations []corev1.Toleration,
+	volumeMounts []corev1.VolumeMount,
+	volumes []corev1.Volume,
+) *corev1.Pod {
+	securityContext := GetSecurityContext(runAsUser, capabilities, privileged)
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        podName,
+			Namespace:   namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: corev1.PodSpec{
+			AutomountServiceAccountToken: &privileged,
+			RestartPolicy:                corev1.RestartPolicyNever,
+			Tolerations:                  tolerations,
+			NodeSelector:                 nodeSelector,
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser:  &runAsUser,
+				RunAsGroup: &runAsGroup,
+				FSGroup:    &runAsGroup,
+			},
+			Containers: []corev1.Container{
+				{
+					Name:            containerName,
+					Image:           containerImage,
+					Args:            []string{},
+					Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
+					VolumeMounts:    volumeMounts,
+					SecurityContext: &securityContext,
+					Resources:       resources,
+					EnvFrom:         envFromSource,
+				},
+			},
+			Volumes: volumes,
+		},
+	}
+
+	if len(seLinuxLevel) > 0 {
+		pod.Spec.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+			Level: seLinuxLevel,
+		}
+	}
+
+	return pod
 }
