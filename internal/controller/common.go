@@ -12,8 +12,11 @@ import (
 	"crypto/sha256"
 
 	"github.com/go-logr/logr"
+	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
+	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	"gopkg.in/yaml.v3"
@@ -546,6 +549,101 @@ func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
 	}
 
 	return []rbacv1.PolicyRule{rbacPolicyRule}
+}
+
+// EnsureNetworkAttachments fetches NetworkAttachmentDefinitions and creates annotations
+func (r *Reconciler) EnsureNetworkAttachments(
+	ctx context.Context,
+	log logr.Logger,
+	helper *helper.Helper,
+	networkAttachments []string,
+	namespace string,
+	conditions *condition.Conditions,
+) (map[string]string, ctrl.Result, error) {
+	nadList := []networkv1.NetworkAttachmentDefinition{}
+	for _, netAtt := range networkAttachments {
+		netAttachDef, err := nad.GetNADWithName(ctx, helper, netAtt, namespace)
+		if err != nil {
+			if k8s_errors.IsNotFound(err) {
+				// Since the net-attach-def CR should have been manually created by the user and referenced in the spec,
+				// we treat this as a warning because it means that the service will not be able to start.
+				log.Info(fmt.Sprintf("network-attachment-definition %s not found", netAtt))
+				conditions.Set(condition.FalseCondition(
+					condition.NetworkAttachmentsReadyCondition,
+					condition.ErrorReason,
+					condition.SeverityWarning,
+					condition.NetworkAttachmentsReadyWaitingMessage,
+					netAtt))
+				return nil, ctrl.Result{RequeueAfter: time.Second * 10}, nil
+			}
+			conditions.Set(condition.FalseCondition(
+				condition.NetworkAttachmentsReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityWarning,
+				condition.NetworkAttachmentsReadyErrorMessage,
+				err.Error()))
+			return nil, ctrl.Result{}, err
+		}
+
+		if netAttachDef != nil {
+			nadList = append(nadList, *netAttachDef)
+		}
+	}
+
+	serviceAnnotations, err := nad.EnsureNetworksAnnotation(nadList)
+	if err != nil {
+		return nil, ctrl.Result{}, fmt.Errorf("failed create network annotation from %s: %w",
+			networkAttachments, err)
+	}
+
+	return serviceAnnotations, ctrl.Result{}, nil
+}
+
+// VerifyNetworkAttachments verifies network status on the pod and updates conditions
+func (r *Reconciler) VerifyNetworkAttachments(
+	ctx context.Context,
+	helper *helper.Helper,
+	instance client.Object,
+	networkAttachments []string,
+	serviceLabels map[string]string,
+	nextWorkflowStep int,
+	conditions *condition.Conditions,
+	networkAttachmentStatus *map[string][]string,
+) (ctrl.Result, error) {
+	if !r.PodExists(ctx, instance, nextWorkflowStep) {
+		return ctrl.Result{}, nil
+	}
+
+	networkReady, status, err := nad.VerifyNetworkStatusFromAnnotation(
+		ctx,
+		helper,
+		networkAttachments,
+		serviceLabels,
+		1,
+	)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	*networkAttachmentStatus = status
+
+	if networkReady {
+		conditions.MarkTrue(
+			condition.NetworkAttachmentsReadyCondition,
+			condition.NetworkAttachmentsReadyMessage)
+	} else {
+		err := fmt.Errorf("%w: %s", ErrNetworkAttachmentsMismatch, networkAttachments)
+		conditions.Set(condition.FalseCondition(
+			condition.NetworkAttachmentsReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.NetworkAttachmentsReadyErrorMessage,
+			err.Error()))
+
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // EnsureCloudsConfigMapExists ensures that frameworks like Tobiko and Horizon have password values
