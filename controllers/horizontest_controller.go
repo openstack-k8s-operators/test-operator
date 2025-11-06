@@ -206,9 +206,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Create Job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-
-	mountKeys := false
-
 	mountKubeconfig := len(instance.Spec.KubeconfigSecretName) != 0
 
 	// Prepare HorizonTest env vars
@@ -226,7 +223,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		podName,
 		logsPVCName,
 		mountCerts,
-		mountKeys,
 		mountKubeconfig,
 		envVars,
 		containerImage,
