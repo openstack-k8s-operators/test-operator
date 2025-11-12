@@ -12,14 +12,6 @@
             vars:
               cifmw_test_operator_bundle: "{{ content_provider_registry_ip }}:5001/openstack-k8s-operators/test-operator:{{ zuul.patchset }}"
               cifmw_test_operator_version: "{{ zuul.patchset }}"
-    periodic:
-      jobs:
-        - openstack-k8s-operators-content-provider:
-            vars:
-              cifmw_operator_build_meta_build: false
-        - podified-multinode-edpm-deployment-crc-test-operator:
-            dependencies:
-              - openstack-k8s-operators-content-provider
 
 - job:
     name: podified-multinode-edpm-deployment-crc-test-operator
