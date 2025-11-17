@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -38,14 +37,6 @@ import (
 
 // log is for logging in this package.
 var ansibletestlog = logf.Log.WithName("ansibletest-resource")
-
-func (r *AnsibleTest) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-//+kubebuilder:webhook:path=/mutate-test-openstack-org-v1beta1-ansibletest,mutating=true,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=ansibletests,verbs=create;update,versions=v1beta1,name=mansibletest.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &AnsibleTest{}
 
@@ -55,9 +46,6 @@ func (r *AnsibleTest) Default() {
 
 	// TODO(user): fill in your defaulting logic.
 }
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-ansibletest,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=ansibletests,verbs=create;update,versions=v1beta1,name=vansibletest.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &AnsibleTest{}
 

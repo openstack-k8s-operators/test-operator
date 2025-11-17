@@ -4,6 +4,9 @@ kind: Pod
 metadata:
   name: test-operator-logs-pod
   namespace: "openstack"
+  labels:
+    app.kubernetes.io/name: test-operator
+    app.kubernetes.io/managed-by: kustomize
 spec:
   containers:
     - name: test-operator-logs-container

@@ -4,6 +4,9 @@ kind: AnsibleTest
 metadata:
   name: performance-tests
   namespace: openstack
+  labels:
+    app.kubernetes.io/name: test-operator
+    app.kubernetes.io/managed-by: kustomize
 spec:
   extraMounts:
     - name: some-configmap
