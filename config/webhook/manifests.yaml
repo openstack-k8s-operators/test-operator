@@ -12,7 +12,7 @@ webhooks:
       namespace: system
       path: /mutate-test-openstack-org-v1beta1-ansibletest
   failurePolicy: Fail
-  name: mansibletest.kb.io
+  name: mansibletest-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org
@@ -32,7 +32,7 @@ webhooks:
       namespace: system
       path: /mutate-test-openstack-org-v1beta1-horizontest
   failurePolicy: Fail
-  name: mhorizontest.kb.io
+  name: mhorizontest-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org
@@ -52,7 +52,7 @@ webhooks:
       namespace: system
       path: /mutate-test-openstack-org-v1beta1-tempest
   failurePolicy: Fail
-  name: mtempest.kb.io
+  name: mtempest-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org
@@ -72,7 +72,7 @@ webhooks:
       namespace: system
       path: /mutate-test-openstack-org-v1beta1-tobiko
   failurePolicy: Fail
-  name: mtobiko.kb.io
+  name: mtobiko-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org
@@ -98,7 +98,7 @@ webhooks:
       namespace: system
       path: /validate-test-openstack-org-v1beta1-ansibletest
   failurePolicy: Fail
-  name: vansibletest.kb.io
+  name: vansibletest-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org
@@ -118,7 +118,7 @@ webhooks:
       namespace: system
       path: /validate-test-openstack-org-v1beta1-horizontest
   failurePolicy: Fail
-  name: vhorizontest.kb.io
+  name: vhorizontest-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org
@@ -138,7 +138,7 @@ webhooks:
       namespace: system
       path: /validate-test-openstack-org-v1beta1-tempest
   failurePolicy: Fail
-  name: vtempest.kb.io
+  name: vtempest-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org
@@ -158,7 +158,7 @@ webhooks:
       namespace: system
       path: /validate-test-openstack-org-v1beta1-tobiko
   failurePolicy: Fail
-  name: vtobiko.kb.io
+  name: vtobiko-v1beta1.kb.io
   rules:
   - apiGroups:
     - test.openstack.org

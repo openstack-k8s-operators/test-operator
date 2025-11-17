@@ -1,6 +1,7 @@
-## Append samples you want in your CSV to this file as resources ##
+## Append samples of your project ##
 resources:
 - test_v1beta1_tempest.yaml
 - test_v1beta1_tobiko.yaml
 - test_v1beta1_horizontest.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples
+- test_v1beta1_ansibletest.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

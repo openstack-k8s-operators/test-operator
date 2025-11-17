@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -38,14 +37,6 @@ import (
 
 // log is for logging in this package.
 var tobikolog = logf.Log.WithName("tobiko-resource")
-
-func (r *Tobiko) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-//+kubebuilder:webhook:path=/mutate-test-openstack-org-v1beta1-tobiko,mutating=true,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tobikoes,verbs=create;update,versions=v1beta1,name=mtobiko.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Tobiko{}
 
@@ -55,9 +46,6 @@ func (r *Tobiko) Default() {
 
 	// TODO(user): fill in your defaulting logic.
 }
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-tobiko,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tobikoes,verbs=create;update,versions=v1beta1,name=vtobiko.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Tobiko{}
 
@@ -98,13 +86,13 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 		}
 
 		if workflowStep.ExtraConfigmapsMounts != nil {
-			allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be" +
+			allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be"+
 				" deprecated! Please use ExtraMounts parameter instead!")
 		}
 	}
 
 	if len(r.Spec.ExtraConfigmapsMounts) > 0 {
-		allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be" +
+		allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be"+
 			" deprecated! Please use ExtraMounts parameter instead!")
 	}
 

@@ -26,7 +26,6 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -34,14 +33,6 @@ import (
 
 // log is for logging in this package.
 var horizontestlog = logf.Log.WithName("horizontest-resource")
-
-func (r *HorizonTest) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-//+kubebuilder:webhook:path=/mutate-test-openstack-org-v1beta1-horizontest,mutating=true,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=horizontests,verbs=create;update,versions=v1beta1,name=mhorizontest.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &HorizonTest{}
 
@@ -51,9 +42,6 @@ func (r *HorizonTest) Default() {
 
 	// TODO(user): fill in your defaulting logic.
 }
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-horizontest,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=horizontests,verbs=create;update,versions=v1beta1,name=vhorizontest.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &HorizonTest{}
 
