@@ -1,75 +1,9 @@
----
 apiVersion: test.openstack.org/v1beta1
 kind: Tobiko
 metadata:
-  name: tobiko-tests
-  namespace: openstack
+  labels:
+    app.kubernetes.io/name: test-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: tobiko-sample
 spec:
-  containerImage: ""
-
-  # Privileged
-  # ----------
-  #
-  # Use with caution! This parameter specifies whether test-operator should spawn test
-  # pods with allowedPrivilegedEscalation: true and the default capabilities on
-  # top of capabilities that are usually needed by the test pods (NET_ADMIN, NET_RAW).
-  # This parameter is deemed insecure but it is needed for certain test-operator
-  # functionalities to work properly (e.g.: extraRPMs in Tempest CR, or a certain set
-  # of tobiko tests).
-  #
-  # privileged: false
-  #
-  # extraMounts:
-  #   - extraVol:
-  #     - propagation:
-  #         - Tobiko
-  #       extraVolType: ConfigMap
-  #       volumes:
-  #         - name: configmap-volume
-  #           configMap:
-  #             name: configmap-name
-  #       mounts:
-  #         - name: configmap-volume
-  #           mountPath: "/etc/config"
-
-  # storageClass: local-storage
-  # parallel: false
-  # debug: false
-  # privateKey: |
-  #   <private-key-value>
-  # publicKey: |
-  #   <public-key-value>
-  # numProcesses: <integer>
-  # preventCreate: <true/false>
-  # pytestAddopts: >- # example:
-  #   -m <markers>
-  #   --maxfail <max-failed-tests>
-  #   --skipregex <regex>
-  # resources:
-  #   limits:
-  #     cpu: 8000m
-  #     memory: 8Gi
-  #   requests:
-  #     cpu: 4000m
-  #     memory: 4Gi
-  testenv: py3
-  version: master
-  config: |
-    [DEFAULT]
-    log_file = value
-
-    [testcase]
-    timeout = value
-    test_runner_timeout = value
-
-    [ubuntu]
-    interface_name = value
-
-    [keystone]
-    interface_name = value
-  workflow:
-    - stepName: unit-tests
-      testenv: py3
-
-    - stepName: functional-tests
-      testenv: functional
+  # TODO(user): Add fields here

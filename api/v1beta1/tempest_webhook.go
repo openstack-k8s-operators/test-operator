@@ -32,29 +32,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// TempestDefaults -
-type TempestDefaults struct {
-	ContainerImageURL string
-}
-
-var tempestDefaults TempestDefaults
-
 // log is for logging in this package.
 var tempestlog = logf.Log.WithName("tempest-resource")
-
-func (r *Tempest) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-//+kubebuilder:webhook:path=/mutate-test-openstack-org-v1beta1-tempest,mutating=true,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tempests,verbs=create;update,versions=v1beta1,name=mtempest.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Tempest{}
 
@@ -68,7 +52,7 @@ func (r *Tempest) Default() {
 // Default - set defaults for this Tempest spec.
 func (spec *TempestSpec) Default() {
 	if spec.ContainerImage == "" {
-		spec.ContainerImage = tempestDefaults.ContainerImageURL
+		spec.ContainerImage = testDefaults.TempestContainerImageURL
 	}
 
 	if spec.TempestconfRun == (TempestconfRunSpec{}) {
@@ -79,9 +63,6 @@ func (spec *TempestSpec) Default() {
 func (r *Tempest) PrivilegedRequired() bool {
 	return len(r.Spec.TempestRun.ExtraImages) > 0
 }
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-tempest,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tempests,verbs=create;update,versions=v1beta1,name=vtempest.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Tempest{}
 
@@ -131,13 +112,13 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 		}
 
 		if workflowStep.ExtraConfigmapsMounts != nil {
-			allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be" +
+			allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be"+
 				" deprecated! Please use ExtraMounts parameter instead!")
 		}
 	}
 
 	if len(r.Spec.ExtraConfigmapsMounts) > 0 {
-		allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be" +
+		allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be"+
 			" deprecated! Please use ExtraMounts parameter instead!")
 	}
 
