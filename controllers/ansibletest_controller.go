@@ -206,7 +206,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	podName := r.GetPodName(instance, nextWorkflowStep)
+	podName := GetPodName(instance, nextWorkflowStep)
 	envVars := r.PrepareAnsibleEnv(instance)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage, err := r.GetContainerImage(ctx, instance)

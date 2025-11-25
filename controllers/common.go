@@ -300,7 +300,6 @@ func (r *Reconciler) GetContainerImage(
 // GetPodName returns the name of the pod for the given instance and workflow step
 func (r *Reconciler) GetPodName(instance interface{}, stepNum int) string {
 	v := reflect.ValueOf(instance)
-
 	name := GetStringField(v, "Name")
 	spec, err := SafetyCheck(v, "Spec")
 	if err != nil {
@@ -415,7 +414,7 @@ func (r *Reconciler) GetScheme() *runtime.Scheme {
 }
 
 // GetDefaultInt returns the string representation of an integer value with optional default value
-func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) string {
+func GetDefaultInt(variable int64, defaultValue ...string) string {
 	if variable != 0 {
 		return strconv.FormatInt(variable, 10)
 	} else if len(defaultValue) > 0 {
@@ -520,7 +519,7 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 // PodExists checks if a pod exists for the given instance and workflow step
 func (r *Reconciler) PodExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
 	pod := &corev1.Pod{}
-	podName := r.GetPodName(instance, workflowStepNum)
+	podName := GetPodName(instance, workflowStepNum)
 	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: podName}
 	err := r.Client.Get(ctx, objectKey, pod)
 	if err != nil && k8s_errors.IsNotFound(err) {
