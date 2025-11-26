@@ -20,16 +20,13 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/go-logr/logr"
-	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
-	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/internal/tobiko"
@@ -221,74 +218,32 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 	// Create PersistentVolumeClaim - end
 
-	nadList := []networkv1.NetworkAttachmentDefinition{}
-	for _, netAtt := range instance.Spec.NetworkAttachments {
-		nad, err := nad.GetNADWithName(ctx, helper, netAtt, instance.Namespace)
-		if err != nil {
-			if k8s_errors.IsNotFound(err) {
-				// Since the net-attach-def CR should have been manually created by the user and referenced in the spec,
-				// we treat this as a warning because it means that the service will not be able to start.
-				Log.Info(fmt.Sprintf("network-attachment-definition %s not found", netAtt))
-				instance.Status.Conditions.Set(condition.FalseCondition(
-					condition.NetworkAttachmentsReadyCondition,
-					condition.ErrorReason,
-					condition.SeverityWarning,
-					condition.NetworkAttachmentsReadyWaitingMessage,
-					netAtt))
-				return ctrl.Result{RequeueAfter: time.Second * 10}, nil
-			}
-			instance.Status.Conditions.Set(condition.FalseCondition(
-				condition.NetworkAttachmentsReadyCondition,
-				condition.ErrorReason,
-				condition.SeverityWarning,
-				condition.NetworkAttachmentsReadyErrorMessage,
-				err.Error()))
-			return ctrl.Result{}, err
-		}
-
-		if nad != nil {
-			nadList = append(nadList, *nad)
-		}
-	}
-
-	serviceAnnotations, err := nad.EnsureNetworksAnnotation(nadList)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed create network annotation from %s: %w",
-			instance.Spec.NetworkAttachments, err)
+	serviceAnnotations, ctrlResult, err := r.EnsureNetworkAttachments(
+		ctx,
+		Log,
+		helper,
+		instance.Spec.NetworkAttachments,
+		instance.Namespace,
+		&instance.Status.Conditions,
+	)
+	if err != nil || (ctrlResult != ctrl.Result{}) {
+		return ctrlResult, err
 	}
 
 	// NetworkAttachments
-	if r.PodExists(ctx, instance, nextWorkflowStep) {
-		networkReady, networkAttachmentStatus, err := nad.VerifyNetworkStatusFromAnnotation(
-			ctx,
-			helper,
-			instance.Spec.NetworkAttachments,
-			serviceLabels,
-			1,
-		)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-
-		instance.Status.NetworkAttachments = networkAttachmentStatus
-
-		if networkReady {
-			instance.Status.Conditions.MarkTrue(
-				condition.NetworkAttachmentsReadyCondition,
-				condition.NetworkAttachmentsReadyMessage)
-		} else {
-			err := fmt.Errorf("%w: %s", ErrNetworkAttachmentsMismatch, instance.Spec.NetworkAttachments)
-			instance.Status.Conditions.Set(condition.FalseCondition(
-				condition.NetworkAttachmentsReadyCondition,
-				condition.ErrorReason,
-				condition.SeverityWarning,
-				condition.NetworkAttachmentsReadyErrorMessage,
-				err.Error()))
-
-			return ctrl.Result{}, err
-		}
+	ctrlResult, err = r.VerifyNetworkAttachments(
+		ctx,
+		helper,
+		instance,
+		instance.Spec.NetworkAttachments,
+		serviceLabels,
+		nextWorkflowStep,
+		&instance.Status.Conditions,
+		&instance.Status.NetworkAttachments,
+	)
+	if err != nil || (ctrlResult != ctrl.Result{}) {
+		return ctrlResult, err
 	}
-	// NetworkAttachments - end
 
 	// Create Job
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
