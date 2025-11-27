@@ -7,7 +7,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// GetVolumes -
+const (
+	computeName  = "compute-ssh-secret"
+	workloadName = "workload-ssh-secret"
+)
+
+// GetVolumes - returns a list of volumes for the test pod
 func GetVolumes(
 	instance *testv1beta1.AnsibleTest,
 	logsPVCName string,
@@ -16,257 +21,77 @@ func GetVolumes(
 	externalWorkflowCounter int,
 ) []corev1.Volume {
 
-	var scriptsVolumeConfidentialMode int32 = 0420
-	var tlsCertificateMode int32 = 0444
-	var privateKeyMode int32 = 0600
-	var publicInfoMode int32 = 0744
-
-	//source_type := corev1.HostPathDirectoryOrCreate
 	volumes := []corev1.Volume{
-		{
-			Name: "openstack-config",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &scriptsVolumeConfidentialMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "openstack-config",
-					},
-				},
-			},
-		},
-		{
-			Name: "openstack-config-secret",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: &tlsCertificateMode,
-					SecretName:  "openstack-config-secret",
-				},
-			},
-		},
-		{
-			Name: "test-operator-logs",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: logsPVCName,
-					ReadOnly:  false,
-				},
-			},
-		},
-		{
-			Name: util.TestOperatorEphemeralVolumeNameWorkdir,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
-			Name: util.TestOperatorEphemeralVolumeNameTmp,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
+		util.CreateOpenstackConfigMapVolume("openstack-config"),
+		util.CreateOpenstackConfigSecretVolume(),
+		util.CreateLogsPVCVolume(logsPVCName),
+		util.CreateWorkdirVolume(),
+		util.CreateTmpVolume(),
 	}
 
 	if mountCerts {
-		caCertsVolume := corev1.Volume{
-			Name: "ca-certs",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: &scriptsVolumeConfidentialMode,
-					SecretName:  "combined-ca-bundle",
-				},
-			},
-		}
-
-		volumes = append(volumes, caCertsVolume)
+		volumes = util.AppendCACertsVolume(volumes)
 	}
 
-	keysVolume := corev1.Volume{
-		Name: "compute-ssh-secret",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  instance.Spec.ComputeSSHKeySecretName,
-				DefaultMode: &privateKeyMode,
-			},
-		},
-	}
-
-	volumes = append(volumes, keysVolume)
+	volumes = util.AppendSSHKeyVolume(volumes, computeName, instance.Spec.ComputeSSHKeySecretName)
 
 	if instance.Spec.WorkloadSSHKeySecretName != "" {
-		keysVolume = corev1.Volume{
-			Name: "workload-ssh-secret",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  instance.Spec.WorkloadSSHKeySecretName,
-					DefaultMode: &privateKeyMode,
-				},
-			},
-		}
-
-		volumes = append(volumes, keysVolume)
+		volumes = util.AppendSSHKeyVolume(volumes, workloadName, instance.Spec.WorkloadSSHKeySecretName)
 	}
 
-	for _, exv := range instance.Spec.ExtraMounts {
-		for _, vol := range exv.Propagate(svc) {
-			for _, v := range vol.Volumes {
-				volumeSource, _ := v.ToCoreVolumeSource()
-				convertedVolume := corev1.Volume{
-					Name:         v.Name,
-					VolumeSource: *volumeSource,
-				}
-				volumes = append(volumes, convertedVolume)
-			}
+	volumes = util.AppendExtraMountsVolumes(volumes, instance.Spec.ExtraMounts, svc)
+	volumes = util.AppendExtraConfigmapsVolumes(volumes, instance.Spec.ExtraConfigmapsMounts, util.PublicInfoMode)
+
+	if len(instance.Spec.Workflow) > 0 {
+		cmMounts := instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts
+		if cmMounts != nil {
+			volumes = util.AppendExtraConfigmapsVolumes(volumes, *cmMounts, util.PublicInfoMode)
 		}
 	}
 
-	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
-		extraVol := corev1.Volume{
-			Name: vol.Name,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &publicInfoMode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: vol.Name,
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, extraVol)
-	}
-
-	if len(instance.Spec.Workflow) > 0 && instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts != nil {
-		for _, vol := range *instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
-			extraWorkflowVol := corev1.Volume{
-				Name: vol.Name,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						DefaultMode: &publicInfoMode,
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: vol.Name,
-						},
-					},
-				},
-			}
-
-			volumes = append(volumes, extraWorkflowVol)
-		}
-	}
 	return volumes
 }
 
-// GetVolumeMounts -
+// GetVolumeMounts - returns a list of volume mounts for the test container
 func GetVolumeMounts(
+	instance *testv1beta1.AnsibleTest,
 	mountCerts bool,
 	svc []storage.PropagationType,
-	instance *testv1beta1.AnsibleTest,
 	externalWorkflowCounter int,
 ) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      util.TestOperatorEphemeralVolumeNameWorkdir,
-			MountPath: "/var/lib/ansible",
-			ReadOnly:  false,
-		},
-		{
-			Name:      util.TestOperatorEphemeralVolumeNameTmp,
-			MountPath: "/tmp",
-			ReadOnly:  false,
-		},
-		{
-			Name:      "test-operator-logs",
-			MountPath: "/var/lib/AnsibleTests/external_files",
-			ReadOnly:  false,
-		},
-		{
-			Name:      "openstack-config",
-			MountPath: "/etc/openstack/clouds.yaml",
-			SubPath:   "clouds.yaml",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "openstack-config",
-			MountPath: "/var/lib/ansible/.config/openstack/clouds.yaml",
-			SubPath:   "clouds.yaml",
-			ReadOnly:  true,
-		},
-		{
-			Name:      "openstack-config-secret",
-			MountPath: "/var/lib/ansible/.config/openstack/secure.yaml",
-			ReadOnly:  false,
-			SubPath:   "secure.yaml",
-		},
+		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/ansible", false),
+		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameTmp, "/tmp", false),
+		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/AnsibleTests/external_files", false),
+		util.CreateOpenstackConfigVolumeMount("/etc/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigVolumeMount("/var/lib/ansible/.config/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigSecretVolumeMount("/var/lib/ansible/.config/openstack/secure.yaml"),
 	}
 
 	if mountCerts {
-		caCertVolumeMount := corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
-		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
-
-		caCertVolumeMount = corev1.VolumeMount{
-			Name:      "ca-certs",
-			MountPath: "/etc/pki/tls/certs/ca-bundle.trust.crt",
-			ReadOnly:  true,
-			SubPath:   "tls-ca-bundle.pem",
-		}
-
-		volumeMounts = append(volumeMounts, caCertVolumeMount)
+		volumeMounts = append(volumeMounts,
+			util.CreateCACertVolumeMount("/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"),
+			util.CreateCACertVolumeMount("/etc/pki/tls/certs/ca-bundle.trust.crt"),
+		)
 	}
+
+	volumeMounts = append(volumeMounts,
+		util.CreateVolumeMountWithSubPath(computeName, "/var/lib/ansible/.ssh/compute_id", "ssh-privatekey", true),
+	)
 
 	if instance.Spec.WorkloadSSHKeySecretName != "" {
-		workloadSSHKeyMount := corev1.VolumeMount{
-			Name:      "workload-ssh-secret",
-			MountPath: "/var/lib/ansible/test_keypair.key",
-			SubPath:   "ssh-privatekey",
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, workloadSSHKeyMount)
+		volumeMounts = append(volumeMounts,
+			util.CreateVolumeMountWithSubPath(workloadName, "/var/lib/ansible/test_keypair.key", "ssh-privatekey", true),
+		)
 	}
 
-	computeSSHKeyMount := corev1.VolumeMount{
-		Name:      "compute-ssh-secret",
-		MountPath: "/var/lib/ansible/.ssh/compute_id",
-		SubPath:   "ssh-privatekey",
-		ReadOnly:  true,
-	}
+	volumeMounts = util.AppendExtraMountsVolumeMounts(volumeMounts, instance.Spec.ExtraMounts, svc)
+	volumeMounts = util.AppendExtraConfigmapsVolumeMounts(volumeMounts, instance.Spec.ExtraConfigmapsMounts)
 
-	volumeMounts = append(volumeMounts, computeSSHKeyMount)
-
-	for _, exv := range instance.Spec.ExtraMounts {
-		for _, vol := range exv.Propagate(svc) {
-			volumeMounts = append(volumeMounts, vol.Mounts...)
-		}
-	}
-
-	for _, vol := range instance.Spec.ExtraConfigmapsMounts {
-
-		extraConfigmapsMounts := corev1.VolumeMount{
-			Name:      vol.Name,
-			MountPath: vol.MountPath,
-			SubPath:   vol.SubPath,
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, extraConfigmapsMounts)
-	}
-
-	if len(instance.Spec.Workflow) > 0 && instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts != nil {
-		for _, vol := range *instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts {
-
-			extraConfigmapsMounts := corev1.VolumeMount{
-				Name:      vol.Name,
-				MountPath: vol.MountPath,
-				SubPath:   vol.SubPath,
-				ReadOnly:  true,
-			}
-
-			volumeMounts = append(volumeMounts, extraConfigmapsMounts)
+	if len(instance.Spec.Workflow) > 0 {
+		cmMounts := instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts
+		if cmMounts != nil {
+			volumeMounts = util.AppendExtraConfigmapsVolumeMounts(volumeMounts, *cmMounts)
 		}
 	}
 

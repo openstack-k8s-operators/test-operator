@@ -20,6 +20,9 @@ const (
 	// TestOperatorEphemeralVolumeNameTmp is the name of the ephemeral temporary volume
 	TestOperatorEphemeralVolumeNameTmp = "test-operator-ephemeral-temporary"
 
+	// TestOperatorLogsVolumeName is the name of logs volume
+	TestOperatorLogsVolumeName = "test-operator-logs"
+
 	// ExtraVolTypeUndefined can be used to label an extraMount which is
 	// not associated to anything in particular
 	ExtraVolTypeUndefined storage.ExtraVolType = "Undefined"
