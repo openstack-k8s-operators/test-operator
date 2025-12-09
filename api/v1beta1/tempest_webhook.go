@@ -27,10 +27,7 @@ import (
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -73,69 +70,30 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	var allErrs field.ErrorList
 	var allWarnings admission.Warnings
 
-	if len(r.Spec.Workflow) > 0 && r.Spec.Debug {
-		allErrs = append(allErrs, &field.Error{
-			Type:     field.ErrorTypeForbidden,
-			BadValue: r.Spec.Workflow,
-			Detail:   fmt.Sprintf(ErrDebug, "Tempest"),
-		})
+	// Common validations
+	allErrs = ValidatePodName(allErrs, r.Name, r.Kind)
+	allWarnings = CheckPrivilegedWarning(allWarnings, r.Spec.Privileged, r.Kind)
+	allWarnings = CheckExtraConfigmapsDeprecation(allWarnings, r.Spec.ExtraConfigmapsMounts)
+
+	// Workflow-specific validations
+	if len(r.Spec.Workflow) > 0 {
+		allErrs = ValidateDebugWorkflow(allErrs, r.Spec.Debug, r.Kind)
+		allErrs = ValidateWorkflowPodNames(allErrs, r.Name, r.Kind, r.Spec.Workflow)
+		allWarnings = CheckSELinuxWarning(allWarnings, r.Spec.Privileged, r.Spec.SELinuxLevel, r.Kind)
+		allWarnings = CheckWorkflowExtraConfigmapsDeprecation(allWarnings, r.Spec.Workflow)
 	}
 
+	// Privileged mode validation
 	if !r.Spec.Privileged && r.PrivilegedRequired() {
 		allErrs = append(allErrs, &field.Error{
 			Type:     field.ErrorTypeRequired,
 			BadValue: r.Spec.Privileged,
-			Detail:   fmt.Sprintf(ErrPrivilegedModeRequired, "Tempest"),
-		},
-		)
+			Detail:   fmt.Sprintf(ErrPrivilegedModeRequired, r.Kind),
+		})
 	}
 
-	if len(r.Name) >= validation.DNS1123LabelMaxLength {
-		allErrs = append(allErrs, &field.Error{
-			Type:     field.ErrorTypeInvalid,
-			BadValue: len(r.Name),
-			Detail:   fmt.Sprintf(ErrNameTooLong, "Tempest", validation.DNS1123LabelMaxLength),
-		},
-		)
-	}
-
-	for _, workflowStep := range r.Spec.Workflow {
-		podNameLength := len(r.Name) + len(workflowStep.StepName) + len("-sXX-")
-
-		if podNameLength >= validation.DNS1123LabelMaxLength {
-			allErrs = append(allErrs, &field.Error{
-				Type:     field.ErrorTypeInvalid,
-				BadValue: podNameLength,
-				Detail:   fmt.Sprintf(ErrNameTooLong, "Tempest", validation.DNS1123LabelMaxLength),
-			},
-			)
-		}
-
-		if workflowStep.ExtraConfigmapsMounts != nil {
-			allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be"+
-				" deprecated! Please use ExtraMounts parameter instead!")
-		}
-	}
-
-	if len(r.Spec.ExtraConfigmapsMounts) > 0 {
-		allWarnings = append(allWarnings, "The ExtraConfigmapsMounts parameter will be"+
-			" deprecated! Please use ExtraMounts parameter instead!")
-	}
-
-	if r.Spec.Privileged {
-		allWarnings = append(allWarnings, fmt.Sprintf(WarnPrivilegedModeOn, "Tempest"))
-	}
-
-	if r.Spec.Privileged && len(r.Spec.Workflow) > 0 && len(r.Spec.SELinuxLevel) == 0 {
-		allWarnings = append(allWarnings, fmt.Sprintf(WarnSELinuxLevel, r.Kind))
-	}
-
-	if len(allErrs) > 0 {
-		return allWarnings, apierrors.NewInvalid(
-			schema.GroupKind{
-				Group: GroupVersion.WithKind("Tempest").Group,
-				Kind:  GroupVersion.WithKind("Tempest").Kind,
-			}, r.GetName(), allErrs)
+	if err := BuildValidationError(r.Kind, r.GetName(), allErrs); err != nil {
+		return allWarnings, err
 	}
 
 	return allWarnings, nil

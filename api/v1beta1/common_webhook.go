@@ -1,9 +1,17 @@
 package v1beta1
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	goClient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // webhookClient is a client that will be initialized from internal/webhook SetupWebhookWithManager
@@ -87,4 +95,101 @@ func SetupDefaults() {
 	}
 
 	SetupTestDefaults(testDefaults)
+}
+
+// ValidatePodName checks if CR name exceeds DNS label length limit
+func ValidatePodName(allErrs field.ErrorList, name, kind string) field.ErrorList {
+	if len(name) >= validation.DNS1123LabelMaxLength {
+		allErrs = append(allErrs, &field.Error{
+			Type:     field.ErrorTypeInvalid,
+			BadValue: len(name),
+			Detail:   fmt.Sprintf(ErrNameTooLong, kind, validation.DNS1123LabelMaxLength),
+		})
+	}
+	return allErrs
+}
+
+// ValidateWorkflowPodNames checks if workflow step pod names exceed DNS label length limit
+func ValidateWorkflowPodNames(allErrs field.ErrorList, name, kind string, workflow interface{}) field.ErrorList {
+	v := reflect.ValueOf(workflow)
+
+	for i := 0; i < v.Len(); i++ {
+		stepName := v.Index(i).FieldByName("StepName").String()
+		podNameLength := len(name) + len(stepName) + len("-sXX-")
+		if podNameLength >= validation.DNS1123LabelMaxLength {
+			allErrs = append(allErrs, &field.Error{
+				Type:     field.ErrorTypeInvalid,
+				BadValue: podNameLength,
+				Detail:   fmt.Sprintf(ErrNameTooLong, kind, validation.DNS1123LabelMaxLength),
+			})
+		}
+	}
+	return allErrs
+}
+
+// CheckExtraConfigmapsDeprecation returns warning if ExtraConfigmapsMounts is used
+func CheckExtraConfigmapsDeprecation(allWarn admission.Warnings, extraConfigmaps interface{}) admission.Warnings {
+	if v := reflect.ValueOf(extraConfigmaps); v.Len() > 0 {
+		allWarn = append(allWarn, "The ExtraConfigmapsMounts parameter will be"+
+			" deprecated! Please use ExtraMounts parameter instead!")
+	}
+	return allWarn
+}
+
+// CheckWorkflowExtraConfigmapsDeprecation checks for deprecated field in workflow steps
+func CheckWorkflowExtraConfigmapsDeprecation(allWarn admission.Warnings, workflow interface{}) admission.Warnings {
+	v := reflect.ValueOf(workflow)
+
+	for i := 0; i < v.Len(); i++ {
+		if field := v.Index(i).FieldByName("ExtraConfigmapsMounts"); field.IsValid() && !field.IsNil() {
+			allWarn = append(allWarn, "The ExtraConfigmapsMounts parameter will be"+
+				" deprecated! Please use ExtraMounts parameter instead!")
+		}
+	}
+	return allWarn
+}
+
+// CheckPrivilegedWarning returns warning if privileged mode is enabled
+func CheckPrivilegedWarning(allWarn admission.Warnings, privileged bool, kind string) admission.Warnings {
+	if privileged {
+		allWarn = append(allWarn, fmt.Sprintf(WarnPrivilegedModeOn, kind))
+	}
+	return allWarn
+}
+
+// CheckSELinuxWarning returns warning if privileged mode + workflow but no SELinux level
+func CheckSELinuxWarning(allWarn admission.Warnings, privileged bool, seLinuxLevel, kind string) admission.Warnings {
+	if privileged && len(seLinuxLevel) == 0 {
+		allWarn = append(allWarn, fmt.Sprintf(WarnSELinuxLevel, kind))
+	}
+	return allWarn
+}
+
+// ValidateDebugWorkflow validates that debug mode and workflow are not both set
+func ValidateDebugWorkflow(allErrs field.ErrorList, debug bool, kind string) field.ErrorList {
+	if debug {
+		allErrs = append(allErrs, &field.Error{
+			Type:     field.ErrorTypeForbidden,
+			BadValue: debug,
+			Detail:   fmt.Sprintf(ErrDebug, kind),
+		})
+	}
+	return allErrs
+}
+
+// BuildValidationError constructs an Invalid error from field errors
+func BuildValidationError(kind, name string, errs field.ErrorList) error {
+	// red error prefix
+	for i := range errs {
+		errs[i].Detail = fmt.Sprintf("\033[31mError:\033[0m %s", errs[i].Detail)
+	}
+
+	if len(errs) > 0 {
+		return apierrors.NewInvalid(
+			schema.GroupKind{
+				Group: GroupVersion.WithKind(kind).Group,
+				Kind:  GroupVersion.WithKind(kind).Kind,
+			}, name, errs)
+	}
+	return nil
 }
