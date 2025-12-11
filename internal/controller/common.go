@@ -15,6 +15,7 @@ import (
 	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
@@ -42,6 +43,7 @@ const (
 	operatorNameLabel          = "operator"
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOwnerField = "owner"
+	testOperatorBaseDir        = "/etc/test_operator/"
 )
 
 const (
@@ -417,17 +419,6 @@ func (r *Reconciler) GetScheme() *runtime.Scheme {
 	return r.Scheme
 }
 
-// GetDefaultInt returns the string representation of an integer value with optional default value
-func (r *Reconciler) GetDefaultInt(variable int64, defaultValue ...string) string {
-	if variable != 0 {
-		return strconv.FormatInt(variable, 10)
-	} else if len(defaultValue) > 0 {
-		return defaultValue[0]
-	}
-
-	return ""
-}
-
 // GetLockInfo retrieves the lock information ConfigMap for the given instance
 func (r *Reconciler) GetLockInfo(ctx context.Context, instance client.Object) (*corev1.ConfigMap, error) {
 	cm := &corev1.ConfigMap{}
@@ -713,6 +704,58 @@ func EnsureCloudsConfigMapExists(
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// Int64OrPlaceholder converts int64 to string, returns placeholder if 0
+func Int64OrPlaceholder(value int64, placeholder string) string {
+	if value > 0 {
+		return strconv.FormatInt(value, 10)
+	}
+	return placeholder
+}
+
+// StringOrPlaceholder returns value if non-empty, otherwise placeholder
+func StringOrPlaceholder(value, placeholder string) string {
+	if value != "" {
+		return value
+	}
+	return placeholder
+}
+
+// SetBoolEnvVars sets boolean values as string environment variables
+func SetBoolEnvVars(envVars map[string]env.Setter, boolVars map[string]bool) {
+	for key, value := range boolVars {
+		envVars[key] = env.SetValue(strconv.FormatBool(value))
+	}
+}
+
+// SetStringEnvVars sets string environment variables
+func SetStringEnvVars(envVars map[string]env.Setter, stringVars map[string]string) {
+	for key, value := range stringVars {
+		envVars[key] = env.SetValue(value)
+	}
+}
+
+// SetFileEnvVar sets a file in customData and creates an env var
+func SetFileEnvVar(
+	customData map[string]string,
+	envVars map[string]string,
+	content string,
+	filename string,
+	envVarName string,
+) {
+	if len(content) == 0 {
+		return
+	}
+	customData[filename] = content
+	envVars[envVarName] = testOperatorBaseDir + filename
+}
+
+// SetDictEnvVar sets dictionary env vars
+func SetDictEnvVar(envVars map[string]string, fields map[string]string) {
+	for key, value := range fields {
+		envVars[key] += value + ","
+	}
 }
 
 // GetStringField returns reflect string field safely

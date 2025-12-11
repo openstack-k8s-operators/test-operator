@@ -358,36 +358,11 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 ) {
 	tRun := instance.Spec.TempestRun
 
-	testOperatorDir := "/etc/test_operator/"
-
 	// Files
-	value := tRun.WorkerFile
-	if len(value) != 0 {
-		workerFile := "worker_file.yaml"
-		customData[workerFile] = value
-		envVars["TEMPEST_WORKER_FILE"] = testOperatorDir + workerFile
-	}
-
-	value = tRun.IncludeList
-	if len(value) != 0 {
-		includeListFile := "include.txt"
-		customData[includeListFile] = value
-		envVars["TEMPEST_INCLUDE_LIST"] = testOperatorDir + includeListFile
-	}
-
-	value = tRun.ExcludeList
-	if len(value) != 0 {
-		excludeListFile := "exclude.txt"
-		customData[excludeListFile] = value
-		envVars["TEMPEST_EXCLUDE_LIST"] = testOperatorDir + excludeListFile
-	}
-
-	value = tRun.ExpectedFailuresList
-	if len(value) != 0 {
-		expectedFailuresListFile := "expected_failures.txt"
-		customData[expectedFailuresListFile] = value
-		envVars["TEMPEST_EXPECTED_FAILURES_LIST"] = testOperatorDir + expectedFailuresListFile
-	}
+	SetFileEnvVar(customData, envVars, tRun.WorkerFile, "worker_file.yaml", "TEMPEST_WORKER_FILE")
+	SetFileEnvVar(customData, envVars, tRun.IncludeList, "include.txt", "TEMPEST_INCLUDE_LIST")
+	SetFileEnvVar(customData, envVars, tRun.ExcludeList, "exclude.txt", "TEMPEST_EXCLUDE_LIST")
+	SetFileEnvVar(customData, envVars, tRun.ExpectedFailuresList, "expected_failures.txt", "TEMPEST_EXPECTED_FAILURES_LIST")
 
 	// Bool
 	tempestBoolEnvVars := map[string]bool{
@@ -402,47 +377,44 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	}
 
 	// Int
-	numValue := tRun.Concurrency
-	envVars["TEMPEST_CONCURRENCY"] = r.GetDefaultInt(numValue)
+	if tRun.Concurrency > 0 {
+		envVars["TEMPEST_CONCURRENCY"] = strconv.FormatInt(tRun.Concurrency, 10)
+	}
 
 	// Dictionary
-	dictValue := tRun.ExternalPlugin
-	for _, externalPluginDictionary := range dictValue {
-		envVars["TEMPEST_EXTERNAL_PLUGIN_GIT_URL"] += externalPluginDictionary.Repository + ","
-
-		if len(externalPluginDictionary.ChangeRepository) == 0 || len(externalPluginDictionary.ChangeRefspec) == 0 {
-			envVars["TEMPEST_EXTERNAL_PLUGIN_CHANGE_URL"] += "-,"
-			envVars["TEMPEST_EXTERNAL_PLUGIN_REFSPEC"] += "-,"
-			continue
-		}
-
-		envVars["TEMPEST_EXTERNAL_PLUGIN_CHANGE_URL"] += externalPluginDictionary.ChangeRepository + ","
-		envVars["TEMPEST_EXTERNAL_PLUGIN_REFSPEC"] += externalPluginDictionary.ChangeRefspec + ","
+	for _, plugin := range tRun.ExternalPlugin {
+		SetDictEnvVar(envVars, map[string]string{
+			"TEMPEST_EXTERNAL_PLUGIN_GIT_URL":    plugin.Repository,
+			"TEMPEST_EXTERNAL_PLUGIN_CHANGE_URL": StringOrPlaceholder(plugin.ChangeRepository, "-"),
+			"TEMPEST_EXTERNAL_PLUGIN_REFSPEC":    StringOrPlaceholder(plugin.ChangeRefspec, "-"),
+		})
 	}
 
 	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetPodName(instance, workflowStepNum)
 
-	extraImages := tRun.ExtraImages
-	for _, extraImageDict := range extraImages {
-		envVars["TEMPEST_EXTRA_IMAGES_URL"] += extraImageDict.URL + ","
-		envVars["TEMPEST_EXTRA_IMAGES_OS_CLOUD"] += extraImageDict.OsCloud + ","
-		envVars["TEMPEST_EXTRA_IMAGES_CONTAINER_FORMAT"] += extraImageDict.ContainerFormat + ","
-		envVars["TEMPEST_EXTRA_IMAGES_ID"] += extraImageDict.ID + ","
-		envVars["TEMPEST_EXTRA_IMAGES_NAME"] += extraImageDict.Name + ","
-		envVars["TEMPEST_EXTRA_IMAGES_DISK_FORMAT"] += extraImageDict.DiskFormat + ","
-		envVars["TEMPEST_EXTRA_IMAGES_CREATE_TIMEOUT"] += r.GetDefaultInt(extraImageDict.ImageCreationTimeout) + ","
+	for _, img := range tRun.ExtraImages {
+		SetDictEnvVar(envVars, map[string]string{
+			"TEMPEST_EXTRA_IMAGES_URL":              img.URL,
+			"TEMPEST_EXTRA_IMAGES_OS_CLOUD":         img.OsCloud,
+			"TEMPEST_EXTRA_IMAGES_CONTAINER_FORMAT": img.ContainerFormat,
+			"TEMPEST_EXTRA_IMAGES_ID":               img.ID,
+			"TEMPEST_EXTRA_IMAGES_NAME":             img.Name,
+			"TEMPEST_EXTRA_IMAGES_DISK_FORMAT":      img.DiskFormat,
+			"TEMPEST_EXTRA_IMAGES_CREATE_TIMEOUT":   Int64OrPlaceholder(img.ImageCreationTimeout, ""),
 
-		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_ID"] += extraImageDict.Flavor.ID + ","
-		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_NAME"] += extraImageDict.Flavor.Name + ","
-		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_OS_CLOUD"] += extraImageDict.Flavor.OsCloud + ","
-		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_RAM"] += r.GetDefaultInt(extraImageDict.Flavor.RAM, "-") + ","
-		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_DISK"] += r.GetDefaultInt(extraImageDict.Flavor.Disk, "-") + ","
-		envVars["TEMPEST_EXTRA_IMAGES_FLAVOR_VCPUS"] += r.GetDefaultInt(extraImageDict.Flavor.Vcpus, "-") + ","
+			"TEMPEST_EXTRA_IMAGES_FLAVOR_ID":       img.Flavor.ID,
+			"TEMPEST_EXTRA_IMAGES_FLAVOR_NAME":     img.Flavor.Name,
+			"TEMPEST_EXTRA_IMAGES_FLAVOR_OS_CLOUD": img.Flavor.OsCloud,
+			"TEMPEST_EXTRA_IMAGES_FLAVOR_RAM":      Int64OrPlaceholder(img.Flavor.RAM, "-"),
+			"TEMPEST_EXTRA_IMAGES_FLAVOR_DISK":     Int64OrPlaceholder(img.Flavor.Disk, "-"),
+			"TEMPEST_EXTRA_IMAGES_FLAVOR_VCPUS":    Int64OrPlaceholder(img.Flavor.Vcpus, "-"),
+		})
 	}
 
-	extraRPMs := tRun.ExtraRPMs
-	for _, extraRPMURL := range extraRPMs {
-		envVars["TEMPEST_EXTRA_RPMS"] += extraRPMURL + ","
+	for _, rpm := range tRun.ExtraRPMs {
+		SetDictEnvVar(envVars, map[string]string{
+			"TEMPEST_EXTRA_RPMS": rpm,
+		})
 	}
 }
 
@@ -453,27 +425,10 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 ) {
 	tcRun := instance.Spec.TempestconfRun
 
-	testOperatorDir := "/etc/test_operator/"
-	value := tcRun.DeployerInput
-	if len(value) != 0 {
-		deployerInputFile := "deployer_input.ini"
-		customData[deployerInputFile] = value
-		envVars["TEMPESTCONF_DEPLOYER_INPUT"] = testOperatorDir + deployerInputFile
-	}
-
-	value = tcRun.TestAccounts
-	if len(value) != 0 {
-		accountsFile := "accounts.yaml"
-		customData[accountsFile] = value
-		envVars["TEMPESTCONF_TEST_ACCOUNTS"] = testOperatorDir + accountsFile
-	}
-
-	value = tcRun.Profile
-	if len(value) != 0 {
-		profileFile := "profile.yaml"
-		customData[profileFile] = value
-		envVars["TEMPESTCONF_PROFILE"] = testOperatorDir + profileFile
-	}
+	// Files
+	SetFileEnvVar(customData, envVars, tcRun.DeployerInput, "deployer_input.ini", "TEMPESTCONF_DEPLOYER_INPUT")
+	SetFileEnvVar(customData, envVars, tcRun.TestAccounts, "accounts.yaml", "TEMPESTCONF_TEST_ACCOUNTS")
+	SetFileEnvVar(customData, envVars, tcRun.Profile, "profile.yaml", "TEMPESTCONF_PROFILE")
 
 	// Bool
 	tempestconfBoolEnvVars := map[string]bool{
@@ -499,7 +454,7 @@ func (r *TempestReconciler) setTempestconfConfigVars(
 	}
 
 	for key, value := range tempestconfIntEnvVars {
-		envVars[key] = r.GetDefaultInt(value)
+		envVars[key] = Int64OrPlaceholder(value, "")
 	}
 
 	// String

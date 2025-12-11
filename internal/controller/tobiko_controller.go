@@ -321,30 +321,40 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 ) map[string]env.Setter {
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
-	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["TOBIKO_LOGS_DIR_NAME"] = env.SetValue(r.GetPodName(instance, workflowStepNum))
 
-	envVars["TOBIKO_TESTENV"] = env.SetValue(instance.Spec.Testenv)
-	envVars["TOBIKO_VERSION"] = env.SetValue(instance.Spec.Version)
-	envVars["TOBIKO_PYTEST_ADDOPTS"] = env.SetValue(instance.Spec.PytestAddopts)
+	// Bool
+	SetBoolEnvVars(envVars, map[string]bool{
+		"TOBIKO_DEBUG_MODE":     instance.Spec.Debug,
+		"TOBIKO_PREVENT_CREATE": instance.Spec.PreventCreate,
+	})
 
-	preventCreate := instance.Spec.PreventCreate
-	if preventCreate {
+	// Note(kstrenko): Remove after the TCIB is updated and takes bool
+	if instance.Spec.PreventCreate {
 		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("True")
+	} else {
+		envVars["TOBIKO_PREVENT_CREATE"] = env.SetValue("")
 	}
+
+	// String
+	SetStringEnvVars(envVars, map[string]string{
+		"USE_EXTERNAL_FILES":    "True",
+		"TOBIKO_LOGS_DIR_NAME":  r.GetPodName(instance, workflowStepNum),
+		"TOBIKO_TESTENV":        instance.Spec.Testenv,
+		"TOBIKO_VERSION":        instance.Spec.Version,
+		"TOBIKO_PYTEST_ADDOPTS": instance.Spec.PytestAddopts,
+		"TOBIKO_KEYS_FOLDER":    "/etc/test_operator",
+	})
 
 	numProcesses := instance.Spec.NumProcesses
 	if numProcesses > 0 {
 		envVars["TOX_NUM_PROCESSES"] = env.SetValue(strconv.Itoa(int(numProcesses)))
 	}
 
-	envVars["TOBIKO_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
-	envVars["TOBIKO_DEBUG_MODE"] = env.SetValue(strconv.FormatBool(instance.Spec.Debug))
-	// Prepare env vars - end
-
 	if instance.Spec.Patch != (testv1beta1.PatchType{}) {
-		envVars["TOBIKO_PATCH_REPOSITORY"] = env.SetValue(instance.Spec.Patch.Repository)
-		envVars["TOBIKO_PATCH_REFSPEC"] = env.SetValue(instance.Spec.Patch.Refspec)
+		SetStringEnvVars(envVars, map[string]string{
+			"TOBIKO_PATCH_REPOSITORY": instance.Spec.Patch.Repository,
+			"TOBIKO_PATCH_REFSPEC":    instance.Spec.Patch.Refspec,
+		})
 	}
 
 	// Prepare custom data
