@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
@@ -266,29 +265,37 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 ) map[string]env.Setter {
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
-	envVars["USE_EXTERNAL_FILES"] = env.SetValue("True")
-	envVars["HORIZON_LOGS_DIR_NAME"] = env.SetValue("horizon")
 
-	// Mandatory variables
-	envVars["ADMIN_USERNAME"] = env.SetValue(instance.Spec.AdminUsername)
-	envVars["ADMIN_PASSWORD"] = env.SetValue(instance.Spec.AdminPassword)
-	envVars["DASHBOARD_URL"] = env.SetValue(instance.Spec.DashboardUrl)
-	envVars["AUTH_URL"] = env.SetValue(instance.Spec.AuthUrl)
-	envVars["REPO_URL"] = env.SetValue(instance.Spec.RepoUrl)
-	envVars["HORIZON_REPO_BRANCH"] = env.SetValue(instance.Spec.HorizonRepoBranch)
+	// Bool
+	SetBoolEnvVars(envVars, map[string]bool{
+		"HORIZONTEST_DEBUG_MODE": instance.Spec.Debug,
+	})
 
-	// Horizon specific configuration
-	envVars["IMAGE_FILE"] = env.SetValue("/var/lib/horizontest/cirros-0.6.2-x86_64-disk.img")
-	envVars["IMAGE_FILE_NAME"] = env.SetValue("cirros-0.6.2-x86_64-disk")
-	envVars["IMAGE_URL"] = env.SetValue("http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img")
-	envVars["PROJECT_NAME"] = env.SetValue("horizontest")
-	envVars["USER_NAME"] = env.SetValue("horizontest")
-	envVars["PASSWORD"] = env.SetValue("horizontest")
-	envVars["FLAVOR_NAME"] = env.SetValue("m1.tiny")
-	envVars["HORIZON_KEYS_FOLDER"] = env.SetValue("/etc/test_operator")
-	envVars["HORIZONTEST_DEBUG_MODE"] = env.SetValue(strconv.FormatBool(instance.Spec.Debug))
-	envVars["EXTRA_FLAG"] = env.SetValue(instance.Spec.ExtraFlag)
-	envVars["PROJECT_NAME_XPATH"] = env.SetValue(instance.Spec.ProjectNameXpath)
+	// String
+	SetStringEnvVars(envVars, map[string]string{
+		"USE_EXTERNAL_FILES":    "True",
+		"HORIZON_LOGS_DIR_NAME": "horizon",
+
+		// Mandatory variables
+		"ADMIN_USERNAME":      instance.Spec.AdminUsername,
+		"ADMIN_PASSWORD":      instance.Spec.AdminPassword,
+		"DASHBOARD_URL":       instance.Spec.DashboardUrl,
+		"AUTH_URL":            instance.Spec.AuthUrl,
+		"REPO_URL":            instance.Spec.RepoUrl,
+		"HORIZON_REPO_BRANCH": instance.Spec.HorizonRepoBranch,
+
+		// Horizon specific configuration
+		"IMAGE_FILE":          "/var/lib/horizontest/cirros-0.6.2-x86_64-disk.img",
+		"IMAGE_FILE_NAME":     "cirros-0.6.2-x86_64-disk",
+		"IMAGE_URL":           "http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img",
+		"PROJECT_NAME":        "horizontest",
+		"USER_NAME":           "horizontest",
+		"PASSWORD":            "horizontest",
+		"FLAVOR_NAME":         "m1.tiny",
+		"HORIZON_KEYS_FOLDER": "/etc/test_operator",
+		"EXTRA_FLAG":          instance.Spec.ExtraFlag,
+		"PROJECT_NAME_XPATH":  instance.Spec.ProjectNameXpath,
+	})
 
 	return envVars
 }

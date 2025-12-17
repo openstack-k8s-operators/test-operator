@@ -271,17 +271,21 @@ func (r *AnsibleTestReconciler) PrepareAnsibleEnv(
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
 
-	// bool
-	envVars["POD_DEBUG"] = env.SetValue(strconv.FormatBool(instance.Spec.Debug))
+	// Bool
+	SetBoolEnvVars(envVars, map[string]bool{
+		"POD_DEBUG": instance.Spec.Debug,
+	})
 
-	// strings
-	envVars["POD_ANSIBLE_EXTRA_VARS"] = env.SetValue(instance.Spec.AnsibleExtraVars)
-	envVars["POD_ANSIBLE_FILE_EXTRA_VARS"] = env.SetValue(instance.Spec.AnsibleVarFiles)
-	envVars["POD_ANSIBLE_INVENTORY"] = env.SetValue(instance.Spec.AnsibleInventory)
-	envVars["POD_ANSIBLE_GIT_REPO"] = env.SetValue(instance.Spec.AnsibleGitRepo)
-	envVars["POD_ANSIBLE_GIT_BRANCH"] = env.SetValue(instance.Spec.AnsibleGitBranch)
-	envVars["POD_ANSIBLE_PLAYBOOK"] = env.SetValue(instance.Spec.AnsiblePlaybookPath)
-	envVars["POD_INSTALL_COLLECTIONS"] = env.SetValue(instance.Spec.AnsibleCollections)
+	// Strings
+	SetStringEnvVars(envVars, map[string]string{
+		"POD_ANSIBLE_EXTRA_VARS":      instance.Spec.AnsibleExtraVars,
+		"POD_ANSIBLE_FILE_EXTRA_VARS": instance.Spec.AnsibleVarFiles,
+		"POD_ANSIBLE_INVENTORY":       instance.Spec.AnsibleInventory,
+		"POD_ANSIBLE_GIT_REPO":        instance.Spec.AnsibleGitRepo,
+		"POD_ANSIBLE_GIT_BRANCH":      instance.Spec.AnsibleGitBranch,
+		"POD_ANSIBLE_PLAYBOOK":        instance.Spec.AnsiblePlaybookPath,
+		"POD_INSTALL_COLLECTIONS":     instance.Spec.AnsibleCollections,
+	})
 
 	return envVars
 }
