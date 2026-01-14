@@ -587,6 +587,8 @@ func (r *Reconciler) EnsureNetworkAttachments(
 			networkAttachments, err)
 	}
 
+	conditions.MarkTrue(condition.NetworkAttachmentsReadyCondition, condition.NetworkAttachmentsReadyMessage)
+
 	return serviceAnnotations, ctrl.Result{}, nil
 }
 
