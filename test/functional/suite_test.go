@@ -122,8 +122,19 @@ var _ = BeforeSuite(func() {
 	kclient, err := kubernetes.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred(), "failed to create kclient")
 
+	err = webhookv1beta1.SetupAnsibleTestWebhookWithManager(k8sManager)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = webhookv1beta1.SetupHorizonTestWebhookWithManager(k8sManager)
+	Expect(err).NotTo(HaveOccurred())
+
 	err = webhookv1beta1.SetupTempestWebhookWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
+
+	err = webhookv1beta1.SetupTobikoWebhookWithManager(k8sManager)
+	Expect(err).NotTo(HaveOccurred())
+
+	testv1.SetupDefaults()
 
 	err = (&controller.AnsibleTestReconciler{
 		Reconciler: controller.Reconciler{
