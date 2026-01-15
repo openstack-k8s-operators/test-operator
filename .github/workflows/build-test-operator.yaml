@@ -68,7 +68,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.21.x
+        go-version: 1.25.x
 
     - name: Checkout test-operator repository
       uses: actions/checkout@v2
