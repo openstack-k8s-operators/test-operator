@@ -96,9 +96,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	// Always patch the instance status when exiting this function so we
 	// can persist any changes.
 	defer func() {
-		// update the overall status condition if service is ready
-		if instance.Status.Conditions.AllSubConditionIsTrue() {
-			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+		// Don't update the status, if reconciler Panics
+		if r := recover(); r != nil {
+			Log.Info(fmt.Sprintf("panic during reconcile %v\n", r))
+			panic(r)
 		}
 		condition.RestoreLastTransitionTimes(&instance.Status.Conditions, savedConditions)
 		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
@@ -126,6 +127,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// e.g. in the cli
 		return ctrl.Result{}, nil
 	}
+	instance.Status.ObservedGeneration = instance.Generation
 
 	// If we're not deleting this and the service object doesn't have our
 	// finalizer, add it.
@@ -167,6 +169,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		instance.Status.Conditions.MarkTrue(
 			condition.DeploymentReadyCondition,
 			condition.DeploymentReadyMessage)
+
+		if instance.Status.Conditions.AllSubConditionIsTrue() {
+			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+		}
 
 		Log.Info(InfoTestingCompleted)
 		return ctrl.Result{}, nil
@@ -320,6 +326,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	)
 	if err != nil || (ctrlResult != ctrl.Result{}) {
 		return ctrlResult, err
+	}
+
+	if instance.Status.Conditions.AllSubConditionIsTrue() {
+		instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
 	}
 
 	return ctrl.Result{}, nil

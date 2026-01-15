@@ -94,9 +94,10 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Always patch the instance status when exiting this function so we
 	// can persist any changes.
 	defer func() {
-		// update the overall status condition if service is ready
-		if instance.Status.Conditions.AllSubConditionIsTrue() {
-			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+		// Don't update the status, if reconciler Panics
+		if r := recover(); r != nil {
+			Log.Info(fmt.Sprintf("panic during reconcile %v\n", r))
+			panic(r)
 		}
 		condition.RestoreLastTransitionTimes(&instance.Status.Conditions, savedConditions)
 		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
@@ -122,8 +123,8 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// Register overall status immediately to have an early feedback
 		// e.g. in the cli
 		return ctrl.Result{}, nil
-
 	}
+	instance.Status.ObservedGeneration = instance.Generation
 
 	workflowLength := len(instance.Spec.Workflow)
 	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
@@ -150,6 +151,10 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		instance.Status.Conditions.MarkTrue(
 			condition.DeploymentReadyCondition,
 			condition.DeploymentReadyMessage)
+
+		if instance.Status.Conditions.AllSubConditionIsTrue() {
+			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+		}
 
 		Log.Info(InfoTestingCompleted)
 		return ctrl.Result{}, nil
@@ -250,6 +255,11 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrlResult, nil
 	}
 	// Create a new pod - end
+
+	if instance.Status.Conditions.AllSubConditionIsTrue() {
+		instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+	}
+
 	Log.Info("Reconciled Service successfully")
 	return ctrl.Result{}, nil
 }
