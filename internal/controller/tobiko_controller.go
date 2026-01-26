@@ -114,6 +114,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		// Initialize conditions used later as Status=Unknown
 		cl := condition.CreateList(
 			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
+			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 			condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
 		)
@@ -229,6 +230,30 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 	// Create PersistentVolumeClaim - end
 
+	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+	}
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
+
+	err = r.ValidateSecretWithKeys(ctx, instance, instance.Spec.KubeconfigSecretName, []string{})
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	mountKubeconfig := len(instance.Spec.KubeconfigSecretName) != 0
+
 	serviceAnnotations, ctrlResult, err := r.EnsureNetworkAttachments(
 		ctx,
 		Log,
@@ -265,8 +290,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	} else {
 		mountKeys = true
 	}
-
-	mountKubeconfig := len(instance.Spec.KubeconfigSecretName) != 0
 
 	// Prepare Tobiko env vars
 	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, nextWorkflowStep)

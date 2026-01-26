@@ -115,7 +115,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// Initialize conditions used later as Status=Unknown
 		cl := condition.CreateList(
 			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
-			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyMessage),
+			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 		)
 		instance.Status.Conditions.Init(&cl)
@@ -207,7 +207,17 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 	// Create PersistentVolumeClaim - end
 
-	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
+	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+	}
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")

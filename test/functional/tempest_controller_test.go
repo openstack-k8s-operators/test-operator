@@ -48,7 +48,7 @@ var _ = Describe("Tempest controller", func() {
 		It("initializes the status fields", func() {
 			Eventually(func(g Gomega) {
 				tempest := GetTempest(tempestName)
-				g.Expect(tempest.Status.Conditions).To(HaveLen(4))
+				g.Expect(tempest.Status.Conditions).To(HaveLen(5))
 			}, timeout*2, interval).Should(Succeed())
 		})
 

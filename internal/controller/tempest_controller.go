@@ -117,6 +117,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// Initialize conditions used later as Status=Unknown
 		cl := condition.CreateList(
 			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
+			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
 			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 			condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
@@ -232,10 +233,29 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 	// Create PersistentVolumeClaim - end
 
-	mountSSHKey := false
-	if instance.Spec.SSHKeySecretName != "" {
-		mountSSHKey = r.CheckSecretExists(ctx, instance, instance.Spec.SSHKeySecretName)
+	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 	}
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
+
+	err = r.ValidateSecretWithKeys(ctx, instance, instance.Spec.SSHKeySecretName, []string{})
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	mountSSHKey := len(instance.Spec.SSHKeySecretName) != 0
 
 	// Generate ConfigMaps
 	err = r.generateServiceConfigMaps(ctx, helper, instance, nextWorkflowStep)
