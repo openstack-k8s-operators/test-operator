@@ -117,6 +117,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// Initialize conditions used later as Status=Unknown
 		cl := condition.CreateList(
 			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
+			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
 			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 			condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
@@ -231,6 +232,22 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrlResult, nil
 	}
 	// Create PersistentVolumeClaim - end
+
+	if err := r.ValidateOpenstackInputs(
+		ctx,
+		instance,
+		instance.Spec.OpenStackConfigMap,
+		instance.Spec.OpenStackConfigSecret,
+	); err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+	}
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
 	mountSSHKey := false
 	if instance.Spec.SSHKeySecretName != "" {

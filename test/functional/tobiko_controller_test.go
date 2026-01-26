@@ -48,7 +48,7 @@ var _ = Describe("Tobiko controller", func() {
 		It("initializes the status fields", func() {
 			Eventually(func(g Gomega) {
 				tobiko := GetTobiko(tobikoName)
-				g.Expect(tobiko.Status.Conditions).To(HaveLen(3))
+				g.Expect(tobiko.Status.Conditions).To(HaveLen(4))
 			}, timeout*2, interval).Should(Succeed())
 		})
 
