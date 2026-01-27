@@ -186,7 +186,13 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		workflowStepLabel: "0",
 	}
 
-	yamlResult, err := EnsureCloudsConfigMapExists(ctx, instance, helper, serviceLabels)
+	yamlResult, err := EnsureCloudsConfigMapExists(
+		ctx,
+		instance,
+		helper,
+		serviceLabels,
+		instance.Spec.OpenStackConfigMap,
+	)
 
 	if err != nil {
 		return yamlResult, err

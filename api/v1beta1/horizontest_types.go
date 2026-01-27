@@ -24,7 +24,8 @@ import (
 
 // HorizonTestSpec defines the desired state of HorizonTest
 type HorizonTestSpec struct {
-	CommonOptions `json:",inline"`
+	CommonOptions         `json:",inline"`
+	CommonOpenstackConfig `json:",inline"`
 
 	// +kubebuilder:default:={limits: {cpu: "2000m", memory: "4Gi"}, requests: {cpu: "1000m", memory: "2Gi"}}
 	// The desired amount of resources that should be assigned to each test pod

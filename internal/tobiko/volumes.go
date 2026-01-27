@@ -26,7 +26,7 @@ func GetVolumes(
 	volumes := []corev1.Volume{
 		util.CreateConfigMapVolume(tobikoConfig, instance.Name+tobikoConfig, util.ScriptsVolumeDefaultMode),
 		util.CreateOpenstackConfigMapVolume(util.TestOperatorCloudsConfigMapName),
-		util.CreateOpenstackConfigSecretVolume(),
+		util.CreateOpenstackConfigSecretVolume(instance.Spec.OpenStackConfigSecret),
 		util.CreateLogsPVCVolume(logsPVCName),
 		util.CreateWorkdirVolume(),
 		util.CreateTmpVolume(),
@@ -67,7 +67,7 @@ func GetVolumeMounts(
 		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/tobiko/external_files", false),
 		util.CreateTestOperatorCloudsConfigVolumeMount("/var/lib/tobiko/.config/openstack/clouds.yaml"),
 		util.CreateTestOperatorCloudsConfigVolumeMount("/etc/openstack/clouds.yaml"),
-		util.CreateOpenstackConfigSecretVolumeMount("/etc/openstack/secure.yaml"),
+		util.CreateOpenstackConfigSecretVolumeMount(instance.Spec.OpenStackConfigSecret, "/etc/openstack/secure.yaml"),
 		util.CreateVolumeMountWithSubPath(tobikoConfig, "/etc/tobiko/tobiko.conf", "tobiko.conf", false),
 	}
 

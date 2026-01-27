@@ -385,6 +385,7 @@ func (in *HorizonTestList) DeepCopyObject() runtime.Object {
 func (in *HorizonTestSpec) DeepCopyInto(out *HorizonTestSpec) {
 	*out = *in
 	in.CommonOptions.DeepCopyInto(&out.CommonOptions)
+	out.CommonOpenstackConfig = in.CommonOpenstackConfig
 	in.Resources.DeepCopyInto(&out.Resources)
 }
 
@@ -634,6 +635,7 @@ func (in *TobikoList) DeepCopyObject() runtime.Object {
 func (in *TobikoSpec) DeepCopyInto(out *TobikoSpec) {
 	*out = *in
 	in.CommonOptions.DeepCopyInto(&out.CommonOptions)
+	out.CommonOpenstackConfig = in.CommonOpenstackConfig
 	in.Resources.DeepCopyInto(&out.Resources)
 	out.Patch = in.Patch
 	if in.NetworkAttachments != nil {
@@ -664,6 +666,7 @@ func (in *TobikoSpec) DeepCopy() *TobikoSpec {
 func (in *TobikoWorkflowSpec) DeepCopyInto(out *TobikoWorkflowSpec) {
 	*out = *in
 	in.WorkflowCommonOptions.DeepCopyInto(&out.WorkflowCommonOptions)
+	out.CommonOpenstackConfig = in.CommonOpenstackConfig
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = new(v1.ResourceRequirements)

@@ -28,12 +28,10 @@ const (
 )
 
 const (
-	volumeNameCACerts         = "ca-certs"
-	volumeNameKubeconfig      = "kubeconfig"
-	volumeNameOpenstackConfig = "openstack-config"
+	volumeNameCACerts    = "ca-certs"
+	volumeNameKubeconfig = "kubeconfig"
 
-	scrtNameCombinedCABundle = "combined-ca-bundle"
-	scrtNameOpenstackConfig  = "openstack-config-secret"
+	secretNameCombinedCABundle = "combined-ca-bundle" // #nosec G101
 
 	subPathCloudsYAML  = "clouds.yaml"
 	subPathConfig      = "config"
@@ -73,14 +71,14 @@ func CreateOpenstackConfigMapVolume(configMapName string) corev1.Volume {
 }
 
 // CreateOpenstackConfigSecretVolume creates the openstack-config-secret volume
-func CreateOpenstackConfigSecretVolume() corev1.Volume {
+func CreateOpenstackConfigSecretVolume(secretName string) corev1.Volume {
 	mode := TLSCertificateMode
 	return corev1.Volume{
-		Name: scrtNameOpenstackConfig,
+		Name: secretName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				DefaultMode: &mode,
-				SecretName:  scrtNameOpenstackConfig,
+				SecretName:  secretName,
 			},
 		},
 	}
@@ -127,7 +125,7 @@ func AppendCACertsVolume(volumes []corev1.Volume) []corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				DefaultMode: &mode,
-				SecretName:  scrtNameCombinedCABundle,
+				SecretName:  secretNameCombinedCABundle,
 			},
 		},
 	}
@@ -266,13 +264,13 @@ func CreateCACertVolumeMount(mountPath string) corev1.VolumeMount {
 }
 
 // CreateOpenstackConfigVolumeMount creates an openstack config volume mount
-func CreateOpenstackConfigVolumeMount(mountPath string) corev1.VolumeMount {
-	return CreateVolumeMountWithSubPath(volumeNameOpenstackConfig, mountPath, subPathCloudsYAML, true)
+func CreateOpenstackConfigVolumeMount(configMapName string, mountPath string) corev1.VolumeMount {
+	return CreateVolumeMountWithSubPath(configMapName, mountPath, subPathCloudsYAML, true)
 }
 
 // CreateOpenstackConfigSecretVolumeMount creates an openstack config secret volume mount
-func CreateOpenstackConfigSecretVolumeMount(mountPath string) corev1.VolumeMount {
-	return CreateVolumeMountWithSubPath(scrtNameOpenstackConfig, mountPath, subPathSecureYAML, false)
+func CreateOpenstackConfigSecretVolumeMount(secretName string, mountPath string) corev1.VolumeMount {
+	return CreateVolumeMountWithSubPath(secretName, mountPath, subPathSecureYAML, false)
 }
 
 // CreateTestOperatorCloudsConfigVolumeMount creates a test-operator-clouds-config volume mount

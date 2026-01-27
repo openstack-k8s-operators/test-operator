@@ -21,7 +21,7 @@ func GetVolumes(
 	volumes := []corev1.Volume{
 		util.CreateConfigMapVolume(horizonTestConfig, instance.Name+horizonTestConfig, util.ScriptsVolumeDefaultMode),
 		util.CreateOpenstackConfigMapVolume(util.TestOperatorCloudsConfigMapName),
-		util.CreateOpenstackConfigSecretVolume(),
+		util.CreateOpenstackConfigSecretVolume(instance.Spec.OpenStackConfigSecret),
 		util.CreateLogsPVCVolume(logsPVCName),
 		util.CreateWorkdirVolume(),
 		util.CreateTmpVolume(),
@@ -54,7 +54,7 @@ func GetVolumeMounts(
 		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/horizontest/external_files", false),
 		util.CreateTestOperatorCloudsConfigVolumeMount("/var/lib/horizontest/.config/openstack/clouds.yaml"),
 		util.CreateTestOperatorCloudsConfigVolumeMount("/etc/openstack/clouds.yaml"),
-		util.CreateOpenstackConfigSecretVolumeMount("/etc/openstack/secure.yaml"),
+		util.CreateOpenstackConfigSecretVolumeMount(instance.Spec.OpenStackConfigSecret, "/etc/openstack/secure.yaml"),
 	}
 
 	if mountCerts {
