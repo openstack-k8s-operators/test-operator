@@ -194,7 +194,13 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		operatorNameLabel:  "test-operator",
 	}
 
-	yamlResult, err := EnsureCloudsConfigMapExists(ctx, instance, helper, serviceLabels)
+	yamlResult, err := EnsureCloudsConfigMapExists(
+		ctx,
+		instance,
+		helper,
+		serviceLabels,
+		instance.Spec.OpenStackConfigMap,
+	)
 
 	if err != nil {
 		return yamlResult, err

@@ -36,7 +36,8 @@ type PatchType struct {
 
 // TobikoSpec defines the desired state of Tobiko
 type TobikoSpec struct {
-	CommonOptions `json:",inline"`
+	CommonOptions         `json:",inline"`
+	CommonOpenstackConfig `json:",inline"`
 
 	// +kubebuilder:default:={limits: {cpu: "8000m", memory: "8Gi"}, requests: {cpu: "4000m", memory: "4Gi"}}
 	// The desired amount of resources that should be assigned to each test pod
@@ -134,6 +135,7 @@ type TobikoSpec struct {
 
 type TobikoWorkflowSpec struct {
 	WorkflowCommonOptions `json:",inline"`
+	CommonOpenstackConfig `json:",inline"`
 
 	// The desired amount of resources that should be assigned to each test pod
 	// spawned using the Tobiko CR. https://pkg.go.dev/k8s.io/api/core/v1#ResourceRequirements

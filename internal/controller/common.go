@@ -647,8 +647,8 @@ func EnsureCloudsConfigMapExists(
 	instance client.Object,
 	helper *helper.Helper,
 	labels map[string]string,
+	openstackConfigMapName string,
 ) (ctrl.Result, error) {
-	const openstackConfigMapName = "openstack-config"
 	const testOperatorCloudsConfigMapName = "test-operator-clouds-config"
 
 	cm, _, _ := configmap.GetConfigMap(

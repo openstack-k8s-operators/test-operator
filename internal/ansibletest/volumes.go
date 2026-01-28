@@ -22,8 +22,8 @@ func GetVolumes(
 ) []corev1.Volume {
 
 	volumes := []corev1.Volume{
-		util.CreateOpenstackConfigMapVolume("openstack-config"),
-		util.CreateOpenstackConfigSecretVolume(),
+		util.CreateOpenstackConfigMapVolume(instance.Spec.OpenStackConfigMap),
+		util.CreateOpenstackConfigSecretVolume(instance.Spec.OpenStackConfigSecret),
 		util.CreateLogsPVCVolume(logsPVCName),
 		util.CreateWorkdirVolume(),
 		util.CreateTmpVolume(),
@@ -63,9 +63,9 @@ func GetVolumeMounts(
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/ansible", false),
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameTmp, "/tmp", false),
 		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/AnsibleTests/external_files", false),
-		util.CreateOpenstackConfigVolumeMount("/etc/openstack/clouds.yaml"),
-		util.CreateOpenstackConfigVolumeMount("/var/lib/ansible/.config/openstack/clouds.yaml"),
-		util.CreateOpenstackConfigSecretVolumeMount("/var/lib/ansible/.config/openstack/secure.yaml"),
+		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/etc/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/var/lib/ansible/.config/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigSecretVolumeMount(instance.Spec.OpenStackConfigSecret, "/var/lib/ansible/.config/openstack/secure.yaml"),
 	}
 
 	if mountCerts {

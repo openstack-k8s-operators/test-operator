@@ -23,8 +23,8 @@ func GetVolumes(
 
 	volumes := []corev1.Volume{
 		util.CreateConfigMapVolume(configData, customDataConfigMapName, util.ScriptsVolumeDefaultMode),
-		util.CreateOpenstackConfigMapVolume("openstack-config"),
-		util.CreateOpenstackConfigSecretVolume(),
+		util.CreateOpenstackConfigMapVolume(instance.Spec.OpenStackConfigMap),
+		util.CreateOpenstackConfigSecretVolume(instance.Spec.OpenStackConfigSecret),
 		util.CreateLogsPVCVolume(logsPVCName),
 		util.CreateWorkdirVolume(),
 		util.CreateTmpVolume(),
@@ -56,9 +56,9 @@ func GetVolumeMounts(
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/tempest", false),
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameTmp, "/tmp", false),
 		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/tempest/external_files", false),
-		util.CreateOpenstackConfigVolumeMount("/etc/openstack/clouds.yaml"),
-		util.CreateOpenstackConfigVolumeMount("/var/lib/tempest/.config/openstack/clouds.yaml"),
-		util.CreateOpenstackConfigSecretVolumeMount("/etc/openstack/secure.yaml"),
+		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/etc/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/var/lib/tempest/.config/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigSecretVolumeMount(instance.Spec.OpenStackConfigSecret, "/etc/openstack/secure.yaml"),
 	}
 
 	if mountCerts {
