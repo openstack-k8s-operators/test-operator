@@ -94,6 +94,12 @@ var (
 
 	// ErrFieldNotFound indicates a field name does not exist on the struct.
 	ErrFieldNotFound = errors.New("field not found")
+
+	// ErrConfigMapMissingKey indicates that a required key is missing in a config map.
+	ErrConfigMapMissingKey = errors.New("config map is missing required key")
+
+	// ErrSecretMissingKey indicates that a required key is missing in a secret.
+	ErrSecretMissingKey = errors.New("secret is missing required key")
 )
 
 // Reconciler provides common functionality for all test framework reconcilers
@@ -637,6 +643,38 @@ func (r *Reconciler) VerifyNetworkAttachments(
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// ValidateOpenstackInputs validates that required Openstack config map and secret exist
+func (r *Reconciler) ValidateOpenstackInputs(
+	ctx context.Context,
+	instance client.Object,
+	openstackConfigMapName string,
+	openstackConfigSecretName string,
+) error {
+	cm := &corev1.ConfigMap{}
+	if err := r.Client.Get(ctx, client.ObjectKey{
+		Namespace: instance.GetNamespace(),
+		Name:      openstackConfigMapName,
+	}, cm); err != nil {
+		return fmt.Errorf("openstack config map %s: %w", openstackConfigMapName, err)
+	}
+	if _, ok := cm.Data["clouds.yaml"]; !ok {
+		return fmt.Errorf("%w 'clouds.yaml': %s", ErrConfigMapMissingKey, openstackConfigMapName)
+	}
+
+	secret := &corev1.Secret{}
+	if err := r.Client.Get(ctx, client.ObjectKey{
+		Namespace: instance.GetNamespace(),
+		Name:      openstackConfigSecretName,
+	}, secret); err != nil {
+		return fmt.Errorf("openstack secret %s: %w", openstackConfigSecretName, err)
+	}
+	if _, ok := secret.Data["secure.yaml"]; !ok {
+		return fmt.Errorf("%w 'secure.yaml': %s", ErrSecretMissingKey, openstackConfigSecretName)
+	}
+
+	return nil
 }
 
 // EnsureCloudsConfigMapExists ensures that frameworks like Tobiko and Horizon have password values
