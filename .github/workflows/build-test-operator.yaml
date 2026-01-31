@@ -29,7 +29,7 @@ jobs:
     if: needs.check-secrets.outputs.have-secrets == 'true'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - name: Get branch name
       id: branch-name
@@ -71,7 +71,7 @@ jobs:
         go-version: 1.24.x
 
     - name: Checkout test-operator repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
 
     - name: Install operator-sdk
       uses: redhat-actions/openshift-tools-installer@v1
@@ -140,7 +140,7 @@ jobs:
 
     steps:
     - name: Checkout test-operator repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
 
     - name: Get branch name
       id: branch-name
