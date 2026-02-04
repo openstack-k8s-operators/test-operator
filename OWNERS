@@ -2,10 +2,8 @@
 approvers:
   - test-approvers
   - openstack-approvers
-  - ci-approvers
 
 reviewers:
   - test-approvers
   - test-reviewers
   - openstack-approvers
-  - ci-approvers
