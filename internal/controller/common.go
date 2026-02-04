@@ -94,6 +94,9 @@ var (
 
 	// ErrFieldNotFound indicates a field name does not exist on the struct.
 	ErrFieldNotFound = errors.New("field not found")
+
+	// ErrMissingRequiredKey indicates that a required key is missing in a resource.
+	ErrMissingRequiredKey = errors.New("missing required key")
 )
 
 // Reconciler provides common functionality for all test framework reconcilers
@@ -348,6 +351,82 @@ func (r *Reconciler) CheckSecretExists(ctx context.Context, instance client.Obje
 	}
 
 	return true
+}
+
+// ValidateSecretWithKeys validates that a Secret exists and contains required keys
+func (r *Reconciler) ValidateSecretWithKeys(
+	ctx context.Context,
+	instance client.Object,
+	secretName string,
+	requiredKeys []string,
+) error {
+	// When secret is not specified, skip it
+	if secretName == "" {
+		return nil
+	}
+
+	secret := &corev1.Secret{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: secretName}, secret)
+	if err != nil {
+		return err
+	}
+
+	// Validate required keys
+	for _, key := range requiredKeys {
+		if _, ok := secret.Data[key]; !ok {
+			return fmt.Errorf("%w '%s' in secret %s", ErrMissingRequiredKey, key, secretName)
+		}
+	}
+
+	return nil
+}
+
+// ValidateConfigMapWithKeys validates that a ConfigMap exists and contains required keys
+func (r *Reconciler) ValidateConfigMapWithKeys(
+	ctx context.Context,
+	instance client.Object,
+	configMapName string,
+	requiredKeys []string,
+) error {
+	// When config map is not specified, skip it
+	if configMapName == "" {
+		return nil
+	}
+
+	cm := &corev1.ConfigMap{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instance.GetNamespace(), Name: configMapName}, cm)
+	if err != nil {
+		return err
+	}
+
+	// Validate required keys
+	for _, key := range requiredKeys {
+		if _, ok := cm.Data[key]; !ok {
+			return fmt.Errorf("%w '%s' in config map %s", ErrMissingRequiredKey, key, configMapName)
+		}
+	}
+
+	return nil
+}
+
+// ValidateOpenstackInputs validates OpenStack configuration inputs
+func (r *Reconciler) ValidateOpenstackInputs(
+	ctx context.Context,
+	instance client.Object,
+	openstackConfigMapName string,
+	openstackConfigSecretName string,
+) error {
+	err := r.ValidateConfigMapWithKeys(ctx, instance, openstackConfigMapName, []string{"clouds.yaml"})
+	if err != nil {
+		return err
+	}
+
+	err = r.ValidateSecretWithKeys(ctx, instance, openstackConfigSecretName, []string{"secure.yaml"})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetStringHash returns a hash of the given string with the specified length

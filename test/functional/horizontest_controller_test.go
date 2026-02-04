@@ -48,7 +48,7 @@ var _ = Describe("HorizonTest controller", func() {
 		It("initializes the status fields", func() {
 			Eventually(func(g Gomega) {
 				horizonTest := GetHorizonTest(horizonTestName)
-				g.Expect(horizonTest.Status.Conditions).To(HaveLen(2))
+				g.Expect(horizonTest.Status.Conditions).To(HaveLen(3))
 			}, timeout*2, interval).Should(Succeed())
 		})
 
