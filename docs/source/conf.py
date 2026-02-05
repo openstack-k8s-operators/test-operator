@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinxemoji.sphinxemoji",
+    "sphinx_copybutton",
     "sphinx_design"
 ]
 
@@ -89,31 +90,35 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-# html_logo = "images/logo_cifmw_200.png"
-html_theme = "sphinx_material"
+html_theme = "furo"
 
 html_show_sourcelink = True
 html_sidebars = {
-    "**": ["globaltoc.html", "localtoc.html"]
+    "**": [
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/scroll-start.html",
+        "sidebar/navigation.html",
+        "sidebar/scroll-end.html",
+    ]
 }
+
+html_title = "test-operator"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 html_theme_options = {
-    "base_url": "https://github.com/openstack-k8s-operators/test-operator/",
-    "repo_url": "https://github.com/openstack-k8s-operators/test-operator/",
-    "nav_title": "test-operator",
-    "repo_name": "test-operator",
-    "repo_type": "github",
-    "globaltoc_depth": 2,
-    "color_primary": "blue-grey",
-    "color_accent": "cyan",
-    "touch_icon": "images/openstack-logo.png",
-    "theme_color": "#2196f3",
-    "master_doc": False,
-    "table_classes": ["plain"],
+    "source_repository": "https://github.com/openstack-k8s-operators/test-operator/",
+    "source_branch": "main",
+    "source_directory": "docs/source/",
+    "light_css_variables": {
+        "color-link-underline": "transparent",
+    },
+    "dark_css_variables": {
+        "color-link-underline": "transparent",
+    }
 }
 
 # -- Options for HTMLHelp output ------------------------------------------
