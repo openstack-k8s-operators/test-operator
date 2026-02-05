@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinxemoji.sphinxemoji",
+    "sphinx_copybutton",
     "sphinx_design"
 ]
 

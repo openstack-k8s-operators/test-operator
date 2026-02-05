@@ -5,4 +5,5 @@ furo
 doc8>=0.8.1 # Apache-2.0
 sphinxemoji
 myst-parser
+sphinx-copybutton
 sphinx-design
