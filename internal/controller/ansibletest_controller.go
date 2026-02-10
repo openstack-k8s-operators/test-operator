@@ -191,6 +191,18 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		operatorNameLabel:  "test-operator",
 	}
 
+	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+	}
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
+
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(
 		ctx,
@@ -206,18 +218,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrlResult, nil
 	}
 	// Create PersistentVolumeClaim - end
-
-	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityError,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-	}
-	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")

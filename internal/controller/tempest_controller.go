@@ -216,6 +216,31 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		workflowStepNum = nextWorkflowStep
 	}
 
+	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityError,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+	}
+
+	err = r.ValidateSecretWithKeys(ctx, instance, instance.Spec.SSHKeySecretName, []string{})
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.InputReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.InputReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	mountSSHKey := len(instance.Spec.SSHKeySecretName) != 0
+
+	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
+
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(
 		ctx,
@@ -232,30 +257,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrlResult, nil
 	}
 	// Create PersistentVolumeClaim - end
-
-	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityError,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-	}
-	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
-
-	err = r.ValidateSecretWithKeys(ctx, instance, instance.Spec.SSHKeySecretName, []string{})
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{}, err
-	}
-	mountSSHKey := len(instance.Spec.SSHKeySecretName) != 0
 
 	// Generate ConfigMaps
 	err = r.generateServiceConfigMaps(ctx, helper, instance, nextWorkflowStep)
