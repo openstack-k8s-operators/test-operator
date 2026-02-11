@@ -117,4 +117,56 @@ var _ = Describe("Tobiko controller", func() {
 			Expect(pod.Name).ToNot(BeEmpty())
 		})
 	})
+
+	When("Tobiko is created with network attachments", func() {
+		var networkAttachmentName = "ctlplane"
+
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+			Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+			nad := th.CreateNetworkAttachmentDefinition(types.NamespacedName{
+				Namespace: namespace,
+				Name:      networkAttachmentName,
+			})
+			DeferCleanup(th.DeleteInstance, nad)
+
+			spec := GetDefaultTobikoSpec()
+			spec["networkAttachments"] = []string{networkAttachmentName}
+			DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+		})
+
+		It("should add network annotation to pod", func() {
+			pod := GetTestOperatorPod(namespace, tobikoName.Name)
+			Expect(pod.Annotations).To(HaveKey("k8s.v1.cni.cncf.io/networks"))
+		})
+	})
+
+	When("Tobiko is created with non-existent network attachments", func() {
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+			Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+			spec := GetDefaultTobikoSpec()
+			spec["networkAttachments"] = []string{"non-existent-nad"}
+			DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+		})
+
+		It("should set NetworkAttachmentsReady to false", func() {
+			th.ExpectCondition(
+				tobikoName,
+				ConditionGetterFunc(TobikoConditionGetter),
+				condition.NetworkAttachmentsReadyCondition,
+				corev1.ConditionFalse,
+			)
+		})
+	})
 })

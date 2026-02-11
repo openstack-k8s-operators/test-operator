@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"    //revive:disable:dot-imports
 
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
+
 	//revive:disable-next-line:dot-imports
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
@@ -140,6 +141,52 @@ var _ = Describe("Tempest controller", func() {
 		It("should create a pod", func() {
 			pod := GetTestOperatorPod(namespace, tempestName.Name)
 			Expect(pod.Name).ToNot(BeEmpty())
+		})
+	})
+
+	When("Tempest is created with network attachments", func() {
+		var networkAttachmentName = "ctlplane"
+
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			nad := th.CreateNetworkAttachmentDefinition(types.NamespacedName{
+				Namespace: namespace,
+				Name:      networkAttachmentName,
+			})
+			DeferCleanup(th.DeleteInstance, nad)
+
+			spec := GetDefaultTempestSpec()
+			spec["networkAttachments"] = []string{networkAttachmentName}
+			DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+		})
+
+		It("should add network annotation to pod", func() {
+			pod := GetTestOperatorPod(namespace, tempestName.Name)
+			Expect(pod.Annotations).To(HaveKey("k8s.v1.cni.cncf.io/networks"))
+		})
+	})
+
+	When("Tempest is created with non-existent network attachments", func() {
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			spec := GetDefaultTempestSpec()
+			spec["networkAttachments"] = []string{"non-existent-nad"}
+			DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+		})
+
+		It("should set NetworkAttachmentsReady to false", func() {
+			th.ExpectCondition(
+				tempestName,
+				ConditionGetterFunc(TempestConditionGetter),
+				condition.NetworkAttachmentsReadyCondition,
+				corev1.ConditionFalse,
+			)
 		})
 	})
 })
