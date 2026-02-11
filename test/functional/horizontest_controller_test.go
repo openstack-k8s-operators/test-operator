@@ -37,6 +37,28 @@ var _ = Describe("HorizonTest controller", func() {
 		}
 	})
 
+	DescribeTable("Missing Openstack resources should set InputReady to false",
+		func(createResource func()) {
+			createResource()
+			DeferCleanup(th.DeleteInstance, CreateHorizonTest(horizonTestName, GetDefaultHorizonTestSpec()))
+
+			th.ExpectCondition(
+				horizonTestName,
+				ConditionGetterFunc(HorizonTestConditionGetter),
+				condition.InputReadyCondition,
+				corev1.ConditionFalse,
+			)
+		},
+		Entry("when config map is missing", func() {
+			_, secret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
+		}),
+		Entry("when secret is missing", func() {
+			cm, _ := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, cm)).Should(Succeed())
+		}),
+	)
+
 	When("A HorizonTest instance is created", func() {
 		BeforeEach(func() {
 			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
@@ -49,16 +71,51 @@ var _ = Describe("HorizonTest controller", func() {
 			Eventually(func(g Gomega) {
 				horizonTest := GetHorizonTest(horizonTestName)
 				g.Expect(horizonTest.Status.Conditions).To(HaveLen(3))
+				g.Expect(horizonTest.Status.Hash).To(BeEmpty())
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("is not ready", func() {
+		It("should have the Spec fields initialized", func() {
+			horizonTest := GetHorizonTest(horizonTestName)
+			Expect(horizonTest.Spec.StorageClass).Should(Equal(DefaultStorageClass))
+			Expect(horizonTest.Spec.AdminUsername).Should(Equal("admin"))
+			Expect(horizonTest.Spec.AdminPassword).Should(Equal("password"))
+			Expect(horizonTest.Spec.DashboardUrl).ShouldNot(BeEmpty())
+			Expect(horizonTest.Spec.AuthUrl).ShouldNot(BeEmpty())
+		})
+	})
+
+	When("All dependencies are ready", func() {
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+			Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+			DeferCleanup(th.DeleteInstance, CreateHorizonTest(horizonTestName, GetDefaultHorizonTestSpec()))
+		})
+
+		It("should have InputReady condition true", func() {
 			th.ExpectCondition(
 				horizonTestName,
 				ConditionGetterFunc(HorizonTestConditionGetter),
-				condition.ReadyCondition,
-				corev1.ConditionUnknown,
+				condition.InputReadyCondition,
+				corev1.ConditionTrue,
 			)
+		})
+
+		It("should create a PVC for logs", func() {
+			pvc := GetTestOperatorPVC(namespace, horizonTestName.Name)
+			Expect(pvc.Name).ToNot(BeEmpty())
+			Expect(*pvc.Spec.StorageClassName).To(Equal(DefaultStorageClass))
+			Expect(pvc.Spec.AccessModes).To(ContainElement(corev1.ReadWriteOnce))
+		})
+
+		It("should create a pod", func() {
+			pod := GetTestOperatorPod(namespace, horizonTestName.Name)
+			Expect(pod.Name).ToNot(BeEmpty())
 		})
 	})
 })
