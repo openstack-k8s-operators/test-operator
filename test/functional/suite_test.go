@@ -27,7 +27,9 @@ import (
 
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	common_test "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
+	"github.com/openstack-k8s-operators/lib-common/modules/test"
 	testv1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	controller "github.com/openstack-k8s-operators/test-operator/internal/controller"
 	webhookv1beta1 "github.com/openstack-k8s-operators/test-operator/internal/webhook/v1beta1"
@@ -68,6 +70,10 @@ var _ = BeforeSuite(func() {
 
 	ctx, cancel = context.WithCancel(context.TODO())
 
+	networkv1CRD, err := test.GetCRDDirFromModule(
+		"github.com/k8snetworkplumbingwg/network-attachment-definition-client", "../../go.mod", "artifacts/networks-crd.yaml")
+	Expect(err).ShouldNot(HaveOccurred())
+
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		// Increase this to 60 or 120 seconds for the single-core run
@@ -76,6 +82,11 @@ var _ = BeforeSuite(func() {
 		ControlPlaneStopTimeout: 120 * time.Second,
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "config", "crd", "bases"),
+		},
+		CRDInstallOptions: envtest.CRDInstallOptions{
+			Paths: []string{
+				networkv1CRD,
+			},
 		},
 		ErrorIfCRDPathMissing: true,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
@@ -98,12 +109,14 @@ var _ = BeforeSuite(func() {
 	logger = ctrl.Log.WithName("---Test---")
 
 	// cfg is defined in this file globally.
-	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
 	err = testv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = networkv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
