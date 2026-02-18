@@ -30,6 +30,7 @@ import (
 )
 
 const (
+	TestOperatorConfig          = "test-operator-config"
 	OpenStackConfigMapName      = "openstack-config"
 	OpenStackConfigSecretName   = "openstack-config-secret" // #nosec G101
 	DefaultStorageClass         = "local-storage"
@@ -54,7 +55,7 @@ func CreateCommonOpenstackResources(namespace string) (*corev1.ConfigMap, *corev
 			Namespace: namespace,
 		},
 		Data: map[string]string{
-			"clouds.yaml": "clouds:\n  default:\n    auth: {}",
+			"clouds.yaml": "clouds:\n  default:\n    auth:\n      username: admin",
 		},
 	}
 
@@ -64,11 +65,62 @@ func CreateCommonOpenstackResources(namespace string) (*corev1.ConfigMap, *corev
 			Namespace: namespace,
 		},
 		StringData: map[string]string{
-			"secure.yaml": "clouds:\n  default:\n    auth: {}",
+			"secure.yaml": "clouds:\n  default:\n    auth:\n      password: '12345678'",
 		},
 	}
 
 	return cm, secret
+}
+
+func CreateTestOperatorConfigMap(namespace string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      TestOperatorConfig,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			"ansibletest-image": "quay.io/podified-antelope-centos9/openstack-ansibletest:current-podified",
+			"horizontest-image": "quay.io/podified-antelope-centos9/openstack-horizontest:current-podified",
+			"tempest-image":     "quay.io/podified-antelope-centos9/openstack-tempest:current-podified",
+			"tobiko-image":      "quay.io/podified-antelope-centos9/openstack-tobiko:current-podified",
+		},
+	}
+}
+
+func GetTestOperatorPVC(namespace string, instanceName string) *corev1.PersistentVolumeClaim {
+	var pvc corev1.PersistentVolumeClaim
+	Eventually(func(g Gomega) {
+		pvcList := &corev1.PersistentVolumeClaimList{}
+		listOpts := []client.ListOption{
+			client.InNamespace(namespace),
+			client.MatchingLabels{
+				"instanceName": instanceName,
+				"operator":     "test-operator",
+			},
+		}
+		g.Expect(k8sClient.List(ctx, pvcList, listOpts...)).Should(Succeed())
+		g.Expect(pvcList.Items).To(HaveLen(1))
+		pvc = pvcList.Items[0]
+	}, timeout*2, interval).Should(Succeed())
+	return &pvc
+}
+
+func GetTestOperatorPod(namespace string, instanceName string) *corev1.Pod {
+	var pod corev1.Pod
+	Eventually(func(g Gomega) {
+		podList := &corev1.PodList{}
+		listOpts := []client.ListOption{
+			client.InNamespace(namespace),
+			client.MatchingLabels{
+				"instanceName": instanceName,
+				"operator":     "test-operator",
+			},
+		}
+		g.Expect(k8sClient.List(ctx, podList, listOpts...)).Should(Succeed())
+		g.Expect(podList.Items).To(HaveLen(1))
+		pod = podList.Items[0]
+	}, timeout*3, interval).Should(Succeed())
+	return &pod
 }
 
 // AnsibleTest helpers
@@ -95,11 +147,9 @@ func GetAnsibleTest(name types.NamespacedName) *testv1.AnsibleTest {
 
 func GetDefaultAnsibleTestSpec() map[string]any {
 	return map[string]any{
-		"storageClass":          "local-storage",
-		"openStackConfigMap":    "openstack-config",
-		"openStackConfigSecret": "openstack-config-secret",
-		"ansibleGitRepo":        "https://github.com/example/test-repo",
-		"ansiblePlaybookPath":   "tests/playbook.yaml",
+		"storageClass":        DefaultStorageClass,
+		"ansibleGitRepo":      "https://github.com/example/test-repo",
+		"ansiblePlaybookPath": "tests/playbook.yaml",
 	}
 }
 
@@ -132,7 +182,7 @@ func GetHorizonTest(name types.NamespacedName) *testv1.HorizonTest {
 
 func GetDefaultHorizonTestSpec() map[string]any {
 	return map[string]any{
-		"storageClass":  "local-storage",
+		"storageClass":  DefaultStorageClass,
 		"adminUsername": "admin",
 		"adminPassword": "password",
 		"dashboardUrl":  "http://horizon.example.com",
@@ -169,9 +219,7 @@ func GetTempest(name types.NamespacedName) *testv1.Tempest {
 
 func GetDefaultTempestSpec() map[string]any {
 	return map[string]any{
-		"storageClass":          "local-storage",
-		"openStackConfigMap":    "openstack-config",
-		"openStackConfigSecret": "openstack-config-secret",
+		"storageClass": DefaultStorageClass,
 		"tempestRun": map[string]any{
 			"includeList": "tempest.api.identity.v3",
 		},
@@ -207,7 +255,7 @@ func GetTobiko(name types.NamespacedName) *testv1.Tobiko {
 
 func GetDefaultTobikoSpec() map[string]any {
 	return map[string]any{
-		"storageClass": "local-storage",
+		"storageClass": DefaultStorageClass,
 		"testenv":      "sanity",
 	}
 }
