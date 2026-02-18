@@ -1,0 +1,17 @@
+apiVersion: test.openstack.org/v1beta1
+kind: Tempest
+metadata:
+  name: tempest-sample
+  namespace: test-operator-kuttl-tests
+status:
+  conditions:
+  - type: InputReady
+    status: "True"
+  - type: ServiceConfigReady
+    status: "True"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempest-sample-config
+  namespace: test-operator-kuttl-tests
