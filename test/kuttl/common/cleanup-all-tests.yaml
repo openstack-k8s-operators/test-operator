@@ -1,0 +1,15 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+- apiVersion: test.openstack.org/v1beta1
+  kind: Tempest
+  name: tempest-sample
+- apiVersion: test.openstack.org/v1beta1
+  kind: Tobiko
+  name: tobiko-sample
+- apiVersion: test.openstack.org/v1beta1
+  kind: AnsibleTest
+  name: ansibletest-sample
+- apiVersion: test.openstack.org/v1beta1
+  kind: HorizonTest
+  name: horizontest-sample
