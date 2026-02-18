@@ -1,0 +1,11 @@
+---
+- project:
+    name: openstack-k8s-operators/test-operator
+    github-check:
+      jobs:
+        - openstack-k8s-operators-content-provider:
+            vars:
+              cifmw_install_yamls_sdk_version: v1.41.1
+        - podified-multinode-edpm-deployment-crc-test-operator:
+            dependencies:
+              - openstack-k8s-operators-content-provider
