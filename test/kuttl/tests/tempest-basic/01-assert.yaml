@@ -1,0 +1,16 @@
+apiVersion: test.openstack.org/v1beta1
+kind: Tempest
+metadata:
+  name: tempest-sample
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+  - type: DeploymentReady
+    status: "True"
+  - type: InputReady
+    status: "True"
+  - type: NetworkAttachmentsReady
+    status: "True"
+  - type: ServiceConfigReady
+    status: "True"

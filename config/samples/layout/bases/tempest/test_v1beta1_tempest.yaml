@@ -1,0 +1,13 @@
+---
+apiVersion: test.openstack.org/v1beta1
+kind: Tempest
+metadata:
+  name: tempest-sample
+  namespace: openstack
+spec:
+  containerImage: ""
+  tempestRun:
+    includeList: |
+      tempest.api.identity.v3.*
+    concurrency: 8
+  tempestconfRun: {}
