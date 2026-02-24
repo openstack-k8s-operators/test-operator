@@ -220,3 +220,8 @@ func (instance AnsibleTest) RbacNamespace() string {
 func (instance AnsibleTest) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *AnsibleTest) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}

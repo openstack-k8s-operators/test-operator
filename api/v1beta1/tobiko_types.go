@@ -246,3 +246,8 @@ func (instance Tobiko) RbacNamespace() string {
 func (instance Tobiko) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *Tobiko) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}
