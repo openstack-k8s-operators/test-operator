@@ -522,3 +522,18 @@ func (instance Tempest) RbacNamespace() string {
 func (instance Tempest) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *Tempest) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}
+
+// GetStorageClass returns the storage class name
+func (instance *Tempest) GetStorageClass() string {
+	return instance.Spec.StorageClass
+}
+
+// SetObservedGeneration sets the observed generation to the current generation
+func (instance *Tempest) SetObservedGeneration() {
+	instance.Status.ObservedGeneration = instance.Generation
+}
