@@ -333,12 +333,12 @@ func (r *Reconciler) GetPodName(instance interface{}, stepNum int) string {
 }
 
 // GetPVCLogsName returns the name of the PVC for logs for the given instance and workflow step
-func (r *Reconciler) GetPVCLogsName(instance client.Object, workflowStepNum int) string {
+func (r *Reconciler) GetPVCLogsName(instance client.Object, pvcIndex int) string {
 	instanceName := instance.GetName()
 	instanceCreationTimestamp := instance.GetCreationTimestamp().Format(time.UnixDate)
 	suffixLength := 5
 	nameSuffix := GetStringHash(instanceName+instanceCreationTimestamp, suffixLength)
-	workflowStep := strconv.Itoa(workflowStepNum)
+	workflowStep := strconv.Itoa(pvcIndex)
 	return instanceName + "-" + workflowStep + "-" + nameSuffix
 }
 
@@ -446,10 +446,10 @@ func (r *Reconciler) EnsureLogsPVCExists(
 	helper *helper.Helper,
 	labels map[string]string,
 	StorageClassName string,
-	workflowStepNum int,
+	pvcIndex int,
 ) (ctrl.Result, error) {
 	instanceNamespace := instance.GetNamespace()
-	pvcName := r.GetPVCLogsName(instance, workflowStepNum)
+	pvcName := r.GetPVCLogsName(instance, pvcIndex)
 
 	pvvc := &corev1.PersistentVolumeClaim{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: instanceNamespace, Name: pvcName}, pvvc)
@@ -591,9 +591,9 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 }
 
 // PodExists checks if a pod exists for the given instance and workflow step
-func (r *Reconciler) PodExists(ctx context.Context, instance client.Object, workflowStepNum int) bool {
+func (r *Reconciler) PodExists(ctx context.Context, instance client.Object, workflowStepIndex int) bool {
 	pod := &corev1.Pod{}
-	podName := r.GetPodName(instance, workflowStepNum)
+	podName := r.GetPodName(instance, workflowStepIndex)
 	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: podName}
 	err := r.Client.Get(ctx, objectKey, pod)
 	if err != nil && k8s_errors.IsNotFound(err) {
@@ -678,11 +678,11 @@ func (r *Reconciler) VerifyNetworkAttachments(
 	instance client.Object,
 	networkAttachments []string,
 	serviceLabels map[string]string,
-	nextWorkflowStep int,
+	workflowStepIndex int,
 	conditions *condition.Conditions,
 	networkAttachmentStatus *map[string][]string,
 ) (ctrl.Result, error) {
-	if !r.PodExists(ctx, instance, nextWorkflowStep) {
+	if !r.PodExists(ctx, instance, workflowStepIndex) {
 		return ctrl.Result{}, nil
 	}
 
