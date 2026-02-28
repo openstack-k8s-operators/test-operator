@@ -18,11 +18,9 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/go-logr/logr"
-	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
@@ -31,9 +29,7 @@ import (
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/internal/tempest"
 	corev1 "k8s.io/api/core/v1"
-	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -58,318 +54,110 @@ func (r *TempestReconciler) GetLogger(ctx context.Context) logr.Logger {
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;create;update;watch;patch;delete
 
 // Reconcile - Tempest
-func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, _err error) {
-	Log := r.GetLogger(ctx)
-
-	// Fetch the Tempest instance
+func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	instance := &testv1beta1.Tempest{}
-	err := r.Client.Get(ctx, req.NamespacedName, instance)
-	if err != nil {
-		if k8s_errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
+
+	config := FrameworkConfig[*testv1beta1.Tempest]{
+		ServiceName:             tempest.ServiceName,
+		NeedsNetworkAttachments: true,
+		NeedsConfigMaps:         true,
+		NeedsFinalizer:          true,
+		SupportsWorkflow:        true,
+
+		GenerateServiceConfigMaps: func(ctx context.Context, helper *helper.Helper, instance *testv1beta1.Tempest, workflowStep int) error {
+			return r.generateServiceConfigMaps(ctx, helper, instance, workflowStep)
+		},
+
+		BuildPod: func(ctx context.Context, instance *testv1beta1.Tempest, labels, annotations map[string]string, workflowStepNum int, pvcIndex int) (*corev1.Pod, error) {
+			return r.buildTempestPod(ctx, instance, labels, annotations, workflowStepNum, pvcIndex)
+		},
+
+		GetInitialConditions: func() []*condition.Condition {
+			return []*condition.Condition{
+				condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
+				condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
+				condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
+				condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
+				condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
+			}
+		},
+
+		ValidateInputs: func(ctx context.Context, instance *testv1beta1.Tempest) error {
+			if err := r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret); err != nil {
+				return err
+			}
+			return r.ValidateSecretWithKeys(ctx, instance, instance.Spec.SSHKeySecretName, []string{})
+		},
+
+		GetSpec: func(instance *testv1beta1.Tempest) interface{} {
+			return &instance.Spec
+		},
+
+		GetWorkflowStep: func(instance *testv1beta1.Tempest, step int) interface{} {
+			return instance.Spec.Workflow[step]
+		},
+
+		GetWorkflowLength: func(instance *testv1beta1.Tempest) int {
+			return len(instance.Spec.Workflow)
+		},
+
+		GetParallel: func(instance *testv1beta1.Tempest) bool {
+			return instance.Spec.Parallel
+		},
+
+		GetStorageClass: func(instance *testv1beta1.Tempest) string {
+			return instance.Spec.StorageClass
+		},
+
+		GetNetworkAttachments: func(instance *testv1beta1.Tempest) []string {
+			return instance.Spec.NetworkAttachments
+		},
+
+		GetNetworkAttachmentStatus: func(instance *testv1beta1.Tempest) *map[string][]string {
+			return &instance.Status.NetworkAttachments
+		},
+
+		SetObservedGeneration: func(instance *testv1beta1.Tempest) {
+			instance.Status.ObservedGeneration = instance.Generation
+		},
 	}
 
-	// Create a helper
-	helper, err := helper.NewHelper(
-		instance,
-		r.Client,
-		r.Kclient,
-		r.Scheme,
-		r.Log,
-	)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	return CommonReconcile(ctx, &r.Reconciler, req, instance, config, r.GetLogger(ctx))
+}
 
-	// initialize status
-	isNewInstance := instance.Status.Conditions == nil
-	if isNewInstance {
-		instance.Status.Conditions = condition.Conditions{}
-	}
-
-	// Save a copy of the conditions so that we can restore the LastTransitionTime
-	// when a condition's state doesn't change.
-	savedConditions := instance.Status.Conditions.DeepCopy()
-
-	// Always patch the instance status when exiting this function so we
-	// can persist any changes.
-	defer func() {
-		// Don't update the status, if reconciler Panics
-		if r := recover(); r != nil {
-			Log.Info(fmt.Sprintf("panic during reconcile %v\n", r))
-			panic(r)
-		}
-		condition.RestoreLastTransitionTimes(&instance.Status.Conditions, savedConditions)
-		if instance.Status.Conditions.IsUnknown(condition.ReadyCondition) {
-			instance.Status.Conditions.Set(
-				instance.Status.Conditions.Mirror(condition.ReadyCondition))
-		}
-		err := helper.PatchInstance(ctx, instance)
-		if err != nil {
-			_err = err
-			return
-		}
-	}()
-
-	if isNewInstance {
-		// Initialize conditions used later as Status=Unknown
-		cl := condition.CreateList(
-			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
-			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
-			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
-			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
-			condition.UnknownCondition(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage),
-		)
-		instance.Status.Conditions.Init(&cl)
-
-		// Register overall status immediately to have an early feedback
-		// e.g. in the cli
-		return ctrl.Result{}, nil
-	}
-	instance.Status.ObservedGeneration = instance.Generation
-
-	// If we're not deleting this and the service object doesn't have our
-	// finalizer, add it.
-	if instance.DeletionTimestamp.IsZero() && controllerutil.AddFinalizer(instance, helper.GetFinalizer()) {
-		return ctrl.Result{}, nil
-	}
-
-	if instance.Status.NetworkAttachments == nil {
-		instance.Status.NetworkAttachments = map[string][]string{}
-	}
-
-	// Handle service delete
-	if !instance.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, instance, helper)
-	}
-
-	workflowLength := len(instance.Spec.Workflow)
-	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
-	if nextWorkflowStep < workflowLength {
-		MergeSections(&instance.Spec, instance.Spec.Workflow[nextWorkflowStep])
-	}
-
-	switch nextAction {
-	case Failure:
-		return ctrl.Result{}, err
-
-	case Wait:
-		Log.Info(InfoWaitingOnPod)
-		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
-
-	case EndTesting:
-		// All pods created by the instance were completed. Release the lock
-		// so that other instances can spawn their pods.
-		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			Log.Info(fmt.Sprintf(InfoCanNotReleaseLock, testOperatorLockName))
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-		}
-
-		instance.Status.Conditions.MarkTrue(
-			condition.DeploymentReadyCondition,
-			condition.DeploymentReadyMessage)
-
-		if instance.Status.Conditions.AllSubConditionIsTrue() {
-			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
-		}
-
-		Log.Info(InfoTestingCompleted)
-		return ctrl.Result{}, nil
-
-	case CreateFirstPod:
-		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
-		if !lockAcquired {
-			Log.Info(fmt.Sprintf(InfoCanNotAcquireLock, testOperatorLockName))
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-		}
-
-		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
-
-	case CreateNextPod:
-		// Confirm that we still hold the lock. This is useful to check if for
-		// example somebody / something deleted the lock and it got claimed by
-		// another instance. This is considered to be an error state.
-		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
-		if !lockAcquired {
-			Log.Error(err, ErrConfirmLockOwnership, testOperatorLockName)
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-		}
-
-		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
-
-	default:
-		return ctrl.Result{}, ErrReceivedUnexpectedAction
-	}
-
-	serviceLabels := map[string]string{
-		common.AppSelector: tempest.ServiceName,
-		workflowStepLabel:  strconv.Itoa(nextWorkflowStep),
-		instanceNameLabel:  instance.Name,
-		operatorNameLabel:  "test-operator",
-	}
-
-	workflowStepNum := 0
-	// Create multiple PVCs for parallel execution
-	if instance.Spec.Parallel && nextWorkflowStep < len(instance.Spec.Workflow) {
-		workflowStepNum = nextWorkflowStep
-	}
-
-	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityError,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-	}
-
-	err = r.ValidateSecretWithKeys(ctx, instance, instance.Spec.SSHKeySecretName, []string{})
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{}, err
-	}
+func (r *TempestReconciler) buildTempestPod(
+	ctx context.Context,
+	instance *testv1beta1.Tempest,
+	labels, annotations map[string]string,
+	workflowStepNum int,
+	pvcIndex int,
+) (*corev1.Pod, error) {
 	mountSSHKey := len(instance.Spec.SSHKeySecretName) != 0
-
-	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
-
-	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(
-		ctx,
-		instance,
-		helper,
-		serviceLabels,
-		instance.Spec.StorageClass,
-		workflowStepNum,
-	)
-
-	if err != nil {
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, nil
-	}
-	// Create PersistentVolumeClaim - end
-
-	// Generate ConfigMaps
-	err = r.generateServiceConfigMaps(ctx, helper, instance, nextWorkflowStep)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.ServiceConfigReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.ServiceConfigReadyErrorMessage,
-			err.Error()))
-		return ctrl.Result{}, err
-	}
-	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
-	// Generate ConfigMaps - end
-
-	serviceAnnotations, ctrlResult, err := r.EnsureNetworkAttachments(
-		ctx,
-		Log,
-		helper,
-		instance.Spec.NetworkAttachments,
-		instance.Namespace,
-		&instance.Status.Conditions,
-	)
-	if err != nil || (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, err
-	}
-
-	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	customDataConfigMapName := GetCustomDataConfigMapName(instance, nextWorkflowStep)
-	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, nextWorkflowStep)
-	podName := r.GetPodName(instance, nextWorkflowStep)
-	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
+
+	customDataConfigMapName := GetCustomDataConfigMapName(instance, workflowStepNum)
+	envVarsConfigMapName := GetEnvVarsConfigMapName(instance, workflowStepNum)
+
+	podName := r.GetPodName(instance, workflowStepNum)
+	logsPVCName := r.GetPVCLogsName(instance, pvcIndex)
+
 	containerImage, err := r.GetContainerImage(ctx, instance)
 	if err != nil {
-		return ctrl.Result{}, err
+		return nil, err
 	}
 
-	podDef := tempest.Pod(
+	return tempest.Pod(
 		instance,
-		serviceLabels,
-		serviceAnnotations,
+		labels,
+		annotations,
 		podName,
-		EnvVarsConfigMapName,
+		envVarsConfigMapName,
 		customDataConfigMapName,
 		logsPVCName,
 		mountCerts,
 		mountSSHKey,
 		containerImage,
-	)
-
-	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
-	if err != nil {
-		// Creation of the tempest pod was not successful.
-		// Release the lock and allow other controllers to spawn
-		// a pod.
-		if lockReleased, lockErr := r.ReleaseLock(ctx, instance); lockReleased {
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, lockErr
-		}
-
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.DeploymentReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.DeploymentReadyErrorMessage,
-			err.Error()))
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.DeploymentReadyCondition,
-			condition.RequestedReason,
-			condition.SeverityInfo,
-			condition.DeploymentReadyRunningMessage))
-		return ctrlResult, nil
-	}
-	// Create a new pod - end
-
-	// NetworkAttachments
-	ctrlResult, err = r.VerifyNetworkAttachments(
-		ctx,
-		helper,
-		instance,
-		instance.Spec.NetworkAttachments,
-		serviceLabels,
-		nextWorkflowStep,
-		&instance.Status.Conditions,
-		&instance.Status.NetworkAttachments,
-	)
-	if err != nil || (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, err
-	}
-
-	if instance.Status.Conditions.AllSubConditionIsTrue() {
-		instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *TempestReconciler) reconcileDelete(
-	ctx context.Context,
-	instance *testv1beta1.Tempest,
-	helper *helper.Helper,
-) (ctrl.Result, error) {
-	Log := r.GetLogger(ctx)
-	Log.Info("Reconciling Service delete")
-
-	// remove the finalizer
-	controllerutil.RemoveFinalizer(instance, helper.GetFinalizer())
-
-	Log.Info("Reconciled Service delete successfully")
-
-	return ctrl.Result{}, nil
+	), nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

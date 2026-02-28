@@ -191,3 +191,8 @@ func (instance HorizonTest) RbacNamespace() string {
 func (instance HorizonTest) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *HorizonTest) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}
