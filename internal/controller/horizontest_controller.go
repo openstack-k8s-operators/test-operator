@@ -122,7 +122,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	instance.Status.ObservedGeneration = instance.Generation
 
 	workflowLength := 0
-	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
+	nextAction, workflowStepIndex, err := r.NextAction(ctx, instance, workflowLength)
 
 	switch nextAction {
 	case Failure:
@@ -158,7 +158,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, workflowStepIndex))
 
 	case CreateNextPod:
 		// Confirm that we still hold the lock. This is useful to check if for
@@ -170,7 +170,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingNextPod, workflowStepIndex))
 
 	default:
 		return ctrl.Result{}, ErrReceivedUnexpectedAction
