@@ -18,6 +18,7 @@ func Pod(
 	mountCerts bool,
 	mountKeys bool,
 	mountKubeconfig bool,
+	workflowStepIndex int,
 	envVars map[string]env.Setter,
 	containerImage string,
 ) *corev1.Pod {
@@ -39,6 +40,6 @@ func Pod(
 		instance.Spec.SELinuxLevel,
 		instance.Spec.Tolerations,
 		GetVolumeMounts(instance, mountCerts, mountKeys, mountKubeconfig, TobikoPropagation),
-		GetVolumes(instance, logsPVCName, mountCerts, mountKeys, mountKubeconfig, TobikoPropagation),
+		GetVolumes(instance, logsPVCName, mountCerts, mountKeys, mountKubeconfig, workflowStepIndex, TobikoPropagation),
 	)
 }
