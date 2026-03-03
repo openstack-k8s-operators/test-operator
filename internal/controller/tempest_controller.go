@@ -146,9 +146,9 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 
 	workflowLength := len(instance.Spec.Workflow)
-	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
-	if nextWorkflowStep < workflowLength {
-		MergeSections(&instance.Spec, instance.Spec.Workflow[nextWorkflowStep])
+	nextAction, workflowStepIndex, err := r.NextAction(ctx, instance, workflowLength)
+	if workflowStepIndex < workflowLength {
+		MergeSections(&instance.Spec, instance.Spec.Workflow[workflowStepIndex])
 	}
 
 	switch nextAction {
@@ -185,7 +185,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, workflowStepIndex))
 
 	case CreateNextPod:
 		// Confirm that we still hold the lock. This is useful to check if for
@@ -197,7 +197,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingNextPod, workflowStepIndex))
 
 	default:
 		return ctrl.Result{}, ErrReceivedUnexpectedAction
@@ -205,15 +205,15 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tempest.ServiceName,
-		workflowStepLabel:  strconv.Itoa(nextWorkflowStep),
+		workflowStepLabel:  strconv.Itoa(workflowStepIndex),
 		instanceNameLabel:  instance.Name,
 		operatorNameLabel:  "test-operator",
 	}
 
-	workflowStepNum := 0
+	pvcIndex := 0
 	// Create multiple PVCs for parallel execution
-	if instance.Spec.Parallel && nextWorkflowStep < len(instance.Spec.Workflow) {
-		workflowStepNum = nextWorkflowStep
+	if instance.Spec.Parallel && workflowStepIndex < len(instance.Spec.Workflow) {
+		pvcIndex = workflowStepIndex
 	}
 
 	err = r.ValidateOpenstackInputs(ctx, instance, instance.Spec.OpenStackConfigMap, instance.Spec.OpenStackConfigSecret)
@@ -248,7 +248,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		workflowStepNum,
+		pvcIndex,
 	)
 
 	if err != nil {
@@ -259,7 +259,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	// Create PersistentVolumeClaim - end
 
 	// Generate ConfigMaps
-	err = r.generateServiceConfigMaps(ctx, helper, instance, nextWorkflowStep)
+	err = r.generateServiceConfigMaps(ctx, helper, instance, workflowStepIndex)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.ServiceConfigReadyCondition,
@@ -286,10 +286,10 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	customDataConfigMapName := GetCustomDataConfigMapName(instance, nextWorkflowStep)
-	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, nextWorkflowStep)
-	podName := r.GetPodName(instance, nextWorkflowStep)
-	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
+	customDataConfigMapName := GetCustomDataConfigMapName(instance, workflowStepIndex)
+	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, workflowStepIndex)
+	podName := r.GetPodName(instance, workflowStepIndex)
+	logsPVCName := r.GetPVCLogsName(instance, pvcIndex)
 	containerImage, err := r.GetContainerImage(ctx, instance)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -341,7 +341,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		instance,
 		instance.Spec.NetworkAttachments,
 		serviceLabels,
-		nextWorkflowStep,
+		workflowStepIndex,
 		&instance.Status.Conditions,
 		&instance.Status.NetworkAttachments,
 	)
@@ -385,7 +385,7 @@ func (r *TempestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 	customData map[string]string,
 	instance *testv1beta1.Tempest,
-	workflowStepNum int,
+	workflowStepIndex int,
 ) {
 	tRun := instance.Spec.TempestRun
 
@@ -421,7 +421,7 @@ func (r *TempestReconciler) setTempestConfigVars(envVars map[string]string,
 		})
 	}
 
-	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetPodName(instance, workflowStepNum)
+	envVars["TEMPEST_WORKFLOW_STEP_DIR_NAME"] = r.GetPodName(instance, workflowStepIndex)
 
 	for _, img := range tRun.ExtraImages {
 		SetDictEnvVar(envVars, map[string]string{
@@ -509,7 +509,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	ctx context.Context,
 	h *helper.Helper,
 	instance *testv1beta1.Tempest,
-	workflowStepNum int,
+	workflowStepIndex int,
 ) error {
 	// Create/update configmaps from template
 	cmLabels := labels.GetLabels(instance, labels.GetGroupLabel(tempest.ServiceName), map[string]string{})
@@ -528,7 +528,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	customData := make(map[string]string)
 	envVars := make(map[string]string)
 
-	r.setTempestConfigVars(envVars, customData, instance, workflowStepNum)
+	r.setTempestConfigVars(envVars, customData, instance, workflowStepIndex)
 	r.setTempestconfConfigVars(envVars, customData, instance)
 
 	for key, data := range instance.Spec.ConfigOverwrite {
@@ -544,7 +544,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 	cms := []util.Template{
 		// ConfigMap
 		{
-			Name:          GetCustomDataConfigMapName(instance, workflowStepNum),
+			Name:          GetCustomDataConfigMapName(instance, workflowStepIndex),
 			Namespace:     instance.Namespace,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
@@ -553,7 +553,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 		},
 		// configMap - EnvVars
 		{
-			Name:          GetEnvVarsConfigMapName(instance, workflowStepNum),
+			Name:          GetEnvVarsConfigMapName(instance, workflowStepIndex),
 			Namespace:     instance.Namespace,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
@@ -566,11 +566,11 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 }
 
 // GetEnvVarsConfigMapName returns the name of the environment variables ConfigMap for the given workflow step
-func GetEnvVarsConfigMapName(instance *testv1beta1.Tempest, workflowStepNum int) string {
-	return instance.Name + envVarsConfigMapInfix + strconv.Itoa(workflowStepNum)
+func GetEnvVarsConfigMapName(instance *testv1beta1.Tempest, workflowStepIndex int) string {
+	return instance.Name + envVarsConfigMapInfix + strconv.Itoa(workflowStepIndex)
 }
 
 // GetCustomDataConfigMapName returns the name of the custom data ConfigMap for the given workflow step
-func GetCustomDataConfigMapName(instance *testv1beta1.Tempest, workflowStepNum int) string {
-	return instance.Name + customDataConfigMapInfix + strconv.Itoa(workflowStepNum)
+func GetCustomDataConfigMapName(instance *testv1beta1.Tempest, workflowStepIndex int) string {
+	return instance.Name + customDataConfigMapInfix + strconv.Itoa(workflowStepIndex)
 }

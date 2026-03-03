@@ -127,9 +127,9 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	instance.Status.ObservedGeneration = instance.Generation
 
 	workflowLength := len(instance.Spec.Workflow)
-	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
-	if nextWorkflowStep < workflowLength {
-		MergeSections(&instance.Spec, instance.Spec.Workflow[nextWorkflowStep])
+	nextAction, workflowStepIndex, err := r.NextAction(ctx, instance, workflowLength)
+	if workflowStepIndex < workflowLength {
+		MergeSections(&instance.Spec, instance.Spec.Workflow[workflowStepIndex])
 	}
 
 	switch nextAction {
@@ -166,7 +166,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, workflowStepIndex))
 
 	case CreateNextPod:
 		// Confirm that we still hold the lock. This is useful to check if for
@@ -178,7 +178,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingNextPod, workflowStepIndex))
 
 	default:
 		return ctrl.Result{}, ErrReceivedUnexpectedAction
@@ -186,7 +186,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	serviceLabels := map[string]string{
 		common.AppSelector: ansibletest.ServiceName,
-		workflowStepLabel:  strconv.Itoa(nextWorkflowStep),
+		workflowStepLabel:  strconv.Itoa(workflowStepIndex),
 		instanceNameLabel:  instance.Name,
 		operatorNameLabel:  "test-operator",
 	}
@@ -221,7 +221,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-	podName := r.GetPodName(instance, nextWorkflowStep)
+	podName := r.GetPodName(instance, workflowStepIndex)
 	envVars := r.PrepareAnsibleEnv(instance)
 	logsPVCName := r.GetPVCLogsName(instance, 0)
 	containerImage, err := r.GetContainerImage(ctx, instance)
@@ -236,7 +236,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		logsPVCName,
 		mountCerts,
 		envVars,
-		nextWorkflowStep,
+		workflowStepIndex,
 		containerImage,
 	)
 

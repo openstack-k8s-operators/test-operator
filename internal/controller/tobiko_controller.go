@@ -131,9 +131,9 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 
 	workflowLength := len(instance.Spec.Workflow)
-	nextAction, nextWorkflowStep, err := r.NextAction(ctx, instance, workflowLength)
-	if nextWorkflowStep < workflowLength {
-		MergeSections(&instance.Spec, instance.Spec.Workflow[nextWorkflowStep])
+	nextAction, workflowStepIndex, err := r.NextAction(ctx, instance, workflowLength)
+	if workflowStepIndex < workflowLength {
+		MergeSections(&instance.Spec, instance.Spec.Workflow[workflowStepIndex])
 	}
 
 	switch nextAction {
@@ -170,7 +170,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingFirstPod, workflowStepIndex))
 
 	case CreateNextPod:
 		// Confirm that we still hold the lock. This needs to be checked in order
@@ -182,7 +182,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
-		Log.Info(fmt.Sprintf(InfoCreatingNextPod, nextWorkflowStep))
+		Log.Info(fmt.Sprintf(InfoCreatingNextPod, workflowStepIndex))
 
 	default:
 		return ctrl.Result{}, ErrReceivedUnexpectedAction
@@ -190,7 +190,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	serviceLabels := map[string]string{
 		common.AppSelector: tobiko.ServiceName,
-		workflowStepLabel:  strconv.Itoa(nextWorkflowStep),
+		workflowStepLabel:  strconv.Itoa(workflowStepIndex),
 		instanceNameLabel:  instance.Name,
 		operatorNameLabel:  "test-operator",
 	}
@@ -237,11 +237,11 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
-	workflowStepNum := 0
+	pvcIndex := 0
 
 	// Create multiple PVCs for parallel execution
-	if instance.Spec.Parallel && nextWorkflowStep < len(instance.Spec.Workflow) {
-		workflowStepNum = nextWorkflowStep
+	if instance.Spec.Parallel && workflowStepIndex < len(instance.Spec.Workflow) {
+		pvcIndex = workflowStepIndex
 	}
 
 	// Create PersistentVolumeClaim
@@ -251,7 +251,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		helper,
 		serviceLabels,
 		instance.Spec.StorageClass,
-		workflowStepNum,
+		pvcIndex,
 	)
 	if err != nil {
 		return ctrlResult, err
@@ -279,7 +279,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		instance,
 		instance.Spec.NetworkAttachments,
 		serviceLabels,
-		nextWorkflowStep,
+		workflowStepIndex,
 		&instance.Status.Conditions,
 		&instance.Status.NetworkAttachments,
 	)
@@ -298,9 +298,9 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 
 	// Prepare Tobiko env vars
-	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, nextWorkflowStep)
-	podName := r.GetPodName(instance, nextWorkflowStep)
-	logsPVCName := r.GetPVCLogsName(instance, workflowStepNum)
+	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, workflowStepIndex)
+	podName := r.GetPodName(instance, workflowStepIndex)
+	logsPVCName := r.GetPVCLogsName(instance, pvcIndex)
 	containerImage, err := r.GetContainerImage(ctx, instance)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -362,7 +362,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	labels map[string]string,
 	instance *testv1beta1.Tobiko,
 	helper *helper.Helper,
-	workflowStepNum int,
+	workflowStepIndex int,
 ) map[string]env.Setter {
 	// Prepare env vars
 	envVars := make(map[string]env.Setter)
@@ -383,7 +383,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	// String
 	SetStringEnvVars(envVars, map[string]string{
 		"USE_EXTERNAL_FILES":    "True",
-		"TOBIKO_LOGS_DIR_NAME":  r.GetPodName(instance, workflowStepNum),
+		"TOBIKO_LOGS_DIR_NAME":  r.GetPodName(instance, workflowStepIndex),
 		"TOBIKO_TESTENV":        instance.Spec.Testenv,
 		"TOBIKO_VERSION":        instance.Spec.Version,
 		"TOBIKO_PYTEST_ADDOPTS": instance.Spec.PytestAddopts,
