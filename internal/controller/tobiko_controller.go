@@ -316,6 +316,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		mountCerts,
 		mountKeys,
 		mountKubeconfig,
+		workflowStepIndex,
 		envVars,
 		containerImage,
 	)
@@ -404,37 +405,25 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 	}
 
 	// Prepare custom data
-	customData := make(map[string]string)
-	customData["tobiko.conf"] = instance.Spec.Config
+	templateSpecs := []struct {
+		infix string
+		key   string
+		value string
+	}{
+		{tobiko.ConfigMapInfixConfig, tobiko.ConfigFileName, instance.Spec.Config},
+		{tobiko.ConfigMapInfixPrivateKey, tobiko.PrivateKeyFileName, instance.Spec.PrivateKey},
+		{tobiko.ConfigMapInfixPublicKey, tobiko.PublicKeyFileName, instance.Spec.PublicKey},
+	}
 
-	privateKeyData := make(map[string]string)
-	privateKeyData["id_ecdsa"] = instance.Spec.PrivateKey
-
-	publicKeyData := make(map[string]string)
-	publicKeyData["id_ecdsa.pub"] = instance.Spec.PublicKey
-
-	cms := []util.Template{
-		{
-			Name:         instance.Name + "tobiko-config",
+	cms := make([]util.Template, 0, len(templateSpecs))
+	for _, spec := range templateSpecs {
+		cms = append(cms, util.Template{
+			Name:         tobiko.GetConfigMapName(instance, spec.infix, workflowStepIndex),
 			Namespace:    instance.Namespace,
 			InstanceType: instance.Kind,
 			Labels:       labels,
-			CustomData:   customData,
-		},
-		{
-			Name:         instance.Name + "tobiko-private-key",
-			Namespace:    instance.Namespace,
-			InstanceType: instance.Kind,
-			Labels:       labels,
-			CustomData:   privateKeyData,
-		},
-		{
-			Name:         instance.Name + "tobiko-public-key",
-			Namespace:    instance.Namespace,
-			InstanceType: instance.Kind,
-			Labels:       labels,
-			CustomData:   publicKeyData,
-		},
+			CustomData:   map[string]string{spec.key: spec.value},
+		})
 	}
 
 	err := configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
