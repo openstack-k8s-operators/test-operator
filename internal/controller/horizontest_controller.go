@@ -111,6 +111,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		cl := condition.CreateList(
 			condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
 			condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
+			condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
 			condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 		)
 		instance.Status.Conditions.Init(&cl)
@@ -198,23 +199,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 	}
 
-	yamlResult, err := EnsureCloudsConfigMapExists(
-		ctx,
-		instance,
-		helper,
-		serviceLabels,
-		instance.Spec.OpenStackConfigMap,
-	)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return yamlResult, err
-	}
-
 	err = r.ValidateSecretWithKeys(ctx, instance, instance.Spec.KubeconfigSecretName, []string{})
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
@@ -226,8 +210,25 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 	mountKubeconfig := len(instance.Spec.KubeconfigSecretName) != 0
-
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
+
+	yamlResult, err := EnsureCloudsConfigMapExists(
+		ctx,
+		instance,
+		helper,
+		serviceLabels,
+		instance.Spec.OpenStackConfigMap,
+	)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.ServiceConfigReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.ServiceConfigReadyErrorMessage,
+			err.Error()))
+		return yamlResult, err
+	}
+	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
 
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(
