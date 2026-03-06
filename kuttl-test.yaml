@@ -1,0 +1,27 @@
+#
+# EXECUTION (from install_yamls repo root):
+#
+#   make test_operator_kuttl
+#
+# ASSUMPTIONS:
+#
+# 1. Latest version of kuttl is installed at /usr/local/bin/kubectl-kuttl
+# 2. An OCP 4.10+ CRC cluster with Podified Operators has been deployed
+# 3. CLI user has access to $KUBECONFIG
+# 4. A FULL OpenStack deployment is running (via install_yamls)
+#    - Keystone, Nova, Neutron, Glance are deployed and functional
+#    - openstack-config ConfigMap exists in the namespace
+#    - openstack-config-secret Secret exists with valid credentials
+# 5. test-operator is deployed (via install_yamls `make test_operator`)
+#
+
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+reportFormat: xml
+reportName: kuttl-report-test-operator
+reportGranularity: test
+namespace: test-operator-kuttl-tests
+timeout: 180
+parallel: 1
+suppress:
+  - events                     # Remove spammy event logs

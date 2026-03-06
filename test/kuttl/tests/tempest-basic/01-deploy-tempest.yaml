@@ -1,0 +1,8 @@
+apiVersion: test.openstack.org/v1beta1
+kind: Tempest
+metadata:
+  name: tempest-sample
+  namespace: test-operator-kuttl-tests
+spec:
+  containerImage: quay.io/podified-antelope-centos9/openstack-tempest:current-podified
+  storageClass: local-storage

@@ -1,5 +1,23 @@
 ---
 - job:
+      name: test-operator-kuttl
+      parent: cifmw-base-multinode-kuttl
+      attempts: 1
+      irrelevant-files: &ir_files
+        - .*/*.md
+        - ^\..*$
+        - ^LICENSE$
+        - ^OWNERS$
+        - ^OWNERS_ALIASES$
+        - ^PROJECT$
+        - ^README.md$
+        - tests?\/functional
+        - ^renovate.json$
+      vars:
+        cifmw_kuttl_tests_operator_list:
+          - test_operator
+
+- job:
     name: podified-multinode-edpm-deployment-crc-test-operator
     parent: podified-multinode-hci-deployment-crc-1comp-backends
     vars:
