@@ -174,7 +174,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// another instance. This is considered to be an error state.
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, false)
 		if !lockAcquired {
-			Log.Error(err, ErrConfirmLockOwnership, testOperatorLockName)
+			Log.Error(err, fmt.Sprintf(ErrConfirmLockOwnership, testOperatorLockName))
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 

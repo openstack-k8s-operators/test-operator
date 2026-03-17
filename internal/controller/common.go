@@ -48,7 +48,7 @@ const (
 
 const (
 	// ErrConfirmLockOwnership is the error message for lock ownership confirmation failures
-	ErrConfirmLockOwnership = "can not confirm ownership of %s lock"
+	ErrConfirmLockOwnership = "Can not confirm ownership of %s lock."
 )
 
 const (

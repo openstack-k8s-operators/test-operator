@@ -179,7 +179,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		// got claimed by another instance.
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
 		if !lockAcquired {
-			Log.Error(err, ErrConfirmLockOwnership, testOperatorLockName)
+			Log.Error(err, fmt.Sprintf(ErrConfirmLockOwnership, testOperatorLockName))
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
@@ -290,12 +290,9 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	// Create Pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
-
-	mountKeys := false
-	if (len(instance.Spec.PublicKey) == 0) || (len(instance.Spec.PrivateKey) == 0) {
-		Log.Info("Both values privateKey and publicKey need to be specified. Keys not mounted.")
-	} else {
-		mountKeys = true
+	mountKeys := len(instance.Spec.PublicKey) > 0 && len(instance.Spec.PrivateKey) > 0
+	if !mountKeys {
+		Log.Info("Both values 'privateKey' and 'publicKey' need to be specified. Keys not mounted.")
 	}
 
 	// Prepare Tobiko env vars

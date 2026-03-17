@@ -193,7 +193,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// another instance. This is considered to be an error state.
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, instance.Spec.Parallel)
 		if !lockAcquired {
-			Log.Error(err, ErrConfirmLockOwnership, testOperatorLockName)
+			Log.Error(err, fmt.Sprintf(ErrConfirmLockOwnership, testOperatorLockName))
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 		}
 
@@ -287,7 +287,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	// Create a new pod
 	mountCerts := r.CheckSecretExists(ctx, instance, "combined-ca-bundle")
 	customDataConfigMapName := GetCustomDataConfigMapName(instance, workflowStepIndex)
-	EnvVarsConfigMapName := GetEnvVarsConfigMapName(instance, workflowStepIndex)
+	envVarsConfigMapName := GetEnvVarsConfigMapName(instance, workflowStepIndex)
 	podName := r.GetPodName(instance, workflowStepIndex)
 	logsPVCName := r.GetPVCLogsName(instance, pvcIndex)
 	containerImage, err := r.GetContainerImage(ctx, instance)
@@ -300,7 +300,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		serviceLabels,
 		serviceAnnotations,
 		podName,
-		EnvVarsConfigMapName,
+		envVarsConfigMapName,
 		customDataConfigMapName,
 		logsPVCName,
 		mountCerts,
@@ -313,7 +313,7 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		// Creation of the tempest pod was not successful.
 		// Release the lock and allow other controllers to spawn
 		// a pod.
-		if lockReleased, lockErr := r.ReleaseLock(ctx, instance); lockReleased {
+		if lockReleased, lockErr := r.ReleaseLock(ctx, instance); !lockReleased {
 			return ctrl.Result{RequeueAfter: RequeueAfterValue}, lockErr
 		}
 
