@@ -212,13 +212,8 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	mountKubeconfig := len(instance.Spec.KubeconfigSecretName) != 0
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
-	yamlResult, err := EnsureCloudsConfigMapExists(
-		ctx,
-		instance,
-		helper,
-		serviceLabels,
-		instance.Spec.OpenStackConfigMap,
-	)
+	// Generate ConfigMaps
+	err = r.generateServiceConfigMaps(ctx, helper, serviceLabels, instance)
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
 			condition.ServiceConfigReadyCondition,
@@ -226,9 +221,10 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			condition.SeverityWarning,
 			condition.ServiceConfigReadyErrorMessage,
 			err.Error()))
-		return yamlResult, err
+		return ctrl.Result{}, err
 	}
 	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
+	// Generate ConfigMaps - end
 
 	// Create PersistentVolumeClaim
 	ctrlResult, err := r.EnsureLogsPVCExists(
@@ -304,6 +300,22 @@ func (r *HorizonTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
+}
+
+func (r *HorizonTestReconciler) generateServiceConfigMaps(
+	ctx context.Context,
+	h *helper.Helper,
+	labels map[string]string,
+	instance *testv1beta1.HorizonTest,
+) error {
+	err := EnsureCloudsConfigMapExists(
+		ctx,
+		instance,
+		h,
+		labels,
+		instance.Spec.OpenStackConfigMap,
+	)
+	return err
 }
 
 // PrepareHorizonTestEnvVars prepares environment variables for HorizonTest execution

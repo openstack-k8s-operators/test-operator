@@ -207,23 +207,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
 	}
 
-	yamlResult, err := EnsureCloudsConfigMapExists(
-		ctx,
-		instance,
-		helper,
-		serviceLabels,
-		instance.Spec.OpenStackConfigMap,
-	)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.InputReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.InputReadyErrorMessage,
-			err.Error()))
-		return yamlResult, err
-	}
-
 	err = r.ValidateSecretWithKeys(ctx, instance, instance.Spec.KubeconfigSecretName, []string{})
 	if err != nil {
 		instance.Status.Conditions.Set(condition.FalseCondition(
@@ -238,8 +221,21 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	instance.Status.Conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 
-	pvcIndex := 0
+	// Generate ConfigMaps
+	err = r.generateServiceConfigMaps(ctx, helper, serviceLabels, instance, workflowStepIndex)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.ServiceConfigReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.ServiceConfigReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
+	// Generate ConfigMaps - end
 
+	pvcIndex := 0
 	// Create multiple PVCs for parallel execution
 	if instance.Spec.Parallel && workflowStepIndex < len(instance.Spec.Workflow) {
 		pvcIndex = workflowStepIndex
@@ -296,7 +292,7 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 
 	// Prepare Tobiko env vars
-	envVars := r.PrepareTobikoEnvVars(ctx, serviceLabels, instance, helper, workflowStepIndex)
+	envVars := r.PrepareTobikoEnvVars(instance, workflowStepIndex)
 	podName := r.GetPodName(instance, workflowStepIndex)
 	logsPVCName := r.GetPVCLogsName(instance, pvcIndex)
 	containerImage, err := r.GetContainerImage(ctx, instance)
@@ -355,12 +351,51 @@ func (r *TobikoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// PrepareTobikoEnvVars prepares environment variables for a single workflow step
-func (r *TobikoReconciler) PrepareTobikoEnvVars(
+func (r *TobikoReconciler) generateServiceConfigMaps(
 	ctx context.Context,
+	h *helper.Helper,
 	labels map[string]string,
 	instance *testv1beta1.Tobiko,
-	helper *helper.Helper,
+	workflowStepIndex int,
+) error {
+	err := EnsureCloudsConfigMapExists(
+		ctx,
+		instance,
+		h,
+		labels,
+		instance.Spec.OpenStackConfigMap,
+	)
+	if err != nil {
+		return err
+	}
+
+	templateSpecs := []struct {
+		infix string
+		key   string
+		value string
+	}{
+		{tobiko.ConfigMapInfixConfig, tobiko.ConfigFileName, instance.Spec.Config},
+		{tobiko.ConfigMapInfixPrivateKey, tobiko.PrivateKeyFileName, instance.Spec.PrivateKey},
+		{tobiko.ConfigMapInfixPublicKey, tobiko.PublicKeyFileName, instance.Spec.PublicKey},
+	}
+
+	cms := make([]util.Template, 0, len(templateSpecs))
+	for _, spec := range templateSpecs {
+		cms = append(cms, util.Template{
+			Name:         tobiko.GetConfigMapName(instance, spec.infix, workflowStepIndex),
+			Namespace:    instance.Namespace,
+			InstanceType: instance.Kind,
+			Labels:       labels,
+			CustomData:   map[string]string{spec.key: spec.value},
+		})
+	}
+
+	return configmap.EnsureConfigMaps(ctx, h, instance, cms, nil)
+}
+
+// PrepareTobikoEnvVars prepares environment variables for a single workflow step
+func (r *TobikoReconciler) PrepareTobikoEnvVars(
+	instance *testv1beta1.Tobiko,
 	workflowStepIndex int,
 ) map[string]env.Setter {
 	// Prepare env vars
@@ -400,40 +435,6 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 			"TOBIKO_PATCH_REFSPEC":    instance.Spec.Patch.Refspec,
 		})
 	}
-
-	// Prepare custom data
-	templateSpecs := []struct {
-		infix string
-		key   string
-		value string
-	}{
-		{tobiko.ConfigMapInfixConfig, tobiko.ConfigFileName, instance.Spec.Config},
-		{tobiko.ConfigMapInfixPrivateKey, tobiko.PrivateKeyFileName, instance.Spec.PrivateKey},
-		{tobiko.ConfigMapInfixPublicKey, tobiko.PublicKeyFileName, instance.Spec.PublicKey},
-	}
-
-	cms := make([]util.Template, 0, len(templateSpecs))
-	for _, spec := range templateSpecs {
-		cms = append(cms, util.Template{
-			Name:         tobiko.GetConfigMapName(instance, spec.infix, workflowStepIndex),
-			Namespace:    instance.Namespace,
-			InstanceType: instance.Kind,
-			Labels:       labels,
-			CustomData:   map[string]string{spec.key: spec.value},
-		})
-	}
-
-	err := configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
-	if err != nil {
-		instance.Status.Conditions.Set(condition.FalseCondition(
-			condition.ServiceConfigReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.ServiceConfigReadyErrorMessage,
-			err.Error()))
-		return map[string]env.Setter{}
-	}
-	instance.Status.Conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
 
 	return envVars
 }

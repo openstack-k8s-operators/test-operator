@@ -727,7 +727,7 @@ func EnsureCloudsConfigMapExists(
 	helper *helper.Helper,
 	labels map[string]string,
 	openstackConfigMapName string,
-) (ctrl.Result, error) {
+) error {
 	const testOperatorCloudsConfigMapName = "test-operator-clouds-config"
 
 	cm, _, _ := configmap.GetConfigMap(
@@ -738,7 +738,7 @@ func EnsureCloudsConfigMapExists(
 		time.Second*10,
 	)
 	if cm.Name == testOperatorCloudsConfigMapName {
-		return ctrl.Result{}, nil
+		return nil
 	}
 
 	cm, _, _ = configmap.GetConfigMap(
@@ -753,7 +753,7 @@ func EnsureCloudsConfigMapExists(
 
 	err := yaml.Unmarshal([]byte(cm.Data["clouds.yaml"]), &result)
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	clouds := result["clouds"].(map[string]interface{})
@@ -766,7 +766,7 @@ func EnsureCloudsConfigMapExists(
 
 	yamlString, err := yaml.Marshal(result)
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	cms := []util.Template{
@@ -781,10 +781,10 @@ func EnsureCloudsConfigMapExists(
 	}
 	err = configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
-	return ctrl.Result{}, nil
+	return nil
 }
 
 // Int64OrPlaceholder converts int64 to string, returns placeholder if 0
