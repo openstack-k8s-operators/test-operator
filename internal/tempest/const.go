@@ -25,5 +25,5 @@ var (
 	TempestPropagation = []storage.PropagationType{Tempest}
 
 	// PodCapabilities defines the Linux capabilities for Tempest pods
-	PodCapabilities = []corev1.Capability{}
+	PodCapabilities = []corev1.Capability{"NET_ADMIN", "NET_RAW"}
 )
