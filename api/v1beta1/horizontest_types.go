@@ -191,3 +191,18 @@ func (instance HorizonTest) RbacNamespace() string {
 func (instance HorizonTest) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *HorizonTest) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}
+
+// GetStorageClass - return the storage class name
+func (instance *HorizonTest) GetStorageClass() string {
+	return instance.Spec.StorageClass
+}
+
+// SetObservedGeneration - set the observed generation to the current generation
+func (instance *HorizonTest) SetObservedGeneration() {
+	instance.Status.ObservedGeneration = instance.Generation
+}

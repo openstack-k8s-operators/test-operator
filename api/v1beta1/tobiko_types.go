@@ -246,3 +246,18 @@ func (instance Tobiko) RbacNamespace() string {
 func (instance Tobiko) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *Tobiko) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}
+
+// GetStorageClass - return the storage class name
+func (instance *Tobiko) GetStorageClass() string {
+	return instance.Spec.StorageClass
+}
+
+// SetObservedGeneration - set the observed generation to the current generation
+func (instance *Tobiko) SetObservedGeneration() {
+	instance.Status.ObservedGeneration = instance.Generation
+}

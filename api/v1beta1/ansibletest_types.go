@@ -220,3 +220,18 @@ func (instance AnsibleTest) RbacNamespace() string {
 func (instance AnsibleTest) RbacResourceName() string {
 	return instance.Name
 }
+
+// GetConditions - return the conditions from the status
+func (instance *AnsibleTest) GetConditions() *condition.Conditions {
+	return &instance.Status.Conditions
+}
+
+// GetStorageClass - return the storage class name
+func (instance *AnsibleTest) GetStorageClass() string {
+	return instance.Spec.StorageClass
+}
+
+// SetObservedGeneration - set the observed generation to the current generation
+func (instance *AnsibleTest) SetObservedGeneration() {
+	instance.Status.ObservedGeneration = instance.Generation
+}
