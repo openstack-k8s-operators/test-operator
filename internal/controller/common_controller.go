@@ -180,6 +180,9 @@ func CommonReconcile[T TestResource](
 	}
 
 	nextAction, workflowStepIndex, err := r.NextAction(ctx, instance, workflowLength)
+	if nextAction == Failure {
+		return ctrl.Result{}, err
+	}
 
 	// Apply workflow step overrides to the base spec
 	if config.SupportsWorkflow && workflowStepIndex < workflowLength {
@@ -200,9 +203,6 @@ func CommonReconcile[T TestResource](
 	}
 
 	switch nextAction {
-	case Failure:
-		return ctrl.Result{}, err
-
 	case Wait:
 		Log.Info(InfoWaitingOnPod)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
