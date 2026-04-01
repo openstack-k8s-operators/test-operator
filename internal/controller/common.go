@@ -31,6 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -489,8 +490,8 @@ func (r *Reconciler) EnsureLogsPVCExists(
 }
 
 // GetLogger returns the logger instance
-func (r *Reconciler) GetLogger() logr.Logger {
-	return r.Log
+func (r *Reconciler) GetLogger(ctx context.Context) logr.Logger {
+	return log.FromContext(ctx)
 }
 
 // GetScheme returns the runtime scheme
@@ -555,7 +556,7 @@ func (r *Reconciler) AcquireLock(
 
 // ReleaseLock releases the lock for the given instance
 func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (bool, error) {
-	Log := r.GetLogger()
+	Log := r.GetLogger(ctx)
 
 	cm, err := r.GetLockInfo(ctx, instance)
 	if err != nil && k8s_errors.IsNotFound(err) {
