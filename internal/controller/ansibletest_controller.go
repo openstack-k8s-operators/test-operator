@@ -96,7 +96,7 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *AnsibleTestReconciler) buildAnsibleTestPod(
 	ctx context.Context,
 	instance *testv1beta1.AnsibleTest,
-	labels, _ map[string]string,
+	labels, annotations map[string]string,
 	workflowStepIndex int,
 	pvcIndex int,
 ) (*corev1.Pod, error) {
@@ -114,6 +114,7 @@ func (r *AnsibleTestReconciler) buildAnsibleTestPod(
 	return ansibletest.Pod(
 		instance,
 		labels,
+		annotations,
 		podName,
 		logsPVCName,
 		mountCerts,

@@ -23,6 +23,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -59,8 +61,14 @@ func (r *HorizonTest) ValidateCreate() (admission.Warnings, error) {
 func (r *HorizonTest) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	horizontestlog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil, nil
+	oldHorizonTest, ok := old.(*HorizonTest)
+	if !ok || oldHorizonTest == nil {
+		return nil, errors.New("unable to convert existing object")
+	}
+
+	allWarnings := admission.Warnings{}
+	allWarnings = CheckSpecUpdated(allWarnings, oldHorizonTest.Spec, r.Spec, r.Kind)
+	return allWarnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

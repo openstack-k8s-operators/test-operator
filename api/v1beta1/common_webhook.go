@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -75,6 +76,9 @@ const (
 		"set to true. Please, consider setting %[1]s.Spec.SELinuxLevel. This " +
 		"ensures that the copying of the logs to the PV is completed without any " +
 		"complications."
+
+	// WarnSpecUpdated
+	WarnSpecUpdated = "%s CR updated. The associated pods will be recreated to apply changes."
 )
 
 const (
@@ -192,4 +196,12 @@ func BuildValidationError(kind, name string, errs field.ErrorList) error {
 			}, name, errs)
 	}
 	return nil
+}
+
+// CheckSpecUpdated returns warning if spec has changed
+func CheckSpecUpdated(allWarn admission.Warnings, oldSpec, newSpec interface{}, kind string) admission.Warnings {
+	if !cmp.Equal(oldSpec, newSpec) {
+		allWarn = append(allWarn, fmt.Sprintf(WarnSpecUpdated, kind))
+	}
+	return allWarn
 }

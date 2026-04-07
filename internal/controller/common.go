@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -254,6 +255,11 @@ func (r *Reconciler) GetLastPod(
 	maxPodWorkflowStep := 0
 
 	for _, pod := range podList.Items {
+		// Skip pods that are being deleted
+		if pod.DeletionTimestamp != nil {
+			continue
+		}
+
 		workflowStep, err := strconv.Atoi(pod.Labels[workflowStepLabel])
 		if err != nil {
 			return &corev1.Pod{}, err
@@ -913,4 +919,73 @@ func MergeSections(main interface{}, workflow interface{}) {
 			mValue.Set(wValue)
 		}
 	}
+}
+
+// CalculateConfigHash calculates a hash of the entire Spec to detect any changes
+func CalculateConfigHash(instance client.Object) string {
+	v := reflect.ValueOf(instance)
+	spec, err := SafetyCheck(v, "Spec")
+	if err != nil {
+		return ""
+	}
+
+	data, err := json.Marshal(spec.Interface())
+	if err != nil {
+		return ""
+	}
+
+	hash := sha256.Sum256(data)
+	return fmt.Sprintf("%x", hash[:8])
+}
+
+// CheckConfigChange checks if the spec has changed and recreates all pods related to the instance if needed
+func (r *Reconciler) CheckConfigChange(
+	ctx context.Context,
+	instance client.Object,
+	newHash string,
+) (ctrl.Result, error) {
+	Log := r.GetLogger(ctx)
+
+	if newHash == "" {
+		return ctrl.Result{}, nil
+	}
+
+	labels := map[string]string{instanceNameLabel: instance.GetName()}
+	podList := &corev1.PodList{}
+	err := r.Client.List(ctx, podList,
+		client.InNamespace(instance.GetNamespace()),
+		client.MatchingLabels(labels))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var currentHash string
+	for _, pod := range podList.Items {
+		if pod.DeletionTimestamp != nil {
+			continue
+		}
+
+		if hash := pod.Annotations["test.openstack.org/config-hash"]; hash != "" {
+			currentHash = hash
+			break
+		}
+	}
+
+	if currentHash == "" || currentHash == newHash {
+		return ctrl.Result{}, nil
+	}
+
+	for _, pod := range podList.Items {
+		if pod.DeletionTimestamp != nil {
+			continue
+		}
+
+		Log.Info("Configuration changed, deleting pod", "pod", pod.Name)
+
+		if err := r.Client.Delete(ctx, &pod); err != nil && !k8s_errors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{Requeue: true}, nil
 }

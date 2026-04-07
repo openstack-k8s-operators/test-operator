@@ -12,6 +12,7 @@ import (
 func Pod(
 	instance *testv1beta1.AnsibleTest,
 	labels map[string]string,
+	annotations map[string]string,
 	podName string,
 	logsPVCName string,
 	mountCerts bool,
@@ -20,7 +21,7 @@ func Pod(
 	containerImage string,
 ) *corev1.Pod {
 	return util.BuildTestPod(
-		nil, // No annotations
+		annotations,
 		PodCapabilities,
 		containerImage,
 		instance.Name,

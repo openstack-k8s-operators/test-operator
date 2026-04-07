@@ -26,7 +26,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/go-cmp/cmp"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -108,14 +107,9 @@ func (r *Tempest) ValidateUpdate(old runtime.Object) (admission.Warnings, error)
 		return nil, errors.New("unable to convert existing object")
 	}
 
-	if !cmp.Equal(oldTempest.Spec, r.Spec) {
-		warnings := admission.Warnings{}
-		warnings = append(warnings, "You are updating an already existing instance of a "+
-			"Tempest CR! Be aware that changes won't be applied.")
-
-		return warnings, errors.New("updating an existing Tempest CR is not supported")
-	}
-	return nil, nil
+	allWarnings := admission.Warnings{}
+	allWarnings = CheckSpecUpdated(allWarnings, oldTempest.Spec, r.Spec, r.Kind)
+	return allWarnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

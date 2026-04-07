@@ -23,6 +23,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -74,8 +76,14 @@ func (r *AnsibleTest) ValidateCreate() (admission.Warnings, error) {
 func (r *AnsibleTest) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	ansibletestlog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil, nil
+	oldAnsibleTest, ok := old.(*AnsibleTest)
+	if !ok || oldAnsibleTest == nil {
+		return nil, errors.New("unable to convert existing object")
+	}
+
+	allWarnings := admission.Warnings{}
+	allWarnings = CheckSpecUpdated(allWarnings, oldAnsibleTest.Spec, r.Spec, r.Kind)
+	return allWarnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

@@ -184,6 +184,13 @@ func CommonReconcile[T TestResource](
 		return ctrl.Result{}, err
 	}
 
+	// Check for config changes and handle pod recreation
+	configHash := CalculateConfigHash(instance)
+	ctrlResult, err := r.CheckConfigChange(ctx, instance, configHash)
+	if err != nil || (ctrlResult != ctrl.Result{}) {
+		return ctrlResult, err
+	}
+
 	// Apply workflow step overrides to the base spec
 	if config.SupportsWorkflow && workflowStepIndex < workflowLength {
 		spec := config.GetSpec(instance)
@@ -271,7 +278,7 @@ func CommonReconcile[T TestResource](
 	}
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err := r.EnsureLogsPVCExists(
+	ctrlResult, err = r.EnsureLogsPVCExists(
 		ctx,
 		instance,
 		helper,
@@ -284,6 +291,9 @@ func CommonReconcile[T TestResource](
 	} else if (ctrlResult != ctrl.Result{}) {
 		return ctrlResult, nil
 	}
+
+	serviceAnnotations := make(map[string]string)
+	serviceAnnotations["test.openstack.org/config-hash"] = configHash
 
 	// Generate ConfigMaps containing test configuration
 	if config.NeedsConfigMaps {
@@ -300,7 +310,6 @@ func CommonReconcile[T TestResource](
 		conditions.MarkTrue(condition.ServiceConfigReadyCondition, condition.ServiceConfigReadyMessage)
 	}
 
-	var serviceAnnotations map[string]string
 	if config.NeedsNetworkAttachments {
 		annotations, ctrlResult, err := r.EnsureNetworkAttachments(
 			ctx,
@@ -313,7 +322,9 @@ func CommonReconcile[T TestResource](
 		if err != nil || (ctrlResult != ctrl.Result{}) {
 			return ctrlResult, err
 		}
-		serviceAnnotations = annotations
+		for k, v := range annotations {
+			serviceAnnotations[k] = v
+		}
 	}
 
 	// Build pod

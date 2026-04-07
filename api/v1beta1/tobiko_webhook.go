@@ -23,6 +23,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"errors"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -82,8 +83,14 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 func (r *Tobiko) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	tobikolog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil, nil
+	oldTobiko, ok := old.(*Tobiko)
+	if !ok || oldTobiko == nil {
+		return nil, errors.New("unable to convert existing object")
+	}
+
+	allWarnings := admission.Warnings{}
+	allWarnings = CheckSpecUpdated(allWarnings, oldTobiko.Spec, r.Spec, r.Kind)
+	return allWarnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

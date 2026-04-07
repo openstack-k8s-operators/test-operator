@@ -96,7 +96,7 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *HorizonTestReconciler) buildHorizonTestPod(
 	ctx context.Context,
 	instance *testv1beta1.HorizonTest,
-	labels, _ map[string]string,
+	labels, annotations map[string]string,
 	workflowStepIndex int,
 	pvcIndex int,
 ) (*corev1.Pod, error) {
@@ -115,6 +115,7 @@ func (r *HorizonTestReconciler) buildHorizonTestPod(
 	return horizontest.Pod(
 		instance,
 		labels,
+		annotations,
 		podName,
 		logsPVCName,
 		mountCerts,
