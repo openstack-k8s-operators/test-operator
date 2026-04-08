@@ -637,6 +637,11 @@ func (in *TobikoSpec) DeepCopyInto(out *TobikoSpec) {
 	in.CommonOptions.DeepCopyInto(&out.CommonOptions)
 	out.CommonOpenstackConfig = in.CommonOpenstackConfig
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.SkipRegexList != nil {
+		in, out := &in.SkipRegexList, &out.SkipRegexList
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	out.Patch = in.Patch
 	if in.NetworkAttachments != nil {
 		in, out := &in.NetworkAttachments, &out.NetworkAttachments
@@ -671,6 +676,11 @@ func (in *TobikoWorkflowSpec) DeepCopyInto(out *TobikoWorkflowSpec) {
 		in, out := &in.Resources, &out.Resources
 		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.SkipRegexList != nil {
+		in, out := &in.SkipRegexList, &out.SkipRegexList
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	if in.PreventCreate != nil {
 		in, out := &in.PreventCreate, &out.PreventCreate

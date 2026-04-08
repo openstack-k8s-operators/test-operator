@@ -65,6 +65,13 @@ type TobikoSpec struct {
 	PytestAddopts string `json:"pytestAddopts"`
 
 	// +kubebuilder:validation:Optional
+	// +listType=atomic
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// List of test name patterns to skip. It has the same functionality
+	// as the --skipregex parameter used in PytestAddopts.
+	SkipRegexList []string `json:"skipRegexList,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// Boolean specifying whether tobiko tests create new resources or re-use those previously created
@@ -150,6 +157,13 @@ type TobikoWorkflowSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// String including any options to pass to pytest when it runs tobiko tests
 	PytestAddopts string `json:"pytestAddopts,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +listType=atomic
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// List of test name patterns to skip. It has the same functionality
+	// as the --skipregex parameter used in PytestAddopts.
+	SkipRegexList []string `json:"skipRegexList,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
