@@ -1378,6 +1378,14 @@ spec:
                       More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                     type: object
                 type: object
+              skipRegexList:
+                description: |-
+                  List of test name patterns to skip. It has the same functionality
+                  as the --skipregex parameter used in PytestAddopts.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: atomic
               storageClass:
                 default: local-storage
                 description: StorageClass used to create any test-operator related
@@ -1617,6 +1625,14 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                           type: object
                       type: object
+                    skipRegexList:
+                      description: |-
+                        List of test name patterns to skip. It has the same functionality
+                        as the --skipregex parameter used in PytestAddopts.
+                      items:
+                        type: string
+                      type: array
+                      x-kubernetes-list-type: atomic
                     stepName:
                       description: A parameter that contains a definition of a single
                         workflow step.

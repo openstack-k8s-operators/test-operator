@@ -846,6 +846,22 @@ func SetDictEnvVar(envVars map[string]string, fields map[string]string) {
 	}
 }
 
+// PreparePytestAddopts adds skipregex parameter to the PytestAddopts
+func PreparePytestAddopts(pytestAddopts string, skipRegexList []string) string {
+	if len(skipRegexList) == 0 {
+		return pytestAddopts
+	}
+
+	skipRegex := strings.Join(skipRegexList, "|")
+	skipOpt := fmt.Sprintf("--skipregex='%s'", skipRegex)
+
+	if len(pytestAddopts) == 0 {
+		return skipOpt
+	}
+
+	return fmt.Sprintf("%s %s", pytestAddopts, skipOpt)
+}
+
 // GetStringField returns reflect string field safely
 func GetStringField(v reflect.Value, fieldName string) string {
 	field, err := SafetyCheck(v, fieldName)

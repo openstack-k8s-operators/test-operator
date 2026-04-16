@@ -237,7 +237,7 @@ func (r *TobikoReconciler) PrepareTobikoEnvVars(
 		"TOBIKO_LOGS_DIR_NAME":  r.GetPodName(instance, workflowStepIndex),
 		"TOBIKO_TESTENV":        instance.Spec.Testenv,
 		"TOBIKO_VERSION":        instance.Spec.Version,
-		"TOBIKO_PYTEST_ADDOPTS": instance.Spec.PytestAddopts,
+		"TOBIKO_PYTEST_ADDOPTS": PreparePytestAddopts(instance.Spec.PytestAddopts, instance.Spec.SkipRegexList),
 		"TOBIKO_KEYS_FOLDER":    "/etc/test_operator",
 	})
 
