@@ -325,6 +325,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 		{
 			Name:          GetCustomDataConfigMapName(instance, workflowStepIndex),
 			Namespace:     instance.Namespace,
+			Type:          util.TemplateTypeNone,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
 			ConfigOptions: templateParameters,
@@ -334,6 +335,7 @@ func (r *TempestReconciler) generateServiceConfigMaps(
 		{
 			Name:          GetEnvVarsConfigMapName(instance, workflowStepIndex),
 			Namespace:     instance.Namespace,
+			Type:          util.TemplateTypeNone,
 			InstanceType:  instance.Kind,
 			Labels:        cmLabels,
 			ConfigOptions: templateParameters,
