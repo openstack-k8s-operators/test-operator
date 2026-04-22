@@ -545,6 +545,7 @@ func (r *Reconciler) AcquireLock(
 			{
 				Name:       testOperatorLockName,
 				Namespace:  instance.GetNamespace(),
+				Type:       util.TemplateTypeNone,
 				CustomData: cm,
 			},
 		}
@@ -780,6 +781,7 @@ func EnsureCloudsConfigMapExists(
 		{
 			Name:      testOperatorCloudsConfigMapName,
 			Namespace: instance.GetNamespace(),
+			Type:      util.TemplateTypeNone,
 			Labels:    labels,
 			CustomData: map[string]string{
 				"clouds.yaml": string(yamlString),

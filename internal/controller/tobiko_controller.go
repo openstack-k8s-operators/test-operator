@@ -201,6 +201,7 @@ func (r *TobikoReconciler) generateServiceConfigMaps(
 		cms = append(cms, util.Template{
 			Name:         tobiko.GetConfigMapName(instance, spec.infix, workflowStepIndex),
 			Namespace:    instance.Namespace,
+			Type:         util.TemplateTypeNone,
 			InstanceType: instance.Kind,
 			Labels:       labels,
 			CustomData:   map[string]string{spec.key: spec.value},
