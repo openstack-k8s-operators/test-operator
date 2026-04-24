@@ -36,8 +36,7 @@ var (
 	ErrInvalidAnsibleTestType = errors.New("invalid object type for AnsibleTest webhook")
 )
 
-// nolint:unused
-// log is for logging in this package.
+// ansibletestlog is for logging in this package.
 var ansibletestlog = logf.Log.WithName("ansibletest-resource")
 
 // SetupAnsibleTestWebhookWithManager registers the webhook for AnsibleTest in the manager.
@@ -51,17 +50,11 @@ func SetupAnsibleTestWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 // +kubebuilder:webhook:path=/mutate-test-openstack-org-v1beta1-ansibletest,mutating=true,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=ansibletests,verbs=create;update,versions=v1beta1,name=mansibletest-v1beta1.kb.io,admissionReviewVersions=v1
 
 // AnsibleTestCustomDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind AnsibleTest when those are created or updated.
-//
-// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
-// as it is used only for temporary operations and does not need to be deeply copied.
 type AnsibleTestCustomDefaulter struct {
-	// TODO(user): Add more fields as needed for defaulting
 }
 
 var _ webhook.CustomDefaulter = &AnsibleTestCustomDefaulter{}
@@ -81,18 +74,11 @@ func (d *AnsibleTestCustomDefaulter) Default(_ context.Context, obj runtime.Obje
 	return nil
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
-// Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-ansibletest,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=ansibletests,verbs=create;update,versions=v1beta1,name=vansibletest-v1beta1.kb.io,admissionReviewVersions=v1
 
 // AnsibleTestCustomValidator struct is responsible for validating the AnsibleTest resource
 // when it is created, updated, or deleted.
-//
-// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
-// as this struct is used only for temporary operations and does not need to be deeply copied.
 type AnsibleTestCustomValidator struct {
-	// TODO(user): Add more fields as needed for validation
 }
 
 var _ webhook.CustomValidator = &AnsibleTestCustomValidator{}
