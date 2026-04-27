@@ -127,6 +127,7 @@
       cifmw_test_operator_horizontest_dashboard_url: "https://horizon-openstack.apps-crc.testing/"
       cifmw_test_operator_horizontest_extra_flag: "not pagination and test_users.py"
       cifmw_test_operator_horizontest_project_name_xpath: //*[@class="context-project"]//ancestor::ul
+      cifmw_test_operator_horizontest_project_text_xpath: './/*[@class="context-project"]'
       cifmw_test_operator_horizontest_extra_mounts:
         - name: v1
           region: r1
