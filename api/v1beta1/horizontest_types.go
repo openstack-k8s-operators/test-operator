@@ -52,6 +52,13 @@ type HorizonTestSpec struct {
 	// on the horizon dashboard based on the u/s or d/s theme
 	ProjectNameXpath string `json:"projectNameXpath"`
 
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// ProjectTextXpath is the xpath to element displaying
+	// current project name on the horizon dashboard based
+	// on the u/s or d/s theme
+	ProjectTextXpath string `json:"projectTextXpath"`
+
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253
