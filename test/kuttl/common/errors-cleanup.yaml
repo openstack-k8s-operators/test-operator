@@ -1,0 +1,49 @@
+#
+# Check for:
+#
+# No CRs
+# No Pods
+#
+apiVersion: test.openstack.org/v1beta1
+kind: Tempest
+metadata:
+  name: tempest-sample
+---
+apiVersion: test.openstack.org/v1beta1
+kind: Tobiko
+metadata:
+  name: tobiko-sample
+---
+apiVersion: test.openstack.org/v1beta1
+kind: AnsibleTest
+metadata:
+  name: ansibletest-sample
+---
+apiVersion: test.openstack.org/v1beta1
+kind: HorizonTest
+metadata:
+  name: horizontest-sample
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    job-name: tempest-sample
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    job-name: tobiko-sample
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    job-name: ansibletest-sample
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    job-name: horizontest-sample
