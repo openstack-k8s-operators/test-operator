@@ -35,8 +35,7 @@ var (
 	ErrInvalidTobikoType = errors.New("invalid object type for Tobiko webhook")
 )
 
-// nolint:unused
-// log is for logging in this package.
+// tobikolog is for logging in this package.
 var tobikolog = logf.Log.WithName("tobiko-resource")
 
 // SetupTobikoWebhookWithManager registers the webhook for Tobiko in the manager.
@@ -50,17 +49,11 @@ func SetupTobikoWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 // +kubebuilder:webhook:path=/mutate-test-openstack-org-v1beta1-tobiko,mutating=true,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tobikoes,verbs=create;update,versions=v1beta1,name=mtobiko-v1beta1.kb.io,admissionReviewVersions=v1
 
 // TobikoCustomDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Tobiko when those are created or updated.
-//
-// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
-// as it is used only for temporary operations and does not need to be deeply copied.
 type TobikoCustomDefaulter struct {
-	// TODO(user): Add more fields as needed for defaulting
 }
 
 var _ webhook.CustomDefaulter = &TobikoCustomDefaulter{}
@@ -80,18 +73,11 @@ func (d *TobikoCustomDefaulter) Default(_ context.Context, obj runtime.Object) e
 	return nil
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
-// Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-test-openstack-org-v1beta1-tobiko,mutating=false,failurePolicy=fail,sideEffects=None,groups=test.openstack.org,resources=tobikoes,verbs=create;update,versions=v1beta1,name=vtobiko-v1beta1.kb.io,admissionReviewVersions=v1
 
 // TobikoCustomValidator struct is responsible for validating the Tobiko resource
 // when it is created, updated, or deleted.
-//
-// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
-// as this struct is used only for temporary operations and does not need to be deeply copied.
 type TobikoCustomValidator struct {
-	// TODO(user): Add more fields as needed for validation
 }
 
 var _ webhook.CustomValidator = &TobikoCustomValidator{}
