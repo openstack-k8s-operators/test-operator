@@ -62,6 +62,9 @@ spec:
   # ProjectNameXpath is the xpath to select project name on dashboard (optional)
   projectNameXpath: "//span[@class='rcueicon rcueicon-folder-open']/ancestor::li"
 
+  # ProjectTextXpath is the xpath to element displaying current project (optional)
+  projectTextXpath: ".//span[@class='rcueicon rcueicon-folder-open']/ancestor::li"
+
   # Privileged
   # ----------
   #
