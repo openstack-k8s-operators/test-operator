@@ -694,6 +694,7 @@ func (r *Reconciler) VerifyNetworkAttachments(
 	conditions *condition.Conditions,
 	networkAttachmentStatus *map[string][]string,
 ) (ctrl.Result, error) {
+	Log := r.GetLogger(ctx)
 	pod, err := r.GetPodIfExists(ctx, instance, workflowStepIndex)
 	if pod == nil {
 		return ctrl.Result{}, err
@@ -718,14 +719,33 @@ func (r *Reconciler) VerifyNetworkAttachments(
 			condition.NetworkAttachmentsReadyMessage)
 	} else {
 		err := fmt.Errorf("%w: %s", ErrNetworkAttachmentsMismatch, networkAttachments)
+
+		// maxWaitTime to wait for NAD that should escalate to a hard error
+		const maxWaitTime = 5 * time.Minute
+		elaspedTime := time.Since(pod.GetCreationTimestamp().Time)
+		if elaspedTime > maxWaitTime {
+			conditions.Set(condition.FalseCondition(
+				condition.NetworkAttachmentsReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityError,
+				condition.NetworkAttachmentsReadyErrorMessage,
+				fmt.Errorf("timed out waiting for network attachments: %w", err).Error()))
+
+			return ctrl.Result{}, err
+		}
+
 		conditions.Set(condition.FalseCondition(
 			condition.NetworkAttachmentsReadyCondition,
-			condition.ErrorReason,
+			"NetworkAttachmentsWaiting",
 			condition.SeverityWarning,
 			condition.NetworkAttachmentsReadyErrorMessage,
 			err.Error()))
 
-		return ctrl.Result{}, err
+		Log.Info("Waiting for network attachments to become  ready",
+			"elaspedTime", elaspedTime,
+			"maxWaitTime", maxWaitTime)
+
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 
 	return ctrl.Result{}, nil
