@@ -720,10 +720,10 @@ func (r *Reconciler) VerifyNetworkAttachments(
 			condition.NetworkAttachmentsReadyErrorMessage,
 			err.Error()))
 
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, err
 }
 
 // EnsureCloudsConfigMapExists ensures that frameworks like Tobiko and Horizon have password values
