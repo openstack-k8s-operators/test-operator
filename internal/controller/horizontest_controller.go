@@ -187,6 +187,7 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 		"HORIZON_KEYS_FOLDER": "/etc/test_operator",
 		"EXTRA_FLAG":          instance.Spec.ExtraFlag,
 		"PROJECT_NAME_XPATH":  instance.Spec.ProjectNameXpath,
+		"PROJECT_TEXT_XPATH":  instance.Spec.ProjectTextXpath,
 	})
 
 	return envVars
