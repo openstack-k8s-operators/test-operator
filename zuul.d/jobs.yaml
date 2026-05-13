@@ -100,7 +100,8 @@
       # Tobiko
       cifmw_test_operator_tobiko_workflow:
         - stepName: 'podified-functional'
-          testenv: 'functional -- tobiko/tests/functional/podified/test_topology.py'
+          testenv: 'functional'
+          pytestAddopts: "tobiko/tests/functional/podified/test_topology.py"
           numProcesses: 2
         - stepName: 'sanity'
           testenv: 'sanity'
