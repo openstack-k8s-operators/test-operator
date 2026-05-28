@@ -598,17 +598,21 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	return false, ErrFailedToDeleteLock
 }
 
-// PodExists checks if a pod exists for the given instance and workflow step
-func (r *Reconciler) PodExists(ctx context.Context, instance client.Object, workflowStepIndex int) bool {
-	pod := &corev1.Pod{}
+// GetPodIfExists returns the pod for the given instance and workflow step if it exists
+func (r *Reconciler) GetPodIfExists(
+	ctx context.Context,
+	instance client.Object,
+	workflowStepIndex int,
+) (*corev1.Pod, error) {
 	podName := r.GetPodName(instance, workflowStepIndex)
-	objectKey := client.ObjectKey{Namespace: instance.GetNamespace(), Name: podName}
-	err := r.Client.Get(ctx, objectKey, pod)
-	if err != nil && k8s_errors.IsNotFound(err) {
-		return false
+	pod, err := r.GetPod(ctx, podName, instance.GetNamespace())
+	if err != nil {
+		if k8s_errors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
-
-	return true
+	return pod, nil
 }
 
 // GetCommonRbacRules returns the common RBAC rules for test operations, with optional privileged permissions
@@ -690,8 +694,9 @@ func (r *Reconciler) VerifyNetworkAttachments(
 	conditions *condition.Conditions,
 	networkAttachmentStatus *map[string][]string,
 ) (ctrl.Result, error) {
-	if !r.PodExists(ctx, instance, workflowStepIndex) {
-		return ctrl.Result{}, nil
+	pod, err := r.GetPodIfExists(ctx, instance, workflowStepIndex)
+	if pod == nil {
+		return ctrl.Result{}, err
 	}
 
 	networkReady, status, err := nad.VerifyNetworkStatusFromAnnotation(
