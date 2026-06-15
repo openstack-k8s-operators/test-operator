@@ -2,20 +2,13 @@
 # Check for:
 #
 # No CRs
-# No Pods
-# No ConfigMaps
-# No Secrets
+# No Pods owned by test-operator
 #
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: openstack-config
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: openstack-config-secret
----
+# NOTE: openstack-config ConfigMap and openstack-config-secret Secret are
+# infrastructure resources managed by the CI environment (not by the
+# test-operator) and must NOT be checked here. Other operators in the
+# namespace may recreate them after deletion, causing cleanup timeouts.
+#
 apiVersion: test.openstack.org/v1beta1
 kind: Tempest
 metadata:
@@ -40,22 +33,22 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    job-name: tempest-sample
+    instanceName: tempest-sample
 ---
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    job-name: tobiko-sample
+    instanceName: tobiko-sample
 ---
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    job-name: ansibletest-sample
+    instanceName: ansibletest-sample
 ---
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    job-name: horizontest-sample
+    instanceName: horizontest-sample
