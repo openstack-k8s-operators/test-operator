@@ -144,6 +144,33 @@ CRs that can use the workflow section:
 
 * :ref:`ansibletest-custom-resource`
 
+.. _nodeselector-and-tolerations:
+
+NodeSelector and Tolerations
+============================
+Use :code:`nodeSelector` and :code:`tolerations` to control which nodes the
+test pods are scheduled on. The :code:`nodeSelector` ensures the pod only runs
+on nodes with a matching label. The :code:`tolerations` grant permission to run
+on tainted nodes.
+
+Basic Usage
+-----------
+
+.. code-block:: yaml
+
+   spec:
+     # Targets nodes labeled testoperator=true
+     # (oc get node <node-name> --show-labels)
+     nodeSelector:
+       testoperator: "true"
+     # Tolerates nodes tainted with test=true:NoSchedule
+     # (oc describe node <node-name> | grep Taints)
+     tolerations:
+       - key: "test"
+         operator: "Equal"
+         value: "true"
+         effect: "NoSchedule"
+
 ExtraMounts parameter
 =====================
 To correctly use the :code:`ExtraMounts` parameter, follow these steps:
@@ -159,7 +186,7 @@ to be mounted. The name assigned here is later referenced in the
 mounted in the Pod. Each entry should include the name of a volume
 from the :code:`volumes` field and the target mount path.
 
-Example of using the :code:`ExtraMounts` parameter:
+Example test of using the :code:`ExtraMounts` parameter:
 
 .. code-block:: yaml
 

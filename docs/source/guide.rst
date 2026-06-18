@@ -201,7 +201,6 @@ Please make sure that you follow the order of the steps:
    :code:`crd`. In such a case, try to delete the :code:`finalizers:`
    section in the output of the :code:`oc edit tempest/tempest-tests`.
 
-
 .. _executing-tests:
 
 Executing Tests
@@ -248,11 +247,31 @@ You should see a pod with a name like :code:`tempest-tests-xxxxx`.
 
 .. code-block:: bash
 
-    oc logs <name of the pod>
+    oc logs <pod-name>
 
 Read :ref:`getting-logs` section if you want to see logs and artifacts
 produced during the testing.
 
+.. _checking-conditions:
+
+Checking Conditions
+-------------------
+Every test CR exposes standard conditions that track its progress:
+
+.. code-block:: bash
+
+   oc get tempest <cr-name> -n openstack -o jsonpath='{.status.conditions}' | jq
+
+Example output of a condition:
+
+.. code-block:: bash
+
+   {
+     "type": "DeploymentReady",
+     "status": "False",
+     "reason": "Requested",
+     "message": "Deployment is running"
+   }
 
 .. _getting-logs:
 

@@ -16,7 +16,10 @@ spec:
   storageClass: local-storage
   workloadSSHKeySecretName: open-ssh-keys
   ansiblePlaybookPath: playbooks/my_playbook.yaml
+  # git repository URL to clone into the test pod
   ansibleGitRepo: https://github.com/myansible/project
+  # branch, tag, or commit SHA to check out (default: repo's default branch)
+  # ansibleGitBranch: ""
   # containerImage:
   ansibleInventory: |
     localhost ansible_connection=local ansible_python_interpreter=python3

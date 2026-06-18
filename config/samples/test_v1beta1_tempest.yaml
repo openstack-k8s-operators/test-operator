@@ -9,6 +9,8 @@ spec:
   # storageClass: local-storage
   # parallel: false
   # debug: false
+  # networkAttachments: []  # list of NADs to attach extra networks to the test pod
+  #                         # if omitted, the pod uses only the default cluster network
 
   # configOverwrite
   # ---------------
@@ -91,6 +93,8 @@ spec:
     #       RAM: 512
     #       disk: 20
     #       vcpus: 1
+    # Set to true to remove all resources created by Tempest during teardown
+    # cleanup: false
 
     # extraRPMs:
     # ----------

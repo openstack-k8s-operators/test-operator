@@ -35,6 +35,8 @@ spec:
   # storageClass: local-storage
   # parallel: false
   # debug: false
+  # networkAttachments: []  # list of NADs to attach extra networks to the test pod
+  #                         # if omitted, the pod uses only the default cluster network
   # privateKey: |
   #   <private-key-value>
   # publicKey: |
