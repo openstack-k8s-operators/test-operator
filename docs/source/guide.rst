@@ -253,6 +253,214 @@ You should see a pod with a name like :code:`tempest-tests-xxxxx`.
 Read :ref:`getting-logs` section if you want to see logs and artifacts
 produced during the testing.
 
+.. _service-config-ready-condition:
+
+ServiceConfigReady Condition
+----------------------------
+The :code:`ServiceConfigReady` condition tells you whether the operator has
+successfully generated the internal ConfigMaps that a test pod needs to run.
+This condition covers operator-generated ConfigMaps such as environment variable
+bundles, template parameters,and for HorizonTest and Tobiko tests, the derived
+:code:`test-operator-clouds-config` ConfigMap with the patched password (see
+:ref:`configurable-openstack-config`).
+
+For example, running :code:`oc describe tempest my-test -n openstack` shows:
+
+.. code-block:: text
+
+   Conditions:
+     Type                          Status  Reason      Message
+     ----                          ------  ------      -------
+     InputReady                    True    Ready       Input validation passed
+     ServiceConfigReady            True    Ready       Service config ready
+     DeploymentReady               False   Requested   Deployment is running
+     NetworkAttachmentsReady       True    Ready       Network attachments ready
+     Ready                         False   Requested   Deployment is running
+
+Diagnostic Signals
+^^^^^^^^^^^^^^^^^^
+
+:code:`ServiceConfigReady = Unknown`
+
+The operator has not reached this step yet (still initializing or validating
+inputs).
+
+:code:`ServiceConfigReady = True`
+
+Config generation succeeded; the operator moved on to creating the pod.
+
+:code:`ServiceConfigReady = False`
+
+Config generation failed. The accompanying message describes the exact
+failure.
+
+What the Controller Generates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The controller calls a resource-specific callback
+(:code:`GenerateServiceConfigMaps`) that produces different ConfigMaps for each
+resource:
+
+* **Tempest**: ConfigMaps with environment variables for test concurrency,
+  external plugin deployment information, worker counts, and custom Tempest
+  configuration.
+
+* **Tobiko**: ConfigMaps with Tobiko-specific environment variables (test
+  suites, prevent-create flags, debug settings).
+
+* **HorizonTest**: Calls :code:`EnsureCloudsConfigMapExists` to create the
+  derived :code:`test-operator-clouds-config` ConfigMap, plus an additional
+  environment variable ConfigMap.
+
+Inspecting the Condition
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Quick table view:
+
+.. code-block:: bash
+
+   oc get tempest -n openstack
+
+Shows :code:`Status` and :code:`Message` columns from the first condition.
+
+Full condition details:
+
+.. code-block:: bash
+
+   oc get tempest my-test -n openstack -o jsonpath='{.status.conditions}' | jq
+
+Filter for :code:`ServiceConfigReady` specifically:
+
+.. code-block:: bash
+
+   oc get tempest my-test -n openstack \
+     -o jsonpath='{.status.conditions[?(@.type=="ServiceConfigReady")]}'
+
+Human-readable output:
+
+.. code-block:: bash
+
+   oc describe tempest my-test -n openstack
+
+Look for the **Conditions:** section in the output.
+
+.. _tempest-rerun-failed-tests:
+
+Tempest Re-run Failed Tests
+---------------------------
+In deployments, some tests occasionally fail not due to bug failures, but
+because of temporary conditions: service overload, network
+routes taking longer than expected to converge, or a virtual machine that did not reach
+its expected state within a timeout. These intermittent failures are commonly
+called **flaky tests**.
+
+The re-run feature within the Test Operator addresses this problem. When enabled, the Tempest
+pod automatically re-executes any tests that failed during the initial run. This occurs inside
+the same pod, during the same execution without the need of manual intervention and thus, no
+second pod is created.
+
+Functionality
+^^^^^^^^^^^^^
+
+The feature is controlled by two fields in the Tempest CR spec:
+
+:code:`rerunFailedTests` **(default: false)**
+
+When set to :code:`true`, the Tempest container will perform a second run after the
+initial execution completes, targeting only the tests that failed. If all tests
+passed on the first run, no re-run shall occur.
+
+:code:`rerunOverrideStatus` **(default: false)**
+
+Controls what the pod reports as its final result when a re-run happens:
+
+* :code:`false` - The pod exits with the result of the original run. If
+  all previously failed tests pass on re-run, the pod still reports failure.
+  The re-run results are available in the logs for investigation.
+
+* :code:`true` - The pod exits with the result of the re-run. If all failed
+  tests pass on the second attempt, the pod reports success on the consecutive run.
+
+CI Pipeline Gating
+^^^^^^^^^^^^^^^^^^^
+.. code-block:: yaml
+
+   apiVersion: test.openstack.org/v1beta1
+   kind: Tempest
+   metadata:
+     name: ci-gate-tests
+     namespace: openstack
+   spec:
+     rerunFailedTests: true
+     rerunOverrideStatus: true
+     tempestRun:
+       includeList: "tempest.api"
+       concurrency: 4
+
+Flaky tests that pass on the second attempt will not block the pipeline.
+Tests with genuine failures will fail both times, and the pipeline
+will correctly report a failure.
+
+.. code-block:: yaml
+
+   spec:
+     rerunFailedTests: true
+     rerunOverrideStatus: false
+
+Used when collecting data on which tests are flaky without
+changing your pipeline's pass/fail behavior. The pod still reports the
+original failure, but the re-run logs show which tests recovered — useful
+for building a skip list or reporting flakiness to upstream.
+
+Using Re-run With Workflows
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using workflows, the re-run setting can be configured differently for
+each step. Each workflow step produces its own pod, and the re-run behavior
+is independent per step:
+
+.. code-block:: yaml
+
+   apiVersion: test.openstack.org/v1beta1
+   kind: Tempest
+   metadata:
+     name: full-validation
+     namespace: openstack
+   spec:
+     rerunFailedTests: false
+     tempestRun:
+       includeList: "tempest.api"
+     workflow:
+       - stepName: api-validation
+         rerunFailedTests: true
+         rerunOverrideStatus: true
+         tempestRun:
+           includeList: "tempest.api.compute tempest.api.network"
+       - stepName: scenario-tests
+         rerunFailedTests: false
+         tempestRun:
+           includeList: "tempest.scenario"
+
+In this example, API tests (which are more likely to be affected by transient
+conditions) get the re-run safety net, while scenario tests (which are more
+deterministic) fail immediately on first failure.
+
+.. note::
+   The per-step :code:`rerunFailedTests: true` overrides the base spec's
+   :code:`rerunFailedTests: false` for that step only.
+
+Checking Re-run Results
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The re-run results are stored in the same persistent volume as the original
+run. To access them:
+
+.. code-block:: bash
+
+   oc logs <tempest-pod-name>
+
+The container logs will show both the original run summary and the re-run
+summary, making it clear which tests were retried and whether they passed.
 
 .. _getting-logs:
 
