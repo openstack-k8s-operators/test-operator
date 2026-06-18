@@ -169,4 +169,110 @@ var _ = Describe("Tobiko controller", func() {
 			)
 		})
 	})
+
+	Context("extraMounts", func() {
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+			Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+		})
+
+		When("Tobiko is created with extraMounts", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultTobikoSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("Tobiko",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("should add extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+			})
+		})
+
+		When("Tobiko is created with Secret as the source of extraMount", func() {
+			BeforeEach(func() {
+				CreateExtraSecret(namespace, ExtraSecretName)
+
+				spec := GetDefaultTobikoSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("Tobiko",
+					GetDefaultSecretExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("should add secret based extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				ExpectPodHasSecretVolume(pod, ExtraSecretVolName, ExtraSecretName)
+				ExpectPodHasVolumeMount(pod, ExtraSecretVolName, ExtraSecretMountPath)
+			})
+		})
+
+		When("Tobiko is created with multiple extraMounts configmap and secret", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+				CreateExtraSecret(namespace, ExtraSecretName)
+
+				spec := GetDefaultTobikoSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("Tobiko",
+					GetDefaultConfigMapExtraMount(),
+					GetDefaultSecretExtraMount(),
+				)
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("should add all extra volumes and volumeMounts to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasSecretVolume(pod, ExtraSecretVolName, ExtraSecretName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+				ExpectPodHasVolumeMount(pod, ExtraSecretVolName, ExtraSecretMountPath)
+			})
+		})
+
+		When("Tobiko is created with no propagation field", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultTobikoSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("should add extra volume and volumeMount when propagation is omitted", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+			})
+		})
+
+		When("Tobiko created with extraMounts is using the wrong propagation type", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultTobikoSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("HorizonTest",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("should not add extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				ExpectPodNotHasVolume(pod, ExtraConfigVolName)
+				ExpectPodNotHasVolumeMount(pod, ExtraConfigVolName)
+			})
+		})
+	})
 })

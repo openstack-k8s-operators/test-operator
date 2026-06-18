@@ -36,7 +36,20 @@ const (
 	DefaultStorageClass         = "local-storage"
 	DefaultComputeSSHKeySecret  = "dataplane-ansible-ssh-private-key-secret" // #nosec G101
 	DefaultWorkloadSSHKeySecret = "dataplane-ansible-ssh-private-key-secret" // #nosec G101
+	ExtraConfigMapName          = "extra-config"
+	ExtraConfigVolName          = "extra-config-vol"
+	ExtraConfigMountPath        = "/etc/extra-config"
+	ExtraSecretName             = "extra-secret"      // #nosec G101
+	ExtraSecretVolName          = "extra-secret-vol"  // #nosec G101
+	ExtraSecretMountPath        = "/etc/extra-secret" // #nosec G101
 )
+
+type ExtraMount struct {
+	VolName    string
+	SourceName string // ConfigMap or Secret name
+	MountPath  string
+	IsSecret   bool
+}
 
 func CreateUnstructured(rawObj map[string]any) *unstructured.Unstructured {
 	logger.Info("Creating", "raw", rawObj)
@@ -84,6 +97,136 @@ func CreateTestOperatorConfigMap(namespace string) *corev1.ConfigMap {
 			"tempest-image":     "quay.io/podified-antelope-centos9/openstack-tempest:current-podified",
 			"tobiko-image":      "quay.io/podified-antelope-centos9/openstack-tobiko:current-podified",
 		},
+	}
+}
+
+func CreateExtraConfigMap(namespace string, name string) {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			"config.conf": "key=value",
+		},
+	}
+	Expect(k8sClient.Create(ctx, cm)).Should(Succeed())
+}
+
+func CreateExtraSecret(namespace string, name string) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		StringData: map[string]string{
+			"secret.conf": "key=value",
+		},
+	}
+	Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
+}
+
+func BuildExtraMountsSpec(propagation string, mounts ...ExtraMount) []map[string]any {
+	volumes := []map[string]any{}
+	volumeMounts := []map[string]any{}
+
+	for _, m := range mounts {
+		vol := map[string]any{"name": m.VolName}
+		if m.IsSecret {
+			vol["secret"] = map[string]any{"secretName": m.SourceName}
+		} else {
+			vol["configMap"] = map[string]any{"name": m.SourceName}
+		}
+		volumes = append(volumes, vol)
+
+		volumeMounts = append(volumeMounts, map[string]any{
+			"name":      m.VolName,
+			"mountPath": m.MountPath,
+			"readOnly":  true,
+		})
+	}
+
+	extraVol := map[string]any{
+		"volumes": volumes,
+		"mounts":  volumeMounts,
+	}
+	if propagation != "" {
+		extraVol["propagation"] = []string{propagation}
+	}
+	return []map[string]any{
+		{"extraVol": []map[string]any{extraVol}},
+	}
+}
+
+func ExpectPodHasConfigMapVolume(pod *corev1.Pod, volName string, cmName string) {
+	foundVolume := false
+	for _, vol := range pod.Spec.Volumes {
+		if vol.Name == volName {
+			foundVolume = true
+			Expect(vol.VolumeSource.ConfigMap).NotTo(BeNil())
+			Expect(vol.VolumeSource.ConfigMap.Name).To(Equal(cmName))
+			break
+		}
+	}
+	Expect(foundVolume).To(BeTrue(), "expected pod to have volume '%s'", volName)
+}
+
+func ExpectPodHasSecretVolume(pod *corev1.Pod, volName string, secretName string) {
+	foundVolume := false
+	for _, vol := range pod.Spec.Volumes {
+		if vol.Name == volName {
+			foundVolume = true
+			Expect(vol.VolumeSource.Secret).NotTo(BeNil())
+			Expect(vol.VolumeSource.Secret.SecretName).To(Equal(secretName))
+			break
+		}
+	}
+	Expect(foundVolume).To(BeTrue(), "expected pod to have volume '%s'", volName)
+}
+
+func ExpectPodHasVolumeMount(pod *corev1.Pod, volName string, mountPath string) {
+	container := pod.Spec.Containers[0]
+	foundMount := false
+	for _, mount := range container.VolumeMounts {
+		if mount.Name == volName {
+			foundMount = true
+			Expect(mount.MountPath).To(Equal(mountPath))
+			Expect(mount.ReadOnly).To(BeTrue())
+			break
+		}
+	}
+	Expect(foundMount).To(BeTrue(), "expected container to have volumeMount '%s'", volName)
+}
+
+func ExpectPodNotHasVolume(pod *corev1.Pod, volName string) {
+	for _, vol := range pod.Spec.Volumes {
+		Expect(vol.Name).NotTo(Equal(volName),
+			"volume should not be propagated with wrong propagation type")
+	}
+}
+
+func ExpectPodNotHasVolumeMount(pod *corev1.Pod, volName string) {
+	container := pod.Spec.Containers[0]
+	for _, mount := range container.VolumeMounts {
+		Expect(mount.Name).NotTo(Equal(volName),
+			"volumeMount should not be propagated with wrong propagation type")
+	}
+}
+
+func GetDefaultConfigMapExtraMount() ExtraMount {
+	return ExtraMount{
+		VolName:    ExtraConfigVolName,
+		SourceName: ExtraConfigMapName,
+		MountPath:  ExtraConfigMountPath,
+	}
+}
+
+func GetDefaultSecretExtraMount() ExtraMount {
+	return ExtraMount{
+		VolName:    ExtraSecretVolName,
+		SourceName: ExtraSecretName,
+		MountPath:  ExtraSecretMountPath,
+		IsSecret:   true,
 	}
 }
 

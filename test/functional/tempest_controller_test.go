@@ -189,4 +189,110 @@ var _ = Describe("Tempest controller", func() {
 			)
 		})
 	})
+
+	Context("extraMounts", func() {
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+			Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+		})
+
+		When("Tempest is created with extraMounts", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultTempestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("Tempest",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("should add extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tempestName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+			})
+		})
+
+		When("Tempest is created with Secret as the source of extraMount", func() {
+			BeforeEach(func() {
+				CreateExtraSecret(namespace, ExtraSecretName)
+
+				spec := GetDefaultTempestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("Tempest",
+					GetDefaultSecretExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("should add secret based extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tempestName.Name)
+				ExpectPodHasSecretVolume(pod, ExtraSecretVolName, ExtraSecretName)
+				ExpectPodHasVolumeMount(pod, ExtraSecretVolName, ExtraSecretMountPath)
+			})
+		})
+
+		When("Tempest is created with multiple extraMounts configmap and secret", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+				CreateExtraSecret(namespace, ExtraSecretName)
+
+				spec := GetDefaultTempestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("Tempest",
+					GetDefaultConfigMapExtraMount(),
+					GetDefaultSecretExtraMount(),
+				)
+
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("should add all extra volumes and volumeMounts to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tempestName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasSecretVolume(pod, ExtraSecretVolName, ExtraSecretName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+				ExpectPodHasVolumeMount(pod, ExtraSecretVolName, ExtraSecretMountPath)
+			})
+		})
+
+		When("Tempest is created with no propagation field", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultTempestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("should add extra volume and volumeMount when propagation is omitted", func() {
+				pod := GetTestOperatorPod(namespace, tempestName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+			})
+		})
+
+		When("Tempest created with extraMounts is using the wrong propagation type", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultTempestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("HorizonTest",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("should not add extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, tempestName.Name)
+				ExpectPodNotHasVolume(pod, ExtraConfigVolName)
+				ExpectPodNotHasVolumeMount(pod, ExtraConfigVolName)
+			})
+		})
+	})
 })
