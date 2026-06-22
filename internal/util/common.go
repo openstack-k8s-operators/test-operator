@@ -117,6 +117,7 @@ func BuildTestPod(
 				{
 					Name:            containerName,
 					Image:           containerImage,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args:            []string{},
 					Env:             env.MergeEnvs([]corev1.EnvVar{}, envVars),
 					VolumeMounts:    volumeMounts,
