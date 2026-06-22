@@ -32,14 +32,12 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - name: Get branch name
-      id: branch-name
-      uses: tj-actions/branch-names@v9
-
     - name: Set latest tag for non main branch
-      if: "${{ steps.branch-name.outputs.current_branch != 'main' }}"
+      if: github.ref_name != 'main'
+      env:
+        BRANCH_NAME: ${{ github.ref_name }}
       run: |
-        echo "latesttag=${{ steps.branch-name.outputs.current_branch }}-latest" >> $GITHUB_ENV
+        echo "latesttag=${BRANCH_NAME}-latest" >> $GITHUB_ENV
 
     - name: Buildah Action
       id: build-test-operator
@@ -106,14 +104,12 @@ jobs:
         BASE_IMAGE: test-operator
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Get branch name
-      id: branch-name
-      uses: tj-actions/branch-names@v9
-
     - name: Set latest tag for non main branch
-      if: "${{ steps.branch-name.outputs.current_branch != 'main' }}"
+      if: github.ref_name != 'main'
+      env:
+        BRANCH_NAME: ${{ github.ref_name }}
       run: |
-        echo "latesttag=${{ steps.branch-name.outputs.current_branch }}-latest" >> $GITHUB_ENV
+        echo "latesttag=${BRANCH_NAME}-latest" >> $GITHUB_ENV
 
     - name: Build test-operator-bundle using buildah
       id: build-test-operator-bundle
@@ -143,14 +139,12 @@ jobs:
     - name: Checkout test-operator repository
       uses: actions/checkout@v6
 
-    - name: Get branch name
-      id: branch-name
-      uses: tj-actions/branch-names@v9
-
     - name: Set latest tag for non main branch
-      if: "${{ steps.branch-name.outputs.current_branch != 'main' }}"
+      if: github.ref_name != 'main'
+      env:
+        BRANCH_NAME: ${{ github.ref_name }}
       run: |
-        echo "latesttag=${{ steps.branch-name.outputs.current_branch }}-latest" >> $GITHUB_ENV
+        echo "latesttag=${BRANCH_NAME}-latest" >> $GITHUB_ENV
 
     - name: Install opm
       uses: redhat-actions/openshift-tools-installer@v1
