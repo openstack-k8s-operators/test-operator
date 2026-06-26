@@ -30,7 +30,7 @@ jobs:
     if: needs.check-secrets.outputs.have-secrets == 'true'
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
     - name: Set latest tag for non main branch
       if: github.ref_name != 'main'
@@ -41,7 +41,7 @@ jobs:
 
     - name: Buildah Action
       id: build-test-operator
-      uses: redhat-actions/buildah-build@v2
+      uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
       with:
         image: test-operator
         tags: ${{ env.latesttag }} ${{ github.sha }}
@@ -49,7 +49,7 @@ jobs:
           ./Dockerfile
 
     - name: Push test-operator To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@v2
+      uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
       with:
         image: ${{ steps.build-test-operator.outputs.image }}
         tags: ${{ steps.build-test-operator.outputs.tags }}
@@ -65,28 +65,28 @@ jobs:
 
     steps:
     - name: Install Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
       with:
         go-version: 1.24.x
 
     - name: Checkout test-operator repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
     - name: Install operator-sdk
-      uses: redhat-actions/openshift-tools-installer@v1
+      uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1
       with:
         source: github
         operator-sdk: '1.41.1'
 
     - name: Log in to Quay Registry
-      uses: redhat-actions/podman-login@v1
+      uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
       with:
         registry: ${{ env.imageregistry }}
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
 
     - name: Log in to Red Hat Registry
-      uses: redhat-actions/podman-login@v1
+      uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
       with:
         registry: registry.redhat.io
         username: ${{ secrets.REDHATIO_USERNAME }}
@@ -113,7 +113,7 @@ jobs:
 
     - name: Build test-operator-bundle using buildah
       id: build-test-operator-bundle
-      uses: redhat-actions/buildah-build@v2
+      uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
       with:
         image: test-operator-bundle
         tags: ${{ env.latesttag }} ${{ github.sha }}
@@ -121,7 +121,7 @@ jobs:
           ./bundle.Dockerfile
 
     - name: Push test-operator To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@v2
+      uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
       with:
         image: ${{ steps.build-test-operator-bundle.outputs.image }}
         tags: ${{ steps.build-test-operator-bundle.outputs.tags }}
@@ -137,7 +137,7 @@ jobs:
 
     steps:
     - name: Checkout test-operator repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
     - name: Set latest tag for non main branch
       if: github.ref_name != 'main'
@@ -147,13 +147,13 @@ jobs:
         echo "latesttag=${BRANCH_NAME}-latest" >> $GITHUB_ENV
 
     - name: Install opm
-      uses: redhat-actions/openshift-tools-installer@v1
+      uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1
       with:
         source: github
         opm: 'latest'
 
     - name: Log in to Red Hat Registry
-      uses: redhat-actions/podman-login@v1
+      uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
       with:
         registry: ${{ env.imageregistry }}
         username: ${{ secrets.QUAY_USERNAME }}
@@ -173,7 +173,7 @@ jobs:
         INDEX_IMAGE: test-operator-index
 
     - name: Push test-operator-index To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@v2
+      uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
       with:
         image: test-operator-index
         tags: ${{ env.latesttag }} ${{ github.sha }}
