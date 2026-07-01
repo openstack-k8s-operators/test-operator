@@ -214,6 +214,10 @@ func CommonReconcile[T TestResource](
 		Log.Info(InfoWaitingOnPod)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
+	case CheckPending:
+		Log.Info(InfoPendingPod)
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
+
 	case EndTesting:
 		// All pods created by the instance were completed. Release the lock
 		// so that other instances can spawn their pods.
