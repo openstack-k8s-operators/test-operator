@@ -56,6 +56,8 @@ const (
 const (
 	// InfoWaitingOnPod is the info message when waiting for pod completion or lock release
 	InfoWaitingOnPod = "Waiting on either pod to finish or release of the lock."
+	// InfoPendingPod is the info message when waiting for a pending pod to start
+	InfoPendingPod = "Waiting for pending pod to start running."
 	// InfoTestingCompleted is the info message when all testing is completed
 	InfoTestingCompleted = "Testing completed. All pods spawned by the test-operator finished."
 	// InfoCreatingFirstPod is the info message when creating the first test pod
@@ -116,6 +118,10 @@ const (
 	// Wait indicates that we should wait for the state of the OpenShift cluster
 	// to change
 	Wait = iota
+
+	// CheckPending indicates that the pod is pending and prerequisite checks
+	// should be run on each reconcile to catch early failures
+	CheckPending
 
 	// CreateFirstPod indicates that the Reconcile loop should create the first pod
 	// either specified in the .Spec section or in the .Spec.Workflow section.
@@ -197,23 +203,29 @@ func (r *Reconciler) NextAction(
 			return Failure, workflowStepIdx, err
 		}
 
-		// If the last pod is not in Failed or Succeeded state -> Wait
-		lastPodFinished := lastPod.Status.Phase == corev1.PodFailed || lastPod.Status.Phase == corev1.PodSucceeded
-		if !lastPodFinished {
+		switch lastPod.Status.Phase {
+		case corev1.PodPending:
+			// If the last pod is in Pending state -> Check reason for pending
+			return CheckPending, workflowStepIdx, nil
+
+		case corev1.PodRunning:
+			// If the last pod is in Running state -> Wait
 			return Wait, workflowStepIdx, nil
-		}
 
-		// If the last pod is in Failed or Succeeded state and it is NOT the last
-		// pod which was supposed to be created -> CreateNextPod
-		if lastPodFinished && !isLastPodIndex(workflowStepIdx, workflowLength) {
-			workflowStepIdx++
-			return CreateNextPod, workflowStepIdx, nil
-		}
+		case corev1.PodFailed, corev1.PodSucceeded:
+			// If the last pod is finished and it is NOT the last pod which was
+			// supposed to be created -> CreateNextPod
+			if !isLastPodIndex(workflowStepIdx, workflowLength) {
+				workflowStepIdx++
+				return CreateNextPod, workflowStepIdx, nil
+			}
 
-		// Otherwise if the pod is in Failed or Succeeded state and it IS the
-		// last pod -> EndTesting
-		if lastPodFinished && isLastPodIndex(workflowStepIdx, workflowLength) {
+			// Otherwise if the pod is finished and it IS the last pod -> EndTesting
 			return EndTesting, workflowStepIdx, nil
+
+		default:
+			// For any other pod phase -> Wait
+			return Wait, workflowStepIdx, nil
 		}
 	}
 
