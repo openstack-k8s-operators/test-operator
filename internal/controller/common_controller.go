@@ -210,6 +210,10 @@ func CommonReconcile[T TestResource](
 	}
 
 	switch nextAction {
+	case CheckPending:
+		Log.Info(InfoPendingPod)
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
+
 	case Wait:
 		Log.Info(InfoWaitingOnPod)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
