@@ -116,4 +116,112 @@ var _ = Describe("AnsibleTest controller", func() {
 			Expect(pod.Name).ToNot(BeEmpty())
 		})
 	})
+
+	Context("extraMounts", func() {
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+			Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+		})
+
+		When("AnsibleTest is created with extraMounts", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultAnsibleTestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("AnsibleTest",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+			})
+
+			It("should add extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+			})
+		})
+
+		When("AnsibleTest is created with Secret as the source of extraMount", func() {
+			BeforeEach(func() {
+				CreateExtraSecret(namespace, ExtraSecretName)
+
+				spec := GetDefaultAnsibleTestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("AnsibleTest",
+					GetDefaultSecretExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+			})
+
+			It("should add secret based extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				ExpectPodHasSecretVolume(pod, ExtraSecretVolName, ExtraSecretName)
+				ExpectPodHasVolumeMount(pod, ExtraSecretVolName, ExtraSecretMountPath)
+			})
+		})
+
+		When("AnsibleTest is created with multiple extraMounts configmap and secret", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+				CreateExtraSecret(namespace, ExtraSecretName)
+
+				spec := GetDefaultAnsibleTestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("AnsibleTest",
+					GetDefaultConfigMapExtraMount(),
+					GetDefaultSecretExtraMount(),
+				)
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+			})
+
+			It("should add all extra volumes and volumeMounts to the pod", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasSecretVolume(pod, ExtraSecretVolName, ExtraSecretName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+				ExpectPodHasVolumeMount(pod, ExtraSecretVolName, ExtraSecretMountPath)
+			})
+		})
+
+		When("AnsibleTest is created with no propagation field", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultAnsibleTestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+			})
+
+			It("should add extra volume and volumeMount when propagation is omitted", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				ExpectPodHasConfigMapVolume(pod, ExtraConfigVolName, ExtraConfigMapName)
+				ExpectPodHasVolumeMount(pod, ExtraConfigVolName, ExtraConfigMountPath)
+			})
+		})
+
+		When("AnsibleTest created with extraMounts is using the wrong propagation type", func() {
+			BeforeEach(func() {
+				CreateExtraConfigMap(namespace, ExtraConfigMapName)
+
+				spec := GetDefaultAnsibleTestSpec()
+				spec["extraMounts"] = BuildExtraMountsSpec("Tempest",
+					GetDefaultConfigMapExtraMount())
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+			})
+
+			It("should not add extra volume and volumeMount to the pod", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				ExpectPodNotHasVolume(pod, ExtraConfigVolName)
+				ExpectPodNotHasVolumeMount(pod, ExtraConfigVolName)
+			})
+		})
+
+	})
+
 })
