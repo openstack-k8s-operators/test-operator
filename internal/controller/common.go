@@ -913,7 +913,7 @@ func GetStringField(v reflect.Value, fieldName string) string {
 
 // SafetyCheck returns reflect value after checking its validity
 func SafetyCheck(v reflect.Value, fieldName string) (reflect.Value, error) {
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return reflect.Value{}, fmt.Errorf("%s: %w", fieldName, ErrFieldNilPointer)
 		}
@@ -938,7 +938,7 @@ func IsEmpty(value interface{}) bool {
 		switch v.Kind() {
 		case reflect.String, reflect.Map:
 			return v.Len() == 0
-		case reflect.Ptr, reflect.Interface, reflect.Slice:
+		case reflect.Pointer, reflect.Interface, reflect.Slice:
 			return v.IsNil()
 		}
 	}
@@ -956,7 +956,7 @@ func MergeSections(main interface{}, workflow interface{}) {
 		mValue := mReflect.Field(i)
 		wValue := wReflect.FieldByName(name)
 
-		if mValue.Kind() == reflect.Struct && wValue.Kind() != reflect.Ptr {
+		if mValue.Kind() == reflect.Struct && wValue.Kind() != reflect.Pointer {
 			switch name {
 			case "CommonOptions":
 				wValue := wReflect.FieldByName("WorkflowCommonOptions")
@@ -968,7 +968,7 @@ func MergeSections(main interface{}, workflow interface{}) {
 		}
 
 		if wValue.IsValid() && !IsEmpty(wValue) {
-			if wValue.Kind() == reflect.Ptr && mValue.Kind() != reflect.Ptr {
+			if wValue.Kind() == reflect.Pointer && mValue.Kind() != reflect.Pointer {
 				wValue = wValue.Elem()
 			}
 			mValue.Set(wValue)
