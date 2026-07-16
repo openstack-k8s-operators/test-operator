@@ -61,7 +61,6 @@ func (r *TempestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		ServiceName:             tempest.ServiceName,
 		NeedsNetworkAttachments: true,
 		NeedsConfigMaps:         true,
-		NeedsFinalizer:          true,
 		SupportsWorkflow:        true,
 
 		GenerateServiceConfigMaps: func(ctx context.Context, helper *helper.Helper, _ map[string]string, instance *testv1beta1.Tempest, workflowStep int) error {

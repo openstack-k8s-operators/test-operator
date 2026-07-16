@@ -83,6 +83,12 @@ var _ = Describe("HorizonTest controller", func() {
 			Expect(horizonTest.Spec.DashboardUrl).ShouldNot(BeEmpty())
 			Expect(horizonTest.Spec.AuthUrl).ShouldNot(BeEmpty())
 		})
+
+		It("should have a finalizer", func() {
+			Eventually(func() []string {
+				return GetHorizonTest(horizonTestName).Finalizers
+			}, timeout, interval).Should(ContainElement("openstack.org/horizontest"))
+		})
 	})
 
 	When("All dependencies are ready", func() {
