@@ -29,14 +29,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var tempestlog = logf.Log.WithName("tempest-resource")
-
-var _ webhook.Defaulter = &Tempest{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Tempest) Default() {
@@ -59,8 +56,6 @@ func (spec *TempestSpec) Default() {
 func (r *Tempest) PrivilegedRequired() bool {
 	return len(r.Spec.TempestRun.ExtraImages) > 0
 }
-
-var _ webhook.Validator = &Tempest{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Tempest) ValidateCreate() (admission.Warnings, error) {

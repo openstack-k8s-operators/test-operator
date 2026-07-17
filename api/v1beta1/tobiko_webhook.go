@@ -29,14 +29,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var tobikolog = logf.Log.WithName("tobiko-resource")
-
-var _ webhook.Defaulter = &Tobiko{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Tobiko) Default() {
@@ -44,8 +41,6 @@ func (r *Tobiko) Default() {
 
 	// TODO(user): fill in your defaulting logic.
 }
-
-var _ webhook.Validator = &Tobiko{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {

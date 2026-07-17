@@ -27,14 +27,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var horizontestlog = logf.Log.WithName("horizontest-resource")
-
-var _ webhook.Defaulter = &HorizonTest{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *HorizonTest) Default() {
@@ -42,8 +39,6 @@ func (r *HorizonTest) Default() {
 
 	// TODO(user): fill in your defaulting logic.
 }
-
-var _ webhook.Validator = &HorizonTest{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *HorizonTest) ValidateCreate() (admission.Warnings, error) {
