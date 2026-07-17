@@ -1,4 +1,6 @@
 # test-operator
+
+foo
 This is a test operator that automates testing of an OpenStack deployment
 running on an OpenShift cluster. The operator supports execution of the following
 tests:

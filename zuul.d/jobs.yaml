@@ -206,7 +206,6 @@
       - name: openstack-k8s-operators/openstack-operator
         override-checkout: main
       - name: github.com/openstack-k8s-operators/ci-framework
-        override-checkout: main
       - name: github.com/openstack-k8s-operators/repo-setup
         override-checkout: main
       - name: github.com/openstack-k8s-operators/infra-operator
