@@ -22,7 +22,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 	testv1beta1 "github.com/openstack-k8s-operators/test-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/test-operator/internal/horizontest"
 	corev1 "k8s.io/api/core/v1"
@@ -57,12 +56,8 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	config := TestResourceConfig[*testv1beta1.HorizonTest]{
 		ServiceName:             horizontest.ServiceName,
 		NeedsNetworkAttachments: false,
-		NeedsConfigMaps:         true,
+		NeedsConfigMaps:         false,
 		SupportsWorkflow:        false,
-
-		GenerateServiceConfigMaps: func(ctx context.Context, helper *helper.Helper, labels map[string]string, instance *testv1beta1.HorizonTest, _ int) error {
-			return r.generateServiceConfigMaps(ctx, helper, labels, instance)
-		},
 
 		BuildPod: func(ctx context.Context, instance *testv1beta1.HorizonTest, labels, annotations map[string]string, workflowStepIndex int, pvcIndex int) (*corev1.Pod, error) {
 			return r.buildHorizonTestPod(ctx, instance, labels, annotations, workflowStepIndex, pvcIndex)
@@ -72,7 +67,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return []*condition.Condition{
 				condition.UnknownCondition(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage),
 				condition.UnknownCondition(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
-				condition.UnknownCondition(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage),
 				condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 			}
 		},
@@ -132,22 +126,6 @@ func (r *HorizonTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
-}
-
-func (r *HorizonTestReconciler) generateServiceConfigMaps(
-	ctx context.Context,
-	h *helper.Helper,
-	labels map[string]string,
-	instance *testv1beta1.HorizonTest,
-) error {
-	err := EnsureCloudsConfigMapExists(
-		ctx,
-		instance,
-		h,
-		labels,
-		instance.Spec.OpenStackConfigMap,
-	)
-	return err
 }
 
 // PrepareHorizonTestEnvVars prepares environment variables for HorizonTest execution
