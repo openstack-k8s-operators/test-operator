@@ -273,11 +273,6 @@ func CreateOpenstackConfigSecretVolumeMount(secretName string, mountPath string)
 	return CreateVolumeMountWithSubPath(secretName, mountPath, subPathSecureYAML, false)
 }
 
-// CreateTestOperatorCloudsConfigVolumeMount creates a test-operator-clouds-config volume mount
-func CreateTestOperatorCloudsConfigVolumeMount(mountPath string) corev1.VolumeMount {
-	return CreateVolumeMountWithSubPath(TestOperatorCloudsConfigMapName, mountPath, subPathCloudsYAML, true)
-}
-
 // AppendExtraMountsVolumeMounts appends volume mounts from ExtraMounts spec
 func AppendExtraMountsVolumeMounts(
 	volumeMounts []corev1.VolumeMount,

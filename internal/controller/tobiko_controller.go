@@ -175,17 +175,6 @@ func (r *TobikoReconciler) generateServiceConfigMaps(
 	instance *testv1beta1.Tobiko,
 	workflowStepIndex int,
 ) error {
-	err := EnsureCloudsConfigMapExists(
-		ctx,
-		instance,
-		h,
-		labels,
-		instance.Spec.OpenStackConfigMap,
-	)
-	if err != nil {
-		return err
-	}
-
 	templateSpecs := []struct {
 		infix string
 		key   string

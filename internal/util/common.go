@@ -9,11 +9,6 @@ import (
 )
 
 const (
-	// TestOperatorCloudsConfigMapName is the name of the ConfigMap which contains
-	// modified clouds.yaml obtained from openstack-config ConfigMap. The modified
-	// CM is needed by some test frameworks (e.g., HorizonTest and Tobiko)
-	TestOperatorCloudsConfigMapName = "test-operator-clouds-config"
-
 	// TestOperatorEphemeralVolumeNameWorkdir is the name of the ephemeral workdir volume
 	TestOperatorEphemeralVolumeNameWorkdir = "test-operator-ephemeral-workdir"
 
