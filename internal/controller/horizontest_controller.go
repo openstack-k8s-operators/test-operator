@@ -58,7 +58,6 @@ func (r *HorizonTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		ServiceName:             horizontest.ServiceName,
 		NeedsNetworkAttachments: false,
 		NeedsConfigMaps:         true,
-		NeedsFinalizer:          false,
 		SupportsWorkflow:        false,
 
 		GenerateServiceConfigMaps: func(ctx context.Context, helper *helper.Helper, labels map[string]string, instance *testv1beta1.HorizonTest, _ int) error {

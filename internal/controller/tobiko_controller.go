@@ -61,7 +61,6 @@ func (r *TobikoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		ServiceName:             tobiko.ServiceName,
 		NeedsNetworkAttachments: true,
 		NeedsConfigMaps:         true,
-		NeedsFinalizer:          false,
 		SupportsWorkflow:        true,
 
 		GenerateServiceConfigMaps: func(ctx context.Context, helper *helper.Helper, labels map[string]string, instance *testv1beta1.Tobiko, workflowStepIndex int) error {

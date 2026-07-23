@@ -82,6 +82,11 @@ var _ = Describe("Tobiko controller", func() {
 			Expect(tobiko.Spec.Testenv).Should(Equal("sanity"))
 		})
 
+		It("should have a finalizer", func() {
+			Eventually(func() []string {
+				return GetTobiko(tobikoName).Finalizers
+			}, timeout, interval).Should(ContainElement("openstack.org/tobiko"))
+		})
 	})
 
 	When("All dependencies are ready", func() {

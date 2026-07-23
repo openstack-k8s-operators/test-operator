@@ -58,7 +58,6 @@ func (r *AnsibleTestReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		ServiceName:             ansibletest.ServiceName,
 		NeedsNetworkAttachments: false,
 		NeedsConfigMaps:         false,
-		NeedsFinalizer:          false,
 		SupportsWorkflow:        true,
 
 		BuildPod: func(ctx context.Context, instance *testv1beta1.AnsibleTest, labels, annotations map[string]string, workflowStepIndex int, pvcIndex int) (*corev1.Pod, error) {

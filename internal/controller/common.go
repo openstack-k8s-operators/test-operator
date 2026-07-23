@@ -51,6 +51,8 @@ const (
 const (
 	// ErrConfirmLockOwnership is the error message for lock ownership confirmation failures
 	ErrConfirmLockOwnership = "Can not confirm ownership of %s lock."
+	// ErrCleanupLock is the error message for failing to clean up the lock during pod deletion
+	ErrCleanupLock = "Failed to cleanup lock during pod deletion."
 )
 
 const (
@@ -608,6 +610,22 @@ func (r *Reconciler) ReleaseLock(ctx context.Context, instance client.Object) (b
 	}
 
 	return false, ErrFailedToDeleteLock
+}
+
+// CleanupLock removes the lock for the given instance without waiting for confirmation
+func (r *Reconciler) CleanupLock(ctx context.Context, instance client.Object) {
+	Log := r.GetLogger(ctx)
+
+	cm, err := r.GetLockInfo(ctx, instance)
+	if err != nil {
+		return
+	}
+
+	if cm.Data[testOperatorLockOwnerField] == string(instance.GetUID()) {
+		if err := r.Client.Delete(ctx, cm); err != nil {
+			Log.Info(ErrCleanupLock)
+		}
+	}
 }
 
 // GetPodIfExists returns the pod for the given instance and workflow step if it exists
