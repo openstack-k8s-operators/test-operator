@@ -59,19 +59,23 @@ type HorizonTestSpec struct {
 	// on the u/s or d/s theme
 	ProjectTextXpath string `json:"projectTextXpath"`
 
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="admin"
+	// +kubebuilder:default:=""
+	// WARNING: This parameter will be deprecated!
+	// Please set the username in the OpenStackConfigMap (clouds.yaml) instead.
+	// When this parameter is empty the value is read from the clouds.yaml.
 	// AdminUsername is the username for the OpenStack admin user.
 	AdminUsername string `json:"adminUsername"`
 
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxLength=253
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="admin"
+	// +kubebuilder:default:=""
+	// WARNING: This parameter will be deprecated!
+	// Please set the password in the OpenStackConfigSecret (secure.yaml) instead.
+	// When this parameter is empty the value is read from the secure.yaml.
 	// AdminPassword is the password for the OpenStack admin user.
 	AdminPassword string `json:"adminPassword"`
 
