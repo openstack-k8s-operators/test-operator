@@ -48,7 +48,7 @@ func GetVolumes(
 
 	volumes := []corev1.Volume{
 		util.CreateConfigMapVolume(tobikoConfig, GetConfigMapName(instance, ConfigMapInfixConfig, workflowStepIndex), util.ScriptsVolumeDefaultMode),
-		util.CreateOpenstackConfigMapVolume(util.TestOperatorCloudsConfigMapName),
+		util.CreateOpenstackConfigMapVolume(instance.Spec.OpenStackConfigMap),
 		util.CreateOpenstackConfigSecretVolume(instance.Spec.OpenStackConfigSecret),
 		util.CreateLogsPVCVolume(logsPVCName),
 		util.CreateWorkdirVolume(),
@@ -88,8 +88,8 @@ func GetVolumeMounts(
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/tobiko", false),
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameTmp, "/tmp", false),
 		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/tobiko/external_files", false),
-		util.CreateTestOperatorCloudsConfigVolumeMount("/var/lib/tobiko/.config/openstack/clouds.yaml"),
-		util.CreateTestOperatorCloudsConfigVolumeMount("/etc/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/var/lib/tobiko/.config/openstack/clouds.yaml"),
+		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/etc/openstack/clouds.yaml"),
 		util.CreateOpenstackConfigSecretVolumeMount(instance.Spec.OpenStackConfigSecret, "/etc/openstack/secure.yaml"),
 		util.CreateVolumeMountWithSubPath(tobikoConfig, "/etc/tobiko/tobiko.conf", ConfigFileName, false),
 	}

@@ -21,7 +21,6 @@ import (
 	nad "github.com/openstack-k8s-operators/lib-common/modules/common/networkattachment"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -761,76 +760,6 @@ func (r *Reconciler) VerifyNetworkAttachments(
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// EnsureCloudsConfigMapExists ensures that frameworks like Tobiko and Horizon have password values
-// present in clouds.yaml. This code ensures that we set a default value of
-// 12345678 when password value is missing in the clouds.yaml
-func EnsureCloudsConfigMapExists(
-	ctx context.Context,
-	instance client.Object,
-	helper *helper.Helper,
-	labels map[string]string,
-	openstackConfigMapName string,
-) error {
-	const testOperatorCloudsConfigMapName = "test-operator-clouds-config"
-
-	cm, _, _ := configmap.GetConfigMap(
-		ctx,
-		helper,
-		instance,
-		testOperatorCloudsConfigMapName,
-		time.Second*10,
-	)
-	if cm.Name == testOperatorCloudsConfigMapName {
-		return nil
-	}
-
-	cm, _, _ = configmap.GetConfigMap(
-		ctx,
-		helper,
-		instance,
-		openstackConfigMapName,
-		time.Second*10,
-	)
-
-	result := make(map[string]interface{})
-
-	err := yaml.Unmarshal([]byte(cm.Data["clouds.yaml"]), &result)
-	if err != nil {
-		return err
-	}
-
-	clouds := result["clouds"].(map[string]interface{})
-	defaultValue := clouds["default"].(map[string]interface{})
-	auth := defaultValue["auth"].(map[string]interface{})
-
-	if _, ok := auth["password"].(string); !ok {
-		auth["password"] = "12345678"
-	}
-
-	yamlString, err := yaml.Marshal(result)
-	if err != nil {
-		return err
-	}
-
-	cms := []util.Template{
-		{
-			Name:      testOperatorCloudsConfigMapName,
-			Namespace: instance.GetNamespace(),
-			Type:      util.TemplateTypeNone,
-			Labels:    labels,
-			CustomData: map[string]string{
-				"clouds.yaml": string(yamlString),
-			},
-		},
-	}
-	err = configmap.EnsureConfigMaps(ctx, helper, instance, cms, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Int64OrPlaceholder converts int64 to string, returns placeholder if 0

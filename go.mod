@@ -12,7 +12,6 @@ require (
 	github.com/openstack-k8s-operators/lib-common/modules/storage v0.6.1-0.20260717092345-ab1ee7b97c67
 	github.com/openstack-k8s-operators/test-operator/api v0.0.0-00010101000000-000000000000
 	go.uber.org/zap v1.28.0
-	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.33.13
 	k8s.io/apimachinery v0.33.13
 	k8s.io/client-go v0.33.13
@@ -24,6 +23,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 )
 
