@@ -109,26 +109,6 @@ type HorizonTestSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="horizontest"
-	// ProjectName is the name of the OpenStack project for Horizon tests.
-	ProjectName string `json:"projectName"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxLength=253
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="horizontest"
-	// User is the username under which the Horizon tests will run.
-	User string `json:"user"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxLength=253
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="horizontest"
-	// Password is the password for the user running the Horizon tests.
-	Password string `json:"password"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:="m1.tiny"
 	// FlavorName is the name of the OpenStack flavor to create for Horizon tests.
 	FlavorName string `json:"flavorName"`

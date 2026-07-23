@@ -32,15 +32,6 @@ spec:
   # The URL to download the Cirros image (optional)
   imageUrl: "http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
 
-  # The name of the OpenStack project for Horizon tests (optional)
-  projectName: "horizontest"
-
-  # The username under which Horizon tests will run (optional)
-  user: "horizontest"
-
-  # The password for the user running the Horizon tests (optional)
-  password: "horizontest"
-
   # The name of the OpenStack flavor to create for Horizon tests (optional)
   flavorName: "m1.tiny"
 
