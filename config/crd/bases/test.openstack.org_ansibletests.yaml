@@ -879,6 +879,11 @@ spec:
                 description: OpenStackConfigSecret is the name of the Secret containing
                   the secure.yaml
                 type: string
+              pendingTimeout:
+                description: |-
+                  Timeout after which a test pod in the Pending state is considered
+                  stuck and its execution is terminated.
+                type: integer
               privileged:
                 default: false
                 description: |-
@@ -1110,6 +1115,11 @@ spec:
                       description: OpenStackConfigSecret is the name of the Secret
                         containing the secure.yaml
                       type: string
+                    pendingTimeout:
+                      description: |-
+                        Timeout after which a test pod in the Pending state is considered
+                        stuck and its execution is terminated.
+                      type: integer
                     privileged:
                       description: |-
                         Use with caution! This parameter specifies whether test-operator should spawn test

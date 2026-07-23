@@ -528,6 +528,11 @@ func (instance *Tempest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
 }
 
+// GetPendingTimeout - return the pending timeout
+func (instance *Tempest) GetPendingTimeout() int {
+	return instance.Spec.PendingTimeout
+}
+
 // GetStorageClass - return the storage class name
 func (instance *Tempest) GetStorageClass() string {
 	return instance.Spec.StorageClass

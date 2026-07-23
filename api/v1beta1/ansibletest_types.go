@@ -226,6 +226,11 @@ func (instance *AnsibleTest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
 }
 
+// GetPendingTimeout - return the pending timeout
+func (instance *AnsibleTest) GetPendingTimeout() int {
+	return instance.Spec.PendingTimeout
+}
+
 // GetStorageClass - return the storage class name
 func (instance *AnsibleTest) GetStorageClass() string {
 	return instance.Spec.StorageClass

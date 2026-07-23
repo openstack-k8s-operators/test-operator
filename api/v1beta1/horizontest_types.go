@@ -163,6 +163,11 @@ func (instance *HorizonTest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
 }
 
+// GetPendingTimeout - return the pending timeout
+func (instance *HorizonTest) GetPendingTimeout() int {
+	return instance.Spec.PendingTimeout
+}
+
 // GetStorageClass - return the storage class name
 func (instance *HorizonTest) GetStorageClass() string {
 	return instance.Spec.StorageClass

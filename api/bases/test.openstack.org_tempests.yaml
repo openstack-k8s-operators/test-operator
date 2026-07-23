@@ -878,6 +878,11 @@ spec:
                   instances of test-operator related CRs exist. If you want to turn off this
                   behaviour then set this option to true.
                 type: boolean
+              pendingTimeout:
+                description: |-
+                  Timeout after which a test pod in the Pending state is considered
+                  stuck and its execution is terminated.
+                type: integer
               privileged:
                 default: false
                 description: |-
@@ -1451,6 +1456,11 @@ spec:
                         instances of test-operator related CRs exist. If you want to turn off this
                         behaviour then set this option to true.
                       type: boolean
+                    pendingTimeout:
+                      description: |-
+                        Timeout after which a test pod in the Pending state is considered
+                        stuck and its execution is terminated.
+                      type: integer
                     privileged:
                       description: |-
                         Use with caution! This parameter specifies whether test-operator should spawn test
