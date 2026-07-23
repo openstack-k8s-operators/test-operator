@@ -1298,12 +1298,6 @@ spec:
                 default: false
                 description: Parallel
                 type: boolean
-              password:
-                default: horizontest
-                description: Password is the password for the user running the Horizon
-                  tests.
-                maxLength: 253
-                type: string
               privileged:
                 default: false
                 description: |-
@@ -1315,11 +1309,6 @@ spec:
                   needed for certain test-operator functionalities to work properly (e.g.:
                   extraRPMs in Tempest CR, or a certain set of tobiko tests).
                 type: boolean
-              projectName:
-                default: horizontest
-                description: ProjectName is the name of the OpenStack project for
-                  Horizon tests.
-                type: string
               projectNameXpath:
                 description: |-
                   ProjectNameXpath is the xpath to select project name
@@ -1450,12 +1439,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              user:
-                default: horizontest
-                description: User is the username under which the Horizon tests will
-                  run.
-                maxLength: 253
-                type: string
             required:
             - adminPassword
             - adminUsername
