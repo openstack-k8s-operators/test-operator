@@ -41,7 +41,7 @@ jobs:
 
     - name: Buildah Action
       id: build-test-operator
-      uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+      uses: redhat-actions/buildah-build@3a51aade9afa17e5c78256bcbe2e1ee08c7b995b # v3
       with:
         image: test-operator
         tags: ${{ env.latesttag }} ${{ github.sha }}
@@ -49,7 +49,7 @@ jobs:
           ./Dockerfile
 
     - name: Push test-operator To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+      uses: redhat-actions/push-to-registry@94ade333c38ecc0e60e94785125d9a52ca423b37 # v3
       with:
         image: ${{ steps.build-test-operator.outputs.image }}
         tags: ${{ steps.build-test-operator.outputs.tags }}
@@ -65,7 +65,7 @@ jobs:
 
     steps:
     - name: Install Go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
       with:
         go-version: 1.26.x
 
@@ -73,20 +73,20 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
     - name: Install operator-sdk
-      uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1
+      uses: redhat-actions/openshift-tools-installer@ebd96c3fc72fc10a62663eac5e1421192152e6aa # v2
       with:
         source: github
         operator-sdk: '1.42.3'
 
     - name: Log in to Quay Registry
-      uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
+      uses: redhat-actions/podman-login@50c2d9a331bb67c8fdab99b86455fad05e2e3252 # v2
       with:
         registry: ${{ env.imageregistry }}
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
 
     - name: Log in to Red Hat Registry
-      uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
+      uses: redhat-actions/podman-login@50c2d9a331bb67c8fdab99b86455fad05e2e3252 # v2
       with:
         registry: registry.redhat.io
         username: ${{ secrets.REDHATIO_USERNAME }}
@@ -113,7 +113,7 @@ jobs:
 
     - name: Build test-operator-bundle using buildah
       id: build-test-operator-bundle
-      uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+      uses: redhat-actions/buildah-build@3a51aade9afa17e5c78256bcbe2e1ee08c7b995b # v3
       with:
         image: test-operator-bundle
         tags: ${{ env.latesttag }} ${{ github.sha }}
@@ -121,7 +121,7 @@ jobs:
           ./bundle.Dockerfile
 
     - name: Push test-operator To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+      uses: redhat-actions/push-to-registry@94ade333c38ecc0e60e94785125d9a52ca423b37 # v3
       with:
         image: ${{ steps.build-test-operator-bundle.outputs.image }}
         tags: ${{ steps.build-test-operator-bundle.outputs.tags }}
@@ -147,13 +147,13 @@ jobs:
         echo "latesttag=${BRANCH_NAME}-latest" >> $GITHUB_ENV
 
     - name: Install opm
-      uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1
+      uses: redhat-actions/openshift-tools-installer@ebd96c3fc72fc10a62663eac5e1421192152e6aa # v2
       with:
         source: github
         opm: 'latest'
 
     - name: Log in to Red Hat Registry
-      uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
+      uses: redhat-actions/podman-login@50c2d9a331bb67c8fdab99b86455fad05e2e3252 # v2
       with:
         registry: ${{ env.imageregistry }}
         username: ${{ secrets.QUAY_USERNAME }}
@@ -173,7 +173,7 @@ jobs:
         INDEX_IMAGE: test-operator-index
 
     - name: Push test-operator-index To ${{ env.imageregistry }}
-      uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+      uses: redhat-actions/push-to-registry@94ade333c38ecc0e60e94785125d9a52ca423b37 # v3
       with:
         image: test-operator-index
         tags: ${{ env.latesttag }} ${{ github.sha }}
