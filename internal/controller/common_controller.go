@@ -51,9 +51,6 @@ type TestResourceConfig[T TestResource] struct {
 	// NeedsConfigMaps indicates if ServiceConfigReadyCondition is needed
 	NeedsConfigMaps bool
 
-	// NeedsFinalizer indicates if the controller needs finalizer handling
-	NeedsFinalizer bool
-
 	// SupportsWorkflow indicates if the controller supports workflow feature
 	SupportsWorkflow bool
 
@@ -154,14 +151,15 @@ func CommonReconcile[T TestResource](
 
 	// If we're not deleting this and the service object doesn't have our
 	// finalizer, add it.
-	if config.NeedsFinalizer && instance.GetDeletionTimestamp().IsZero() &&
+	if instance.GetDeletionTimestamp().IsZero() &&
 		controllerutil.AddFinalizer(instance, helper.GetFinalizer()) {
 		return ctrl.Result{}, nil
 	}
 
 	// Handle service delete
-	if config.NeedsFinalizer && !instance.GetDeletionTimestamp().IsZero() {
+	if !instance.GetDeletionTimestamp().IsZero() {
 		Log.Info("Reconciling Service delete")
+		r.CleanupLock(ctx, instance)
 		controllerutil.RemoveFinalizer(instance, helper.GetFinalizer())
 		Log.Info("Reconciled Service delete successfully")
 		return ctrl.Result{}, nil

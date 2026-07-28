@@ -86,8 +86,6 @@ var _ = Describe("Tempest controller", func() {
 		})
 
 		It("should have a finalizer", func() {
-			// the reconciler loop adds the finalizer so we have to wait for
-			// it to run
 			Eventually(func() []string {
 				return GetTempest(tempestName).Finalizers
 			}, timeout, interval).Should(ContainElement("openstack.org/tempest"))

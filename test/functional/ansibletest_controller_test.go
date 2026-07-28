@@ -81,6 +81,12 @@ var _ = Describe("AnsibleTest controller", func() {
 			Expect(ansibleTest.Spec.AnsibleGitRepo).ShouldNot(BeEmpty())
 			Expect(ansibleTest.Spec.AnsiblePlaybookPath).ShouldNot(BeEmpty())
 		})
+
+		It("should have a finalizer", func() {
+			Eventually(func() []string {
+				return GetAnsibleTest(ansibleTestName).Finalizers
+			}, timeout, interval).Should(ContainElement("openstack.org/ansibletest"))
+		})
 	})
 
 	When("All dependencies are ready", func() {
