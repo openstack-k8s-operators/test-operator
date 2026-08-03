@@ -13,10 +13,6 @@ spec:
   # debug: false
   storageClass: "local-storage"
 
-  # OpenStack admin credentials
-  adminUsername: "admin"
-  adminPassword: "12345678"
-
   # The URL of the Horizon dashboard
   dashboardUrl: "https://horizon-openstack.apps.ocp.openstack.lab/"
 
