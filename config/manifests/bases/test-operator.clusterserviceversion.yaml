@@ -251,10 +251,18 @@ spec:
           operator.
         displayName: SELinux Level
         path: SELinuxLevel
-      - description: AdminPassword is the password for the OpenStack admin user.
+      - description: |-
+          WARNING: This parameter will be deprecated!
+          Please set the password in the OpenStackConfigSecret (secure.yaml) instead.
+          When this parameter is empty the value is read from the secure.yaml.
+          AdminPassword is the password for the OpenStack admin user.
         displayName: Admin Password
         path: adminPassword
-      - description: AdminUsername is the username for the OpenStack admin user.
+      - description: |-
+          WARNING: This parameter will be deprecated!
+          Please set the username in the OpenStackConfigMap (clouds.yaml) instead.
+          When this parameter is empty the value is read from the clouds.yaml.
+          AdminUsername is the username for the OpenStack admin user.
         displayName: Admin Username
         path: adminUsername
       - description: AuthUrl is the authentication URL for OpenStack.
@@ -302,20 +310,10 @@ spec:
         path: extraMounts[0].name
       - displayName: Region
         path: extraMounts[0].region
-      - description: FlavorName is the name of the OpenStack flavor to create for
-          Horizon tests.
-        displayName: Flavor Name
-        path: flavorName
       - description: HorizonRepoBranch is the branch of the Horizon repository to
           checkout.
         displayName: Horizon Repo Branch
         path: horizonRepoBranch
-      - description: HorizonTestDir is the directory path for Horizon tests.
-        displayName: Horizon Test Dir
-        path: horizonTestDir
-      - description: ImageUrl is the URL to download the Cirros image.
-        displayName: Image Url
-        path: imageUrl
       - description: |-
           Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/horizontest/.kube/config
           in the test pod.
@@ -323,21 +321,22 @@ spec:
         path: kubeconfigSecretName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: LogsDirectoryName is the name of the directory to store test
-          logs.
-        displayName: Logs Directory Name
-        path: logsDirectoryName
       - description: |-
           This value contains a nodeSelector value that is applied to test pods
           spawned by the test operator.
         displayName: Node Selector
         path: nodeSelector
+      - description: OpenStackConfigMap is the name of the ConfigMap containing the
+          clouds.yaml
+        displayName: Open Stack Config Map
+        path: openStackConfigMap
+      - description: OpenStackConfigSecret is the name of the Secret containing the
+          secure.yaml
+        displayName: Open Stack Config Secret
+        path: openStackConfigSecret
       - description: Parallel
         displayName: Parallel
         path: parallel
-      - description: Password is the password for the user running the Horizon tests.
-        displayName: Password
-        path: password
       - description: |-
           Use with caution! This parameter specifies whether test-operator should spawn
           test pods with allowedPrivilegedEscalation: true, readOnlyRootFilesystem: false,
@@ -348,15 +347,17 @@ spec:
           extraRPMs in Tempest CR, or a certain set of tobiko tests).
         displayName: Privileged
         path: privileged
-      - description: ProjectName is the name of the OpenStack project for Horizon
-          tests.
-        displayName: Project Name
-        path: projectName
       - description: |-
           ProjectNameXpath is the xpath to select project name
           on the horizon dashboard based on the u/s or d/s theme
         displayName: Project Name Xpath
         path: projectNameXpath
+      - description: |-
+          ProjectTextXpath is the xpath to element displaying
+          current project name on the horizon dashboard based
+          on the u/s or d/s theme
+        displayName: Project Text Xpath
+        path: projectTextXpath
       - description: RepoUrl is the URL of the Horizon repository.
         displayName: Repo Url
         path: repoUrl
@@ -368,9 +369,6 @@ spec:
           test pods that are spawned by the test-operator.
         displayName: Tolerations
         path: tolerations
-      - description: User is the username under which the Horizon tests will run.
-        displayName: User
-        path: user
       version: v1beta1
     - displayName: Tempest
       kind: Tempest
@@ -1093,6 +1091,14 @@ spec:
           0 results in automatic decision
         displayName: Num Processes
         path: numProcesses
+      - description: OpenStackConfigMap is the name of the ConfigMap containing the
+          clouds.yaml
+        displayName: Open Stack Config Map
+        path: openStackConfigMap
+      - description: OpenStackConfigSecret is the name of the Secret containing the
+          secure.yaml
+        displayName: Open Stack Config Secret
+        path: openStackConfigSecret
       - description: |-
           By default test-operator executes the test-pods sequentially if multiple
           instances of test-operator related CRs exist. To run test-pods in parallel
@@ -1126,6 +1132,11 @@ spec:
           tests
         displayName: Pytest Addopts
         path: pytestAddopts
+      - description: |-
+          List of test name patterns to skip. It has the same functionality
+          as the --skipregex parameter used in PytestAddopts.
+        displayName: Skip Regex List
+        path: skipRegexList
       - description: StorageClass used to create any test-operator related PVCs.
         displayName: Storage Class
         path: storageClass
@@ -1199,6 +1210,14 @@ spec:
           0 results in automatic decision
         displayName: Num Processes
         path: workflow[0].numProcesses
+      - description: OpenStackConfigMap is the name of the ConfigMap containing the
+          clouds.yaml
+        displayName: Open Stack Config Map
+        path: workflow[0].openStackConfigMap
+      - description: OpenStackConfigSecret is the name of the Secret containing the
+          secure.yaml
+        displayName: Open Stack Config Secret
+        path: workflow[0].openStackConfigSecret
       - description: Optional patch to apply to the Tobiko repository for this step.
         displayName: Patch
         path: workflow[0].patch
@@ -1225,6 +1244,11 @@ spec:
           tests
         displayName: Pytest Addopts
         path: workflow[0].pytestAddopts
+      - description: |-
+          List of test name patterns to skip. It has the same functionality
+          as the --skipregex parameter used in PytestAddopts.
+        displayName: Skip Regex List
+        path: workflow[0].skipRegexList
       - description: A parameter that contains a definition of a single workflow step.
         displayName: Step Name
         path: workflow[0].stepName

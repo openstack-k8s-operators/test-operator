@@ -142,8 +142,7 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 
 	// String
 	SetStringEnvVars(envVars, map[string]string{
-		"USE_EXTERNAL_FILES":    "True",
-		"HORIZON_LOGS_DIR_NAME": "horizon",
+		"USE_EXTERNAL_FILES": "True",
 
 		// Mandatory variables
 		"ADMIN_USERNAME":      instance.Spec.AdminUsername,
@@ -153,18 +152,10 @@ func (r *HorizonTestReconciler) PrepareHorizonTestEnvVars(
 		"REPO_URL":            instance.Spec.RepoUrl,
 		"HORIZON_REPO_BRANCH": instance.Spec.HorizonRepoBranch,
 
-		// Horizon specific configuration
-		"IMAGE_FILE":          "/var/lib/horizontest/cirros-0.6.2-x86_64-disk.img",
-		"IMAGE_FILE_NAME":     "cirros-0.6.2-x86_64-disk",
-		"IMAGE_URL":           "http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img",
-		"PROJECT_NAME":        "horizontest",
-		"USER_NAME":           "horizontest",
-		"PASSWORD":            "horizontest",
-		"FLAVOR_NAME":         "m1.tiny",
-		"HORIZON_KEYS_FOLDER": "/etc/test_operator",
-		"EXTRA_FLAG":          instance.Spec.ExtraFlag,
-		"PROJECT_NAME_XPATH":  instance.Spec.ProjectNameXpath,
-		"PROJECT_TEXT_XPATH":  instance.Spec.ProjectTextXpath,
+		// Optional variables
+		"EXTRA_FLAG":         instance.Spec.ExtraFlag,
+		"PROJECT_NAME_XPATH": instance.Spec.ProjectNameXpath,
+		"PROJECT_TEXT_XPATH": instance.Spec.ProjectTextXpath,
 	})
 
 	return envVars

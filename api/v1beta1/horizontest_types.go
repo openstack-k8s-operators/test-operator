@@ -105,51 +105,6 @@ type HorizonTestSpec struct {
 	HorizonRepoBranch string `json:"horizonRepoBranch"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Format=uri
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
-	// ImageUrl is the URL to download the Cirros image.
-	ImageUrl string `json:"imageUrl"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="horizontest"
-	// ProjectName is the name of the OpenStack project for Horizon tests.
-	ProjectName string `json:"projectName"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxLength=253
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="horizontest"
-	// User is the username under which the Horizon tests will run.
-	User string `json:"user"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxLength=253
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="horizontest"
-	// Password is the password for the user running the Horizon tests.
-	Password string `json:"password"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="m1.tiny"
-	// FlavorName is the name of the OpenStack flavor to create for Horizon tests.
-	FlavorName string `json:"flavorName"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="horizon"
-	// LogsDirectoryName is the name of the directory to store test logs.
-	LogsDirectoryName string `json:"logsDirectoryName"`
-
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:default:="/var/lib/horizontest"
-	// HorizonTestDir is the directory path for Horizon tests.
-	HorizonTestDir string `json:"horizonTestDir"`
-
-	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:default:=false
 	// Parallel
