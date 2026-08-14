@@ -1,0 +1,23 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      if [ -z "${S2I_TEMPEST_IMAGE}" ]; then
+        echo "SKIP: S2I_TEMPEST_IMAGE is not set (regular kuttl job)"
+        exit 0
+      fi
+      NS="${NAMESPACE:-test-operator-kuttl-tests}"
+      POD_IMAGE=$(oc -n "${NS}" get pod -l instanceName=tempest-sample \
+        -o jsonpath='{.items[0].spec.containers[0].image}')
+      echo "Tempest pod image: ${POD_IMAGE}"
+      echo "Expected S2I image: ${S2I_TEMPEST_IMAGE}"
+      if [ -z "${POD_IMAGE}" ]; then
+        echo "ERROR: no tempest-sample pod found in ${NS}"
+        oc -n "${NS}" get pods,tempest
+        exit 1
+      fi
+      if [ "${POD_IMAGE}" != "${S2I_TEMPEST_IMAGE}" ]; then
+        echo "ERROR: Tempest pod is NOT running the S2I image"
+        exit 1
+      fi
+      echo "Confirmed: Tempest pod is running the S2I image"
