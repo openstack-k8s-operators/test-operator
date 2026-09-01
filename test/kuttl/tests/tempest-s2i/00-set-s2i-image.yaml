@@ -1,0 +1,12 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      if [ -z "${S2I_TEMPEST_IMAGE}" ]; then
+        echo "SKIP: S2I_TEMPEST_IMAGE is not set (regular kuttl job)"
+        exit 0
+      fi
+      echo "Patching test-operator with s2i tempest image: ${S2I_TEMPEST_IMAGE}"
+      oc -n openstack-operators set env deployment/test-operator-controller-manager \
+        RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT="${S2I_TEMPEST_IMAGE}"
+      oc -n openstack-operators rollout status deployment/test-operator-controller-manager --timeout=120s

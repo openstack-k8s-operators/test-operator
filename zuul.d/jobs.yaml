@@ -217,3 +217,84 @@
         override-checkout: main
       - name: github.com/openstack-k8s-operators/openstack-must-gather
         override-checkout: main
+
+- job:
+    name: tempest-s2i-content-provider
+    parent: s2i-openstack-container-content-provider
+    description: |
+      Build s2i tempest images for tempest-s2i-tempest.
+    required-projects:
+      - name: openstack-k8s-operators/s2i-openstack-containers
+        override-checkout: main
+    vars:
+      s2i_ci_images:
+        - tempest/tempest
+
+- job:
+    name: test-operator-kuttl-s2i
+    parent: test-operator-kuttl
+    description: |
+      KUTTL test using s2i-built test-operator container images.
+      Currently runs only the tempest-s2i suite: pins the Tempest CR
+      to the s2i tempest image and asserts the tempest pod is using
+      that image. Named without a CR-type suffix so Tobiko,
+      AnsibleTest, and HorizonTest suites can be added later.
+
+      The s2i content provider deploys its own plain Docker registry on
+      the builder node. CRC is configured to trust it via
+      cifmw_crc_additional_insecure_registries.
+    required-projects:
+      - name: openstack-k8s-operators/s2i-openstack-containers
+        override-checkout: main
+    vars:
+      cifmw_crc_additional_insecure_registries:
+        - "{{ s2i_content_provider_registry_ip }}:5001"
+      cifmw_crc_additional_allowed_registries:
+        - "{{ s2i_content_provider_registry_ip }}:5001"
+      cifmw_kuttl_tests_env_vars:
+        PV_NUM: 20
+        KUTTL_ARGS: "--test tempest-s2i"
+        S2I_TEMPEST_IMAGE: >-
+          {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-tempest:{{ s2i_ci_content.tag }}
+
+- job:
+    name: tempest-s2i-tempest
+    parent: podified-multinode-edpm-deployment-crc-test-operator
+    description: |
+      Validate speculatively-built s2i tempest images against a live
+      OpenStack deployment. The s2i-built openstack-tempest image from
+      tempest-s2i-content-provider is pinned via cifmw_test_operator_*
+      image vars (test workload, not an OpenStackVersion field).
+    required-projects:
+      - name: openstack-k8s-operators/s2i-openstack-containers
+        override-checkout: main
+    vars:
+      cifmw_crc_additional_insecure_registries:
+        - "{{ s2i_content_provider_registry_ip }}:5001"
+      cifmw_crc_additional_allowed_registries:
+        - "{{ s2i_content_provider_registry_ip }}:5001"
+      cifmw_test_operator_stages:
+        - name: tempest
+          type: tempest
+      cifmw_test_operator_tempest_registry: >-
+        {{ s2i_content_provider_registry_ip }}:5001
+      cifmw_test_operator_tempest_namespace: "{{ s2i_ci_content.namespace }}"
+      cifmw_test_operator_tempest_container: openstack-tempest
+      cifmw_test_operator_tempest_image_tag: "{{ s2i_ci_content.tag }}"
+      # Workaround: s2i tempest is built from current git, which requests
+      # project_manager credentials in setUpClass. Dynamic creds look up
+      # a Keystone role named "manager" and fail with:
+      #   tempest.lib.exceptions.NotFound: No "manager" role found
+      # This CRC cloud does not bootstrap that role (Keystone added it
+      # in 2023.2). Drop these once the deployment provides it.
+      # Also probing test_aggregate_add_host_create_server_with_az
+      # (Nova AZ scheduling / exhausted hosts on CRC+EDPM). Drop if it
+      # stays green, exclude if it keeps failing.
+      # run_tempest.sh matches expected failures with grep -Fx against
+      # stestr failing --list, so these must be the exact stestr IDs.
+      cifmw_test_operator_tempest_expected_failures_list: |
+        setUpClass (tempest.scenario.test_shelve_instance.TestShelveInstance)
+        setUpClass (tempest.api.compute.admin.test_migrations.MigrationsAdminTest)
+        setUpClass (tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps)
+        setUpClass (tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerMigrationWithHost)
+        tempest.serial_tests.api.compute.admin.test_aggregates.AggregatesAdminTestJSON.test_aggregate_add_host_create_server_with_az

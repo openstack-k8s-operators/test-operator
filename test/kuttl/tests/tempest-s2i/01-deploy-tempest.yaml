@@ -1,0 +1,15 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      if [ -z "${S2I_TEMPEST_IMAGE}" ]; then
+        echo "SKIP: S2I_TEMPEST_IMAGE is not set (regular kuttl job)"
+        exit 0
+      fi
+      # kustomize overlay places the CR in the kuttl namespace, not openstack
+      NS="${NAMESPACE:-test-operator-kuttl-tests}"
+      oc kustomize ../../../../config/samples/layout/tempest | oc apply -f -
+      oc -n "${NS}" patch tempest tempest-sample --type=merge \
+        -p "{\"spec\":{\"containerImage\":\"${S2I_TEMPEST_IMAGE}\"}}"
+      oc -n "${NS}" wait tempest tempest-sample \
+        --for=condition=Ready --timeout=600s
