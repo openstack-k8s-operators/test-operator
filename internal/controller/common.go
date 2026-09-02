@@ -42,6 +42,7 @@ const (
 	workflowStepLabel          = "workflowStep"
 	instanceNameLabel          = "instanceName"
 	operatorNameLabel          = "operator"
+	pendingTimeoutAnnotation   = "test.openstack.org/pending-timeout"
 	testOperatorLockName       = "test-operator-lock"
 	testOperatorLockOwnerField = "owner"
 	testOperatorBaseDir        = "/etc/test_operator/"
@@ -59,6 +60,8 @@ const (
 	InfoWaitingOnPod = "Waiting on either pod to finish or release of the lock."
 	// InfoPendingPod is the info message when waiting for a pending pod to start
 	InfoPendingPod = "Waiting for pending pod to start running."
+	// InfoPendingPodTimeout is the info message when a pending pod exceeds its timeout
+	InfoPendingPodTimeout = "Pod exceeded pending timeout."
 	// InfoTestingCompleted is the info message when all testing is completed
 	InfoTestingCompleted = "Testing completed. All pods spawned by the test-operator finished."
 	// InfoCreatingFirstPod is the info message when creating the first test pod
@@ -202,6 +205,15 @@ func (r *Reconciler) NextAction(
 		workflowStepIdx, err := strconv.Atoi(lastPod.Labels[workflowStepLabel])
 		if err != nil {
 			return Failure, workflowStepIdx, err
+		}
+
+		// if the last pod has exceeded pending timeout
+		if lastPod.Annotations[pendingTimeoutAnnotation] == "true" {
+			if !isLastPodIndex(workflowStepIdx, workflowLength) {
+				workflowStepIdx++
+				return CreateNextPod, workflowStepIdx, nil
+			}
+			return EndTesting, workflowStepIdx, nil
 		}
 
 		switch lastPod.Status.Phase {
