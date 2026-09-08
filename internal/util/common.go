@@ -21,6 +21,9 @@ const (
 	// ExtraVolTypeUndefined can be used to label an extraMount which is
 	// not associated to anything in particular
 	ExtraVolTypeUndefined storage.ExtraVolType = "Undefined"
+
+	// PrivilegedLabel marks test pods that require the privileged SCC
+	PrivilegedLabel = "test.openstack.org/privileged"
 )
 
 // GetSecurityContext returns a security context with the specified configuration
@@ -90,6 +93,10 @@ func BuildTestPod(
 	volumes []corev1.Volume,
 ) *corev1.Pod {
 	securityContext := GetSecurityContext(runAsUser, capabilities, privileged)
+
+	if privileged {
+		labels[PrivilegedLabel] = "true"
+	}
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{

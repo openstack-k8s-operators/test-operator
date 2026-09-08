@@ -47,7 +47,7 @@ func (r *TempestReconciler) GetLogger(ctx context.Context) logr.Logger {
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=test.openstack.org,resources=tempests/finalizers,verbs=update;patch
 // +kubebuilder:rbac:groups=k8s.cni.cncf.io,resources=network-attachment-definitions,verbs=get;list;watch
-// +kubebuilder:rbac:groups="security.openshift.io",resourceNames=anyuid;privileged;nonroot;nonroot-v2,resources=securitycontextconstraints,verbs=use
+// +kubebuilder:rbac:groups="security.openshift.io",resourceNames=nonroot;nonroot-v2,resources=securitycontextconstraints,verbs=use
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete;
 // +kubebuilder:rbac:groups="",resources=pods,verbs=create;delete;get;list;patch;update;watch

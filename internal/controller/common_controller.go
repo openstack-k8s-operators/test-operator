@@ -196,6 +196,12 @@ func CommonReconcile[T TestResource](
 		MergeSections(spec, workflowStepData)
 	}
 
+	// Keep the privileged SCC grant alive only while a pod of this instance needs it
+	err = r.RevokeUnusedPrivilegedResources(ctx, helper, instance, config.ServiceName, nextAction)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	parallel := false
 	if config.GetParallel != nil {
 		parallel = config.GetParallel(instance)

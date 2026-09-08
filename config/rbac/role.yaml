@@ -10,6 +10,7 @@ rules:
   - configmaps
   - persistentvolumeclaims
   - pods
+  - serviceaccounts
   verbs:
   - create
   - delete
@@ -35,12 +36,30 @@ rules:
   - list
   - watch
 - apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - system:openshift:scc:privileged
+  resources:
+  - clusterroles
+  verbs:
+  - bind
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - security.openshift.io
   resourceNames:
-  - anyuid
   - nonroot
   - nonroot-v2
-  - privileged
   resources:
   - securitycontextconstraints
   verbs:
