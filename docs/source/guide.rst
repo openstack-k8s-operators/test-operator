@@ -101,7 +101,7 @@ testing local changes by following these steps.
 
 .. code-block:: bash
 
-   oc scale deployment openstack-operator-controller-operator -n openstack-operators --replicas=0
+   oc scale deployment openstack-operator-controller-init -n openstack-operators --replicas=0
 
 2. Delete the openstack-operator and test-operator controller managers
 
@@ -122,7 +122,7 @@ testing local changes by following these steps.
 
    .. code-block:: bash
 
-      oc scale deployment openstack-operator-controller-operator -n openstack-operators --replicas=1
+      oc scale deployment openstack-operator-controller-init -n openstack-operators --replicas=1
 
 .. _uninstalling-operator:
 
