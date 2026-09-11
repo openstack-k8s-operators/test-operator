@@ -22,7 +22,6 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/pvc"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -642,24 +641,6 @@ func (r *Reconciler) GetPodIfExists(
 		return nil, err
 	}
 	return pod, nil
-}
-
-// GetCommonRbacRules returns the common RBAC rules for test operations, with optional privileged permissions
-func GetCommonRbacRules(privileged bool) []rbacv1.PolicyRule {
-	rbacPolicyRule := rbacv1.PolicyRule{
-		APIGroups:     []string{"security.openshift.io"},
-		ResourceNames: []string{"nonroot", "nonroot-v2"},
-		Resources:     []string{"securitycontextconstraints"},
-		Verbs:         []string{"use"},
-	}
-
-	if privileged {
-		rbacPolicyRule.ResourceNames = append(
-			rbacPolicyRule.ResourceNames,
-			[]string{"anyuid", "privileged"}...)
-	}
-
-	return []rbacv1.PolicyRule{rbacPolicyRule}
 }
 
 // EnsureNetworkAttachments fetches NetworkAttachmentDefinitions and creates annotations

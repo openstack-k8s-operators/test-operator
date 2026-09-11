@@ -143,21 +143,6 @@ func init() {
 	SchemeBuilder.Register(&HorizonTest{}, &HorizonTestList{})
 }
 
-// RbacConditionsSet - set the conditions for the rbac object
-func (instance HorizonTest) RbacConditionsSet(c *condition.Condition) {
-	instance.Status.Conditions.Set(c)
-}
-
-// RbacNamespace - return the namespace
-func (instance HorizonTest) RbacNamespace() string {
-	return instance.Namespace
-}
-
-// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
-func (instance HorizonTest) RbacResourceName() string {
-	return instance.Name
-}
-
 // GetConditions - return the conditions from the status
 func (instance *HorizonTest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions

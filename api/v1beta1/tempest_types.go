@@ -508,21 +508,6 @@ func init() {
 	SchemeBuilder.Register(&Tempest{}, &TempestList{})
 }
 
-// RbacConditionsSet - set the conditions for the rbac object
-func (instance Tempest) RbacConditionsSet(c *condition.Condition) {
-	instance.Status.Conditions.Set(c)
-}
-
-// RbacNamespace - return the namespace
-func (instance Tempest) RbacNamespace() string {
-	return instance.Namespace
-}
-
-// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
-func (instance Tempest) RbacResourceName() string {
-	return instance.Name
-}
-
 // GetConditions - return the conditions from the status
 func (instance *Tempest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
