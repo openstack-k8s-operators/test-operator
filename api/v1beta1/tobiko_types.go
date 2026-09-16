@@ -246,21 +246,6 @@ func init() {
 	SchemeBuilder.Register(&Tobiko{}, &TobikoList{})
 }
 
-// RbacConditionsSet - set the conditions for the rbac object
-func (instance Tobiko) RbacConditionsSet(c *condition.Condition) {
-	instance.Status.Conditions.Set(c)
-}
-
-// RbacNamespace - return the namespace
-func (instance Tobiko) RbacNamespace() string {
-	return instance.Namespace
-}
-
-// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
-func (instance Tobiko) RbacResourceName() string {
-	return instance.Name
-}
-
 // GetConditions - return the conditions from the status
 func (instance *Tobiko) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions

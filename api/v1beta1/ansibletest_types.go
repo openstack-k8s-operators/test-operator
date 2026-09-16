@@ -206,21 +206,6 @@ func init() {
 	SchemeBuilder.Register(&AnsibleTest{}, &AnsibleTestList{})
 }
 
-// RbacConditionsSet - set the conditions for the rbac object
-func (instance AnsibleTest) RbacConditionsSet(c *condition.Condition) {
-	instance.Status.Conditions.Set(c)
-}
-
-// RbacNamespace - return the namespace
-func (instance AnsibleTest) RbacNamespace() string {
-	return instance.Namespace
-}
-
-// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
-func (instance AnsibleTest) RbacResourceName() string {
-	return instance.Name
-}
-
 // GetConditions - return the conditions from the status
 func (instance *AnsibleTest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
