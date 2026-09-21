@@ -6,6 +6,7 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/storage"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -99,7 +100,7 @@ func BuildTestPod(
 			Annotations: annotations,
 		},
 		Spec: corev1.PodSpec{
-			AutomountServiceAccountToken: &privileged,
+			AutomountServiceAccountToken: ptr.To(false),
 			RestartPolicy:                corev1.RestartPolicyNever,
 			Tolerations:                  tolerations,
 			NodeSelector:                 nodeSelector,
