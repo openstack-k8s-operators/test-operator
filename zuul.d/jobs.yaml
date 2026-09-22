@@ -28,8 +28,6 @@
         - 'TEST_BRANCH'
         - 'OUTPUT_DIR'
 
-      cifmw_run_test_role: test_operator
-
       # Test operator
       cifmw_test_operator_timeout: 7200
       cifmw_test_operator_stages:
@@ -115,6 +113,7 @@
           numProcesses: 2
         - stepName: 'sanity'
           testenv: 'sanity'
+          privileged: true
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
