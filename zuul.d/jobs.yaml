@@ -208,10 +208,11 @@
         override-checkout: main
 
 - job:
-    name: tempest-s2i-content-provider
+    name: test-operator-s2i-content-provider
     parent: s2i-openstack-container-content-provider
     description: |
-      Build s2i tempest images for tempest-s2i-tempest.
+      Build the s2i test-framework images consumed by
+      test-operator-s2i-test and test-operator-kuttl-s2i.
     required-projects:
       - name: openstack-k8s-operators/s2i-openstack-containers
         override-checkout: main
@@ -247,29 +248,39 @@
           {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-tempest:{{ s2i_ci_content.tag }}
 
 - job:
-    name: tempest-s2i-tempest
-    parent: podified-multinode-edpm-deployment-crc-test-operator
+    name: test-operator-s2i-test
+    parent: s2i-test-base-ceph
     description: |
-      Validate speculatively-built s2i tempest images against a live
-      OpenStack deployment. The s2i-built openstack-tempest image from
-      tempest-s2i-content-provider is pinned via cifmw_test_operator_*
-      image vars (test workload, not an OpenStackVersion field).
-    required-projects:
-      - name: openstack-k8s-operators/s2i-openstack-containers
-        override-checkout: main
+      Validate speculatively-built s2i test-framework images against a
+      live OpenStack deployment. The s2i-built images from
+      test-operator-s2i-content-provider are pinned via
+      cifmw_test_operator_* image vars (test workloads, not
+      OpenStackVersion fields).
     vars:
-      cifmw_crc_additional_insecure_registries:
-        - "{{ s2i_content_provider_registry_ip }}:5001"
-      cifmw_crc_additional_allowed_registries:
-        - "{{ s2i_content_provider_registry_ip }}:5001"
+      cifmw_test_operator_timeout: 7200
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
+
+      # Tempest
       cifmw_test_operator_tempest_registry: >-
         {{ s2i_content_provider_registry_ip }}:5001
       cifmw_test_operator_tempest_namespace: "{{ s2i_ci_content.namespace }}"
       cifmw_test_operator_tempest_container: openstack-tempest
       cifmw_test_operator_tempest_image_tag: "{{ s2i_ci_content.tag }}"
+
+      cifmw_test_operator_tempest_concurrency: 4
+      cifmw_test_operator_tempest_cleanup: true
+      cifmw_test_operator_tempest_include_list: |
+        ^tempest.
+      cifmw_test_operator_tempest_exclude_list: |
+        tempest.api.compute.admin.test_live_migration.LiveMigrationTest.test_live_migration_with_trunk
+        tempest.api.compute.servers.test_server_rescue.ServerStableDeviceRescueTestIDE
+        tempest.api.compute.servers.test_device_tagging
+        tempest.api.network.admin.test_dhcp_agent_scheduler.DHCPAgentSchedulersTestJSON
+        tempest.scenario.test_minimum_basic.TestMinimumBasicScenario.test_minimum_basic_scenario
+        tempest.scenario.test_stamp_pattern
+        tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps.test_server_connectivity_live_migration
       # Workaround: s2i tempest is built from current git, which requests
       # project_manager credentials in setUpClass. Dynamic creds look up
       # a Keystone role named "manager" and fail with:
@@ -287,3 +298,53 @@
         setUpClass (tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerOps)
         setUpClass (tempest.scenario.test_network_advanced_server_ops.TestNetworkAdvancedServerMigrationWithHost)
         tempest.serial_tests.api.compute.admin.test_aggregates.AggregatesAdminTestJSON.test_aggregate_add_host_create_server_with_az
+
+      cifmw_test_operator_tempest_tempestconf_config:
+        overrides: |
+          compute-feature-enabled.dhcp_domain ''
+          dashboard.dashboard_url https://horizon-openstack.apps-crc.testing/dashboard/
+          dashboard.login_url https://horizon-openstack.apps-crc.testing/dashboard/auth/login/
+          dashboard.disable_ssl_certificate_validation True
+          identity.v3_endpoint_type public
+          service_available.swift false
+          service_available.cinder false
+          service_available.horizon True
+      cifmw_test_operator_tempest_workflow:
+        - stepName: 'full'
+        - stepName: 'single-test'
+          tempestRun:
+            includeList: |
+              tempest.api.compute.admin.test_flavors.FlavorsAdminTestJSON.test_create_flavor_using_string_ram
+            concurrency: 8
+          tempestconfRun:
+            collectTiming: true
+
+      cifmw_test_operator_tempest_extra_images:
+        - URL: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+          name: cirros-0.6.2-test-operator
+          diskFormat: qcow2
+          containerFormat: bare
+          imageCreationTimeout: 300
+          flavor:
+            name: cirros-0.6.2-test-operator-flavor
+            RAM: 512
+            disk: 20
+            vcpus: 1
+      cifmw_test_operator_tempest_ntp_extra_images: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+      cifmw_test_operator_tempest_network_attachments:
+        - ctlplane
+      cifmw_test_operator_tempest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - Tempest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true

@@ -12,15 +12,15 @@
         - podified-multinode-edpm-deployment-crc-test-operator:
             dependencies:
               - openstack-k8s-operators-content-provider
-        - tempest-s2i-content-provider:
+        - test-operator-s2i-content-provider:
             voting: false
         - test-operator-kuttl-s2i:
             voting: false
             dependencies:
               - openstack-k8s-operators-content-provider
-              - tempest-s2i-content-provider
-        - tempest-s2i-tempest:
+              - test-operator-s2i-content-provider
+        - test-operator-s2i-test:
             voting: false
             dependencies:
               - openstack-k8s-operators-content-provider
-              - tempest-s2i-content-provider
+              - test-operator-s2i-content-provider
