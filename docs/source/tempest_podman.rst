@@ -42,6 +42,6 @@ Run tempest:
 
 .. code-block:: bash
 
-    podman run -e CONCURRENCY=4 -v /tmp/tempest/logs/:/var/lib/tempest/external_files:Z quay.io/podified-antelope-centos9/openstack-tempest:current-podified
+    podman run -e CONCURRENCY=4 -v /tmp/tempest/logs/:/var/lib/tempest/external_files:Z quay.io/openstack-s2i-containers/openstack-tempest:master-latest
 
 Profit! Logs will be in ``/tmp/tempest/logs`` (subunit, html files, tempest logs, etc)
