@@ -112,11 +112,12 @@ Please refer to this section of the documentation:
 
 - :ref:`tempest-images`
 
-Most likely you are using openstack-tempest image instead of openstack-tempest-all.
-You can specify which image you want to be used with :code:`containerImage`
-parameter in the :code:`Tempest` CR. If your plugin is not included in the
-:code:`openstack-tempest-all` image then take a look at the :code:`externalPlugin`
-parameter.
+Most likely the plugin is not part of the image you are using. The default S2I
+:code:`openstack-tempest` image ships a fixed set of plugins, the TCIB
+:code:`openstack-tempest` image ships none at all. You can specify which image
+you want to be used with :code:`containerImage` parameter in the :code:`Tempest`
+CR. If your plugin is not included in any of the images then take a look at the
+:code:`externalPlugin` parameter.
 
 
 **6. The test pod is stuck in a pending state. What should I do?**

@@ -38,7 +38,7 @@ spec:
       emptyDir: {}
   containers:
     - name: tempest-container
-      image: quay.io/podified-antelope-centos9/openstack-tempest:current-podified
+      image: quay.io/openstack-s2i-containers/openstack-tempest:master-latest
       # Uncomment the following line to make the container sleep - that overrides
       # any run commands defined in the tempest image - that will allow you to
       # ssh to the container, install e.g. tempest plugins, change the tempest
