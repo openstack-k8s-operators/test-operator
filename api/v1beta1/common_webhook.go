@@ -95,7 +95,7 @@ func SetupDefaults() {
 		TempestContainerImageURL:     util.GetEnvVar("RELATED_IMAGE_TEST_TEMPEST_IMAGE_URL_DEFAULT", DefaultTempestContainerImageURL),
 		TobikoContainerImageURL:      util.GetEnvVar("RELATED_IMAGE_TEST_TOBIKO_IMAGE_URL_DEFAULT", DefaultTobikoContainerImageURL),
 		AnsibleTestContainerImageURL: util.GetEnvVar("RELATED_IMAGE_TEST_ANSIBLETEST_IMAGE_URL_DEFAULT", DefaultAnsibleTestContainerImageURL),
-		HorizonTestContainerImageURL: util.GetEnvVar("RELATED_IMAGE_HORIZONTEST_IMAGE_URL_DEFAULT", DefaultHorizonTestContainerImageURL),
+		HorizonTestContainerImageURL: util.GetEnvVar("RELATED_IMAGE_TEST_HORIZONTEST_IMAGE_URL_DEFAULT", DefaultHorizonTestContainerImageURL),
 	}
 
 	SetupTestDefaults(testDefaults)
