@@ -27,6 +27,8 @@ import (
 	//revive:disable-next-line:dot-imports
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -139,6 +141,68 @@ var _ = Describe("Tempest controller", func() {
 		It("should create a pod", func() {
 			pod := GetTestOperatorPod(namespace, tempestName.Name)
 			Expect(pod.Name).ToNot(BeEmpty())
+		})
+	})
+
+	When("Tempest is created with privileged mode enabled", func() {
+		var serviceAccountName string
+
+		BeforeEach(func() {
+			serviceAccountName = "tempest-" + tempestName.Name + "-privileged"
+
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			spec := GetDefaultTempestSpec()
+			spec["privileged"] = true
+			DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+		})
+
+		It("should grant the privileged SCC to that service account only", func() {
+			GetTestOperatorPod(namespace, tempestName.Name)
+
+			Eventually(func(g Gomega) {
+				sa := &corev1.ServiceAccount{}
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: namespace,
+					Name:      serviceAccountName,
+				}, sa)).Should(Succeed())
+
+				rb := &rbacv1.RoleBinding{}
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: namespace,
+					Name:      serviceAccountName + "-scc",
+				}, rb)).Should(Succeed())
+
+				g.Expect(rb.RoleRef.Kind).To(Equal("ClusterRole"))
+				g.Expect(rb.RoleRef.Name).To(Equal("system:openshift:scc:privileged"))
+				g.Expect(rb.Subjects).To(HaveLen(1))
+				g.Expect(rb.Subjects[0].Name).To(Equal(serviceAccountName))
+				g.Expect(rb.Subjects[0].Namespace).To(Equal(namespace))
+			}, timeout, interval).Should(Succeed())
+		})
+	})
+
+	When("Tempest is created without privileged mode", func() {
+		BeforeEach(func() {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+			DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, GetDefaultTempestSpec()))
+		})
+
+		It("should not create any privileged SCC grant", func() {
+			GetTestOperatorPod(namespace, tempestName.Name)
+
+			Consistently(func(g Gomega) {
+				sa := &corev1.ServiceAccount{}
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: namespace,
+					Name:      "tempest-" + tempestName.Name + "-privileged",
+				}, sa)
+				g.Expect(k8s_errors.IsNotFound(err)).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 
