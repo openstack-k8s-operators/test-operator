@@ -130,4 +130,8 @@ configuration to Tempest. Please mind the content of the ``run_tempest.sh``
 script defined inside the tempest image as that is the limitation of what
 can be recognized, parsed and taken into account during the tempest run.
 
-The content of the ``run_tempest.sh`` `can be found here <https://github.com/openstack-k8s-operators/tcib/blob/main/container-images/tcib/base/os/tempest/run_tempest.sh>`_.
+The content of the ``run_tempest.sh`` can be found in the
+`s2i-openstack-containers repository <https://github.com/openstack-k8s-operators/s2i-openstack-containers/blob/main/containers/tempest/tempest/scripts/run_tempest.sh>`_
+for the default S2I image and in the
+`tcib repository <https://github.com/openstack-k8s-operators/tcib/blob/main/container-images/tcib/base/os/tempest/run_tempest.sh>`_
+for the TCIB image.
