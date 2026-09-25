@@ -1,0 +1,10 @@
+---
+apiVersion: test.openstack.org/v1beta1
+kind: HorizonTest
+metadata:
+  name: horizontest-sample
+  namespace: openstack
+spec:
+  containerImage: ""
+  dashboardUrl: "https://horizon-openstack.apps-crc.testing/"
+  authUrl: "https://keystone-public-openstack.apps-crc.testing"
