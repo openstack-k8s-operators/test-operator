@@ -886,6 +886,11 @@ spec:
                 default: false
                 description: Parallel
                 type: boolean
+              pendingTimeout:
+                description: |-
+                  Timeout after which a test pod in the Pending state is considered
+                  stuck and its execution is terminated.
+                type: integer
               privileged:
                 default: false
                 description: |-

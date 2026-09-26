@@ -95,6 +95,12 @@ type CommonOptions struct {
 	// ExtraMounts containing conf files, credentials and storage volumes
 	ExtraMounts []ExtraVolMounts `json:"extraMounts,omitempty"`
 
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// Timeout after which a test pod in the Pending state is considered
+	// stuck and its execution is terminated.
+	PendingTimeout int `json:"pendingTimeout"`
+
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// This value contains a nodeSelector value that is applied to test pods
@@ -185,6 +191,12 @@ type WorkflowCommonOptions struct {
 	// WARNING: This parameter will be deprecated!
 	// Please use ExtraMounts parameter instead!
 	ExtraConfigmapsMounts *[]ExtraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// Timeout after which a test pod in the Pending state is considered
+	// stuck and its execution is terminated.
+	PendingTimeout *int `json:"pendingTimeout,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec

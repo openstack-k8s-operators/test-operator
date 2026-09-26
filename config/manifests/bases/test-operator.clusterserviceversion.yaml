@@ -109,6 +109,11 @@ spec:
         displayName: Open Stack Config Secret
         path: openStackConfigSecret
       - description: |-
+          Timeout after which a test pod in the Pending state is considered
+          stuck and its execution is terminated.
+        displayName: Pending Timeout
+        path: pendingTimeout
+      - description: |-
           Use with caution! This parameter specifies whether test-operator should spawn
           test pods with allowedPrivilegedEscalation: true, readOnlyRootFilesystem: false,
           runAsNonRoot: false, automountServiceAccountToken: true, and the default
@@ -209,6 +214,11 @@ spec:
           secure.yaml
         displayName: Open Stack Config Secret
         path: workflow[0].openStackConfigSecret
+      - description: |-
+          Timeout after which a test pod in the Pending state is considered
+          stuck and its execution is terminated.
+        displayName: Pending Timeout
+        path: workflow[0].pendingTimeout
       - description: |-
           Use with caution! This parameter specifies whether test-operator should spawn test
           pods with allowedPrivilegedEscalation: true and the default capabilities on
@@ -338,6 +348,11 @@ spec:
         displayName: Parallel
         path: parallel
       - description: |-
+          Timeout after which a test pod in the Pending state is considered
+          stuck and its execution is terminated.
+        displayName: Pending Timeout
+        path: pendingTimeout
+      - description: |-
           Use with caution! This parameter specifies whether test-operator should spawn
           test pods with allowedPrivilegedEscalation: true, readOnlyRootFilesystem: false,
           runAsNonRoot: false, automountServiceAccountToken: true, and the default
@@ -461,6 +476,11 @@ spec:
           behaviour then set this option to true.
         displayName: Parallel
         path: parallel
+      - description: |-
+          Timeout after which a test pod in the Pending state is considered
+          stuck and its execution is terminated.
+        displayName: Pending Timeout
+        path: pendingTimeout
       - description: |-
           Use with caution! This parameter specifies whether test-operator should spawn
           test pods with allowedPrivilegedEscalation: true, readOnlyRootFilesystem: false,
@@ -777,6 +797,11 @@ spec:
           behaviour then set this option to true.
         displayName: Parallel
         path: workflow[0].parallel
+      - description: |-
+          Timeout after which a test pod in the Pending state is considered
+          stuck and its execution is terminated.
+        displayName: Pending Timeout
+        path: workflow[0].pendingTimeout
       - description: |-
           Use with caution! This parameter specifies whether test-operator should spawn test
           pods with allowedPrivilegedEscalation: true and the default capabilities on
@@ -1108,6 +1133,11 @@ spec:
       - description: Optional patch to apply to the Tobiko repository.
         displayName: Patch
         path: patch
+      - description: |-
+          Timeout after which a test pod in the Pending state is considered
+          stuck and its execution is terminated.
+        displayName: Pending Timeout
+        path: pendingTimeout
       - description: Boolean specifying whether tobiko tests create new resources
           or re-use those previously created
         displayName: Prevent Create
@@ -1221,6 +1251,11 @@ spec:
       - description: Optional patch to apply to the Tobiko repository for this step.
         displayName: Patch
         path: workflow[0].patch
+      - description: |-
+          Timeout after which a test pod in the Pending state is considered
+          stuck and its execution is terminated.
+        displayName: Pending Timeout
+        path: workflow[0].pendingTimeout
       - description: Boolean specifying whether tobiko tests create new resources
           or re-use those previously created
         displayName: Prevent Create

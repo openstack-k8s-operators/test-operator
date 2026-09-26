@@ -884,6 +884,11 @@ spec:
                     format: uri
                     type: string
                 type: object
+              pendingTimeout:
+                description: |-
+                  Timeout after which a test pod in the Pending state is considered
+                  stuck and its execution is terminated.
+                type: integer
               preventCreate:
                 default: false
                 description: Boolean specifying whether tobiko tests create new resources
@@ -1144,6 +1149,11 @@ spec:
                           format: uri
                           type: string
                       type: object
+                    pendingTimeout:
+                      description: |-
+                        Timeout after which a test pod in the Pending state is considered
+                        stuck and its execution is terminated.
+                      type: integer
                     preventCreate:
                       description: Boolean specifying whether tobiko tests create
                         new resources or re-use those previously created
