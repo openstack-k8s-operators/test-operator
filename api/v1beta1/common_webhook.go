@@ -82,10 +82,10 @@ const (
 )
 
 const (
-	DefaultTempestContainerImageURL     = "quay.io/podified-antelope-centos9/openstack-tempest-all:current-podified"
-	DefaultTobikoContainerImageURL      = "quay.io/podified-antelope-centos9/openstack-tobiko:current-podified"
-	DefaultAnsibleTestContainerImageURL = "quay.io/podified-antelope-centos9/openstack-ansible-tests:current-podified"
-	DefaultHorizonTestContainerImageURL = "quay.io/podified-antelope-centos9/openstack-horizontest:current-podified"
+	DefaultTempestContainerImageURL     = "quay.io/openstack-s2i-containers/openstack-tempest:master-latest"
+	DefaultTobikoContainerImageURL      = "quay.io/openstack-s2i-containers/openstack-tobiko:master-latest"
+	DefaultAnsibleTestContainerImageURL = "quay.io/openstack-s2i-containers/openstack-ansible-test:master-latest"
+	DefaultHorizonTestContainerImageURL = "quay.io/openstack-s2i-containers/openstack-horizontest:master-latest"
 )
 
 // SetupDefaults - initializes any CRD field defaults based on environment variables (the defaulting mechanism itself is implemented via webhooks)

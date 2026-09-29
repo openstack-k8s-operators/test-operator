@@ -92,10 +92,10 @@ func CreateTestOperatorConfigMap(namespace string) *corev1.ConfigMap {
 			Namespace: namespace,
 		},
 		Data: map[string]string{
-			"ansibletest-image": "quay.io/podified-antelope-centos9/openstack-ansibletest:current-podified",
-			"horizontest-image": "quay.io/podified-antelope-centos9/openstack-horizontest:current-podified",
-			"tempest-image":     "quay.io/podified-antelope-centos9/openstack-tempest:current-podified",
-			"tobiko-image":      "quay.io/podified-antelope-centos9/openstack-tobiko:current-podified",
+			"ansibletest-image": "quay.io/openstack-s2i-containers/openstack-ansible-test:master-latest",
+			"horizontest-image": "quay.io/openstack-s2i-containers/openstack-horizontest:master-latest",
+			"tempest-image":     "quay.io/openstack-s2i-containers/openstack-tempest:master-latest",
+			"tobiko-image":      "quay.io/openstack-s2i-containers/openstack-tobiko:master-latest",
 		},
 	}
 }
