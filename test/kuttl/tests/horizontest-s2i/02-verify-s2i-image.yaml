@@ -1,0 +1,23 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - script: |
+      if [ -z "${S2I_HORIZONTEST_IMAGE}" ]; then
+        echo "SKIP: S2I_HORIZONTEST_IMAGE is not set (regular kuttl job)"
+        exit 0
+      fi
+      NS="${NAMESPACE:-test-operator-kuttl-tests}"
+      POD_IMAGE=$(oc -n "${NS}" get pod -l instanceName=horizontest-sample \
+        -o jsonpath='{.items[0].spec.containers[0].image}')
+      echo "HorizonTest pod image: ${POD_IMAGE}"
+      echo "Expected S2I image: ${S2I_HORIZONTEST_IMAGE}"
+      if [ -z "${POD_IMAGE}" ]; then
+        echo "ERROR: no horizontest-sample pod found in ${NS}"
+        oc -n "${NS}" get pods,horizontest
+        exit 1
+      fi
+      if [ "${POD_IMAGE}" != "${S2I_HORIZONTEST_IMAGE}" ]; then
+        echo "ERROR: HorizonTest pod is NOT running the S2I image"
+        exit 1
+      fi
+      echo "Confirmed: HorizonTest pod is running the S2I image"

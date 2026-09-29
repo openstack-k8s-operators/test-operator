@@ -219,16 +219,17 @@
     vars:
       s2i_ci_images:
         - tempest/tempest
+        - horizontest/horizontest
 
 - job:
     name: test-operator-kuttl-s2i
     parent: test-operator-kuttl
     description: |
       KUTTL test using s2i-built test-operator container images.
-      Currently runs only the tempest-s2i suite: pins the Tempest CR
-      to the s2i tempest image and asserts the tempest pod is using
-      that image. Named without a CR-type suffix so Tobiko,
-      AnsibleTest, and HorizonTest suites can be added later.
+      Runs the tempest-s2i and horizontest-s2i suites: pins each CR
+      to its s2i image and asserts the test pod is using that image.
+      Named without a CR-type suffix so Tobiko and AnsibleTest
+      suites can be added later.
 
       The s2i content provider deploys its own plain Docker registry on
       the builder node. CRC is configured to trust it via
@@ -243,9 +244,11 @@
         - "{{ s2i_content_provider_registry_ip }}:5001"
       cifmw_kuttl_tests_env_vars:
         PV_NUM: 20
-        KUTTL_ARGS: "--test tempest-s2i"
+        KUTTL_ARGS: "--test tempest-s2i --test horizontest-s2i"
         S2I_TEMPEST_IMAGE: >-
           {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-tempest:{{ s2i_ci_content.tag }}
+        S2I_HORIZONTEST_IMAGE: >-
+          {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-horizontest:{{ s2i_ci_content.tag }}
 
 - job:
     name: test-operator-s2i-test
@@ -261,6 +264,8 @@
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
+        - name: horizontest
+          type: horizontest
 
       # Tempest
       cifmw_test_operator_tempest_registry: >-
@@ -339,6 +344,34 @@
           extraVol:
             - propagation:
               - Tempest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
+
+      # Horizontest
+      cifmw_test_operator_horizontest_registry: >-
+        {{ s2i_content_provider_registry_ip }}:5001
+      cifmw_test_operator_horizontest_namespace: "{{ s2i_ci_content.namespace }}"
+      cifmw_test_operator_horizontest_container: openstack-horizontest
+      cifmw_test_operator_horizontest_image_tag: "{{ s2i_ci_content.tag }}"
+
+      cifmw_test_operator_horizontest_auth_url: "https://keystone-public-openstack.apps-crc.testing"
+      cifmw_test_operator_horizontest_dashboard_url: "https://horizon-openstack.apps-crc.testing/"
+      cifmw_test_operator_horizontest_extra_flag: "not pagination and test_users.py"
+      cifmw_test_operator_horizontest_project_name_xpath: //*[@class="context-project"]//ancestor::ul
+      cifmw_test_operator_horizontest_project_text_xpath: './/*[@class="context-project"]'
+      cifmw_test_operator_horizontest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - HorizonTest
               extraVolType: Ceph
               volumes:
               - name: ceph
