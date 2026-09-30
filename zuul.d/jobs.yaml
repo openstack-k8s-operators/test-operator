@@ -219,6 +219,7 @@
     vars:
       s2i_ci_images:
         - tempest/tempest
+        - ansible-test/ansible-test
         - horizontest/horizontest
 
 - job:
@@ -264,6 +265,8 @@
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
+        - name: ansibletest
+          type: ansibletest
         - name: horizontest
           type: horizontest
 
@@ -372,6 +375,38 @@
           extraVol:
             - propagation:
               - HorizonTest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
+
+      # AnsibleTest
+      cifmw_test_operator_ansibletest_registry: >-
+        {{ s2i_content_provider_registry_ip }}:5001
+      cifmw_test_operator_ansibletest_namespace: "{{ s2i_ci_content.namespace }}"
+      cifmw_test_operator_ansibletest_container: openstack-ansible-test
+      cifmw_test_operator_ansibletest_image_tag: "{{ s2i_ci_content.tag }}"
+
+      cifmw_test_operator_ansibletest_ansible_git_repo: https://github.com/ansible/test-playbooks
+      cifmw_test_operator_ansibletest_ansible_playbook_path: ./debug.yml
+      cifmw_test_operator_ansibletest_workload_ssh_key_secret_name: test-operator-controller-priv-key
+      cifmw_test_operator_ansibletest_ansible_extra_vars: -e manual_run=false
+      cifmw_test_operator_ansibletest_ansible_inventory: |
+        localhost ansible_connection=local ansible_python_interpreter=python3
+      cifmw_test_operator_ansibletest_ansible_var_files: |
+        ---
+        foo: bar
+      cifmw_test_operator_ansibletest_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - AnsibleTest
               extraVolType: Ceph
               volumes:
               - name: ceph
