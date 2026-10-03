@@ -746,6 +746,11 @@ func (in *WorkflowCommonOptions) DeepCopyInto(out *WorkflowCommonOptions) {
 			copy(*out, *in)
 		}
 	}
+	if in.PendingTimeout != nil {
+		in, out := &in.PendingTimeout, &out.PendingTimeout
+		*out = new(int)
+		**out = **in
+	}
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = new(map[string]string)

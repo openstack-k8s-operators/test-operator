@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
@@ -36,6 +37,7 @@ import (
 type TestResource interface {
 	client.Object
 	GetConditions() *condition.Conditions
+	GetPendingTimeout() int
 	GetStorageClass() string
 	SetObservedGeneration()
 }
@@ -209,8 +211,33 @@ func CommonReconcile[T TestResource](
 
 	switch nextAction {
 	case CheckPending:
-		Log.Info(InfoPendingPod)
-		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
+		pendingTimeout := time.Duration(instance.GetPendingTimeout()) * time.Second
+
+		lastPod, err := r.GetLastPod(ctx, instance)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if pendingTimeout <= 0 || time.Since(lastPod.CreationTimestamp.Time) <= pendingTimeout {
+			Log.Info(InfoPendingPod)
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
+		}
+
+		Log.Info(InfoPendingPodTimeout)
+
+		if lastPod.Annotations == nil {
+			lastPod.Annotations = make(map[string]string)
+		}
+		lastPod.Annotations[pendingTimeoutAnnotation] = "true"
+
+		var deadline int64 = 1
+		lastPod.Spec.ActiveDeadlineSeconds = &deadline
+
+		if err := r.Client.Update(ctx, lastPod); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{Requeue: true}, nil
 
 	case Wait:
 		Log.Info(InfoWaitingOnPod)
