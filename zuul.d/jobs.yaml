@@ -219,6 +219,7 @@
     vars:
       s2i_ci_images:
         - tempest/tempest
+        - tobiko/tobiko
         - ansible-test/ansible-test
         - horizontest/horizontest
 
@@ -265,6 +266,8 @@
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
+        - name: tobiko
+          type: tobiko
         - name: ansibletest
           type: ansibletest
         - name: horizontest
@@ -407,6 +410,39 @@
           extraVol:
             - propagation:
               - AnsibleTest
+              extraVolType: Ceph
+              volumes:
+              - name: ceph
+                secret:
+                  secretName: openstack-config-secret
+              mounts:
+              - name: ceph
+                mountPath: "/etc/ceph"
+                readOnly: true
+
+      # Tobiko
+      cifmw_test_operator_tobiko_registry: >-
+        {{ s2i_content_provider_registry_ip }}:5001
+      cifmw_test_operator_tobiko_namespace: "{{ s2i_ci_content.namespace }}"
+      cifmw_test_operator_tobiko_container: openstack-tobiko
+      cifmw_test_operator_tobiko_image_tag: "{{ s2i_ci_content.tag }}"
+
+      cifmw_test_operator_tobiko_workflow:
+        - stepName: 'podified-functional'
+          testenv: 'functional'
+          pytestAddopts: "tobiko/tests/functional/podified/test_topology.py"
+          numProcesses: 2
+        - stepName: 'sanity'
+          testenv: 'sanity'
+          privileged: true
+      cifmw_test_operator_tobiko_network_attachments:
+        - ctlplane
+      cifmw_test_operator_tobiko_extra_mounts:
+        - name: v1
+          region: r1
+          extraVol:
+            - propagation:
+              - Tobiko
               extraVolType: Ceph
               volumes:
               - name: ceph
