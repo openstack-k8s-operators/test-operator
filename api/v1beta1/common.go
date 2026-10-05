@@ -185,6 +185,11 @@ type WorkflowCommonOptions struct {
 	// Please use ExtraMounts parameter instead!
 	ExtraConfigmapsMounts *[]ExtraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +kubebuilder:validation:Optional
+	// ExtraMounts containing conf files, credentials and storage volumes
+	ExtraMounts *[]ExtraVolMounts `json:"extraMounts,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// This value contains a nodeSelector value that is applied to test pods

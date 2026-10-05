@@ -195,6 +195,15 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: workflow[0].extraConfigmapsMounts.subPath
+      - description: ExtraMounts containing conf files, credentials and storage volumes
+        displayName: Extra Mounts
+        path: workflow[0].extraMounts
+      - displayName: Vol Mounts
+        path: workflow[0].extraMounts.extraVol
+      - displayName: Name
+        path: workflow[0].extraMounts.name
+      - displayName: Region
+        path: workflow[0].extraMounts.region
       - description: |-
           This value contains a nodeSelector value that is applied to test pods
           spawned by the test operator.
@@ -750,6 +759,15 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: workflow[0].extraConfigmapsMounts.subPath
+      - description: ExtraMounts containing conf files, credentials and storage volumes
+        displayName: Extra Mounts
+        path: workflow[0].extraMounts
+      - displayName: Vol Mounts
+        path: workflow[0].extraMounts.extraVol
+      - displayName: Name
+        path: workflow[0].extraMounts.name
+      - displayName: Region
+        path: workflow[0].extraMounts.region
       - description: |-
           NetworkAttachments is a list of NetworkAttachment resource names to expose
           the services to the given network
@@ -1185,6 +1203,15 @@ spec:
       - description: Config map subpath for mounting, defaults to configmap root.
         displayName: Sub Path
         path: workflow[0].extraConfigmapsMounts.subPath
+      - description: ExtraMounts containing conf files, credentials and storage volumes
+        displayName: Extra Mounts
+        path: workflow[0].extraMounts
+      - displayName: Vol Mounts
+        path: workflow[0].extraMounts.extraVol
+      - displayName: Name
+        path: workflow[0].extraMounts.name
+      - displayName: Region
+        path: workflow[0].extraMounts.region
       - description: |-
           Name of a secret that contains a kubeconfig. The kubeconfig is mounted under /var/lib/tobiko/.kube/config
           in the test pod.
