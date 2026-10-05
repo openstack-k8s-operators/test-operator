@@ -67,14 +67,12 @@ func (r *Tempest) ValidateCreate() (admission.Warnings, error) {
 	// Common validations
 	allErrs = ValidatePodName(allErrs, r.Name, r.Kind)
 	allWarnings = CheckPrivilegedWarning(allWarnings, r.Spec.Privileged, r.Kind)
-	allWarnings = CheckExtraConfigmapsDeprecation(allWarnings, r.Spec.ExtraConfigmapsMounts)
 
 	// Workflow-specific validations
 	if len(r.Spec.Workflow) > 0 {
 		allErrs = ValidateDebugWorkflow(allErrs, r.Spec.Debug, r.Kind)
 		allErrs = ValidateWorkflowPodNames(allErrs, r.Name, r.Kind, r.Spec.Workflow)
 		allWarnings = CheckSELinuxWarning(allWarnings, r.Spec.Privileged, r.Spec.SELinuxLevel, r.Kind)
-		allWarnings = CheckWorkflowExtraConfigmapsDeprecation(allWarnings, r.Spec.Workflow)
 	}
 
 	// Privileged mode validation

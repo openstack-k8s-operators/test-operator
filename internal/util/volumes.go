@@ -213,32 +213,6 @@ func AppendExtraMountsVolumes(
 	return volumes
 }
 
-// AppendExtraConfigmapsVolumes appends volumes from ExtraConfigmapsMounts spec
-func AppendExtraConfigmapsVolumes(
-	volumes []corev1.Volume,
-	extraConfigmaps []testv1beta1.ExtraConfigmapsMounts,
-	defaultMode int32,
-) []corev1.Volume {
-	for _, vol := range extraConfigmaps {
-		mode := defaultMode
-		extraVol := corev1.Volume{
-			Name: vol.Name,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: &mode,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: vol.Name,
-					},
-				},
-			},
-		}
-
-		volumes = append(volumes, extraVol)
-	}
-
-	return volumes
-}
-
 // CreateVolumeMount creates a basic VolumeMount
 func CreateVolumeMount(name string, mountPath string, readOnly bool) corev1.VolumeMount {
 	return corev1.VolumeMount{
@@ -283,25 +257,6 @@ func AppendExtraMountsVolumeMounts(
 		for _, vol := range exv.Propagate(svc) {
 			volumeMounts = append(volumeMounts, vol.Mounts...)
 		}
-	}
-
-	return volumeMounts
-}
-
-// AppendExtraConfigmapsVolumeMounts appends volume mounts from ExtraConfigmapsMounts spec
-func AppendExtraConfigmapsVolumeMounts(
-	volumeMounts []corev1.VolumeMount,
-	extraConfigmaps []testv1beta1.ExtraConfigmapsMounts,
-) []corev1.VolumeMount {
-	for _, vol := range extraConfigmaps {
-		extraMount := corev1.VolumeMount{
-			Name:      vol.Name,
-			MountPath: vol.MountPath,
-			SubPath:   vol.SubPath,
-			ReadOnly:  true,
-		}
-
-		volumeMounts = append(volumeMounts, extraMount)
 	}
 
 	return volumeMounts
