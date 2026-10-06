@@ -213,6 +213,17 @@ func ExpectPodNotHasVolumeMount(pod *corev1.Pod, volName string) {
 	}
 }
 
+func GetPodEnvVar(pod *corev1.Pod, envName string) string {
+	for _, container := range pod.Spec.Containers {
+		for _, env := range container.Env {
+			if env.Name == envName {
+				return env.Value
+			}
+		}
+	}
+	return ""
+}
+
 func GetDefaultConfigMapExtraMount() ExtraMount {
 	return ExtraMount{
 		VolName:    ExtraConfigVolName,
@@ -296,6 +307,28 @@ func GetDefaultAnsibleTestSpec() map[string]any {
 	}
 }
 
+func GetDefaultAnsibleTestWorkflowSpec() map[string]any {
+	return map[string]any{
+		"storageClass":        DefaultStorageClass,
+		"ansibleGitRepo":      "https://github.com/example/test-repo",
+		"ansiblePlaybookPath": "tests/playbook.yaml",
+		"workflow": []map[string]any{
+			{
+				"stepName":            "first-step",
+				"storageClass":        DefaultStorageClass,
+				"ansibleGitRepo":      "https://github.com/example/workflow-repo",
+				"ansiblePlaybookPath": "tests/workflow-playbook.yaml",
+			},
+			{
+				"stepName":            "second-step",
+				"storageClass":        DefaultStorageClass,
+				"ansibleGitRepo":      "https://github.com/example/second-repo",
+				"ansiblePlaybookPath": "tests/second-playbook.yaml",
+			},
+		},
+	}
+}
+
 func AnsibleTestConditionGetter(name types.NamespacedName) condition.Conditions {
 	instance := GetAnsibleTest(name)
 	return instance.Status.Conditions
@@ -369,6 +402,37 @@ func GetDefaultTempestSpec() map[string]any {
 	}
 }
 
+func GetDefaultTempestWorkflowSpec() map[string]any {
+	return map[string]any{
+		"storageClass": DefaultStorageClass,
+		"tempestRun": map[string]any{
+			"includeList": "tempest.api.identity.v3.*",
+		},
+		"tempestconfRun": map[string]any{
+			"networkID": "spec-network-id",
+		},
+		"workflow": []map[string]any{
+			{
+				"stepName":     "first-step",
+				"storageClass": DefaultStorageClass,
+				"tempestRun": map[string]any{
+					"includeList": "tempest.api.compute.*",
+				},
+				"tempestconfRun": map[string]any{
+					"networkID": "workflow-network-id",
+				},
+			},
+			{
+				"stepName":     "second-step",
+				"storageClass": DefaultStorageClass,
+				"tempestRun": map[string]any{
+					"includeList": "tempest.api.network.*",
+				},
+			},
+		},
+	}
+}
+
 func TempestConditionGetter(name types.NamespacedName) condition.Conditions {
 	instance := GetTempest(name)
 	return instance.Status.Conditions
@@ -400,6 +464,25 @@ func GetDefaultTobikoSpec() map[string]any {
 	return map[string]any{
 		"storageClass": DefaultStorageClass,
 		"testenv":      "sanity",
+	}
+}
+
+func GetDefaultTobikoWorkflowSpec() map[string]any {
+	return map[string]any{
+		"storageClass": DefaultStorageClass,
+		"testenv":      "sanity",
+		"workflow": []map[string]any{
+			{
+				"stepName":     "first-step",
+				"storageClass": DefaultStorageClass,
+				"testenv":      "compute",
+			},
+			{
+				"stepName":     "second-step",
+				"storageClass": DefaultStorageClass,
+				"testenv":      "network",
+			},
+		},
 	}
 }
 

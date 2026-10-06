@@ -25,6 +25,7 @@ import (
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Tobiko controller", func() {
@@ -148,6 +149,7 @@ var _ = Describe("Tobiko controller", func() {
 		It("should add network annotation to pod", func() {
 			pod := GetTestOperatorPod(namespace, tobikoName.Name)
 			Expect(pod.Annotations).To(HaveKey("k8s.v1.cni.cncf.io/networks"))
+			Expect(pod.Annotations["k8s.v1.cni.cncf.io/networks"]).To(ContainSubstring(networkAttachmentName))
 		})
 	})
 
@@ -277,6 +279,178 @@ var _ = Describe("Tobiko controller", func() {
 				pod := GetTestOperatorPod(namespace, tobikoName.Name)
 				ExpectPodNotHasVolume(pod, ExtraConfigVolName)
 				ExpectPodNotHasVolumeMount(pod, ExtraConfigVolName)
+			})
+		})
+	})
+
+	Context("workflow", func() {
+		When("is created", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, GetDefaultTobikoWorkflowSpec()))
+			})
+
+			It("creates PVC with workflow step name", func() {
+				pvc := GetTestOperatorPVC(namespace, tobikoName.Name)
+				Expect(pvc.Name).To(ContainSubstring(tobikoName.Name + "-0-"))
+			})
+
+			It("creates pod with workflow step name", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				spec := GetDefaultTobikoWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				stepName := workflow[0]["stepName"].(string)
+				Expect(pod.Name).To(Equal(tobikoName.Name + "-s00-" + stepName))
+			})
+		})
+
+		When("overrides spec defaults", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, GetDefaultTobikoWorkflowSpec()))
+			})
+
+			It("workflow testenv values take precedence", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				spec := GetDefaultTobikoWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				expectedTestenv := workflow[0]["testenv"].(string)
+
+				Expect(GetPodEnvVar(pod, "TOBIKO_TESTENV")).To(Equal(expectedTestenv))
+				Expect(GetPodEnvVar(pod, "TOBIKO_TESTENV")).NotTo(Equal(spec["testenv"].(string)))
+			})
+		})
+
+		When("inherits from spec defaults", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				spec := GetDefaultTobikoWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				delete(workflow[0], "testenv")
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("uses spec-level values when workflow step omits them", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				spec := GetDefaultTobikoWorkflowSpec()
+				expectedTestenv := spec["testenv"].(string)
+
+				Expect(GetPodEnvVar(pod, "TOBIKO_TESTENV")).To(Equal(expectedTestenv))
+			})
+		})
+
+		When("with multiple workflow steps", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, GetDefaultTobikoWorkflowSpec()))
+			})
+
+			It("creates second pod after first pod succeeds", func() {
+				firstPod := GetTestOperatorPod(namespace, tobikoName.Name)
+				Expect(firstPod.Name).To(Equal(tobikoName.Name + "-s00-first-step"))
+
+				firstPod.Status.Phase = corev1.PodSucceeded
+				Expect(k8sClient.Status().Update(ctx, firstPod)).Should(Succeed())
+
+				Eventually(func(g Gomega) {
+					podList := &corev1.PodList{}
+					listOpts := []client.ListOption{
+						client.InNamespace(namespace),
+						client.MatchingLabels{
+							"instanceName": tobikoName.Name,
+							"operator":     "test-operator",
+							"workflowStep": "1",
+						},
+					}
+					g.Expect(k8sClient.List(ctx, podList, listOpts...)).Should(Succeed())
+					g.Expect(podList.Items).To(HaveLen(1))
+					secondPod := podList.Items[0]
+					g.Expect(secondPod.Name).To(Equal(tobikoName.Name + "-s01-second-step"))
+
+					spec := GetDefaultTobikoWorkflowSpec()
+					workflow := spec["workflow"].([]map[string]any)
+					expectedTestenv := workflow[1]["testenv"].(string)
+					g.Expect(GetPodEnvVar(&secondPod, "TOBIKO_TESTENV")).To(Equal(expectedTestenv))
+				}, timeout, interval).Should(Succeed())
+			})
+		})
+
+		When("with networkAttachments", func() {
+			var networkAttachmentName = "ctlplane"
+
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				nad := th.CreateNetworkAttachmentDefinition(types.NamespacedName{
+					Namespace: namespace,
+					Name:      networkAttachmentName,
+				})
+				DeferCleanup(th.DeleteInstance, nad)
+
+				spec := GetDefaultTobikoWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				workflow[0]["networkAttachments"] = []string{networkAttachmentName}
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("adds network annotation to workflow pod", func() {
+				pod := GetTestOperatorPod(namespace, tobikoName.Name)
+				Expect(pod.Annotations).To(HaveKey("k8s.v1.cni.cncf.io/networks"))
+				Expect(pod.Annotations["k8s.v1.cni.cncf.io/networks"]).To(ContainSubstring(networkAttachmentName))
+			})
+		})
+
+		When("with non-existent networkAttachments", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				spec := GetDefaultTobikoWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				workflow[0]["networkAttachments"] = []string{"non-existent-nad"}
+				DeferCleanup(th.DeleteInstance, CreateTobiko(tobikoName, spec))
+			})
+
+			It("should set NetworkAttachmentsReady to false", func() {
+				th.ExpectCondition(
+					tobikoName,
+					ConditionGetterFunc(TobikoConditionGetter),
+					condition.NetworkAttachmentsReadyCondition,
+					corev1.ConditionFalse,
+				)
 			})
 		})
 	})
