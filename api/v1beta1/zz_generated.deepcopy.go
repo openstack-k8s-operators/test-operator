@@ -746,6 +746,17 @@ func (in *WorkflowCommonOptions) DeepCopyInto(out *WorkflowCommonOptions) {
 			copy(*out, *in)
 		}
 	}
+	if in.ExtraMounts != nil {
+		in, out := &in.ExtraMounts, &out.ExtraMounts
+		*out = new([]ExtraVolMounts)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]ExtraVolMounts, len(*in))
+			for i := range *in {
+				(*in)[i].DeepCopyInto(&(*out)[i])
+			}
+		}
+	}
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = new(map[string]string)
