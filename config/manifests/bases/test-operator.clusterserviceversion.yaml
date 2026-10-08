@@ -71,21 +71,6 @@ spec:
       - description: Run ansible playbook with -vvvv
         displayName: Debug
         path: debug
-      - description: |-
-          Extra configmaps for mounting inside the pod
-          WARNING: This parameter will be deprecated!
-          Please use ExtraMounts parameter instead!
-        displayName: Extra Configmaps Mounts
-        path: extraConfigmapsMounts
-      - description: Path within the container at which the volume should be mounted.
-        displayName: Mount Path
-        path: extraConfigmapsMounts[0].mountPath
-      - description: The name of an existing config map for mounting.
-        displayName: Name
-        path: extraConfigmapsMounts[0].name
-      - description: Config map subpath for mounting, defaults to configmap root.
-        displayName: Sub Path
-        path: extraConfigmapsMounts[0].subPath
       - description: ExtraMounts containing conf files, credentials and storage volumes
         displayName: Extra Mounts
         path: extraMounts
@@ -180,21 +165,6 @@ spec:
       - description: Run ansible playbook with -vvvv
         displayName: Debug
         path: workflow[0].debug
-      - description: |-
-          Extra configmaps for mounting inside the pod
-          WARNING: This parameter will be deprecated!
-          Please use ExtraMounts parameter instead!
-        displayName: Extra Configmaps Mounts
-        path: workflow[0].extraConfigmapsMounts
-      - description: Path within the container at which the volume should be mounted.
-        displayName: Mount Path
-        path: workflow[0].extraConfigmapsMounts.mountPath
-      - description: The name of an existing config map for mounting.
-        displayName: Name
-        path: workflow[0].extraConfigmapsMounts.name
-      - description: Config map subpath for mounting, defaults to configmap root.
-        displayName: Sub Path
-        path: workflow[0].extraConfigmapsMounts.subPath
       - description: ExtraMounts containing conf files, credentials and storage volumes
         displayName: Extra Mounts
         path: workflow[0].extraMounts
@@ -289,21 +259,6 @@ spec:
       - description: DashboardUrl is the URL of the Horizon dashboard.
         displayName: Dashboard Url
         path: dashboardUrl
-      - description: |-
-          Extra configmaps for mounting inside the pod
-          WARNING: This parameter will be deprecated!
-          Please use ExtraMounts parameter instead!
-        displayName: Extra Configmaps Mounts
-        path: extraConfigmapsMounts
-      - description: Path within the container at which the volume should be mounted.
-        displayName: Mount Path
-        path: extraConfigmapsMounts[0].mountPath
-      - description: The name of an existing config map for mounting.
-        displayName: Name
-        path: extraConfigmapsMounts[0].name
-      - description: Config map subpath for mounting, defaults to configmap root.
-        displayName: Sub Path
-        path: extraConfigmapsMounts[0].subPath
       - description: |-
           ExtraFlag is an extra flag that can be set to modify pytest command to
           exclude or include particular test(s)
@@ -420,21 +375,6 @@ spec:
           This allows the user to debug any potential troubles with `oc rsh`.
         displayName: Debug
         path: debug
-      - description: |-
-          Extra configmaps for mounting inside the pod
-          WARNING: This parameter will be deprecated!
-          Please use ExtraMounts parameter instead!
-        displayName: Extra Configmaps Mounts
-        path: extraConfigmapsMounts
-      - description: Path within the container at which the volume should be mounted.
-        displayName: Mount Path
-        path: extraConfigmapsMounts[0].mountPath
-      - description: The name of an existing config map for mounting.
-        displayName: Name
-        path: extraConfigmapsMounts[0].name
-      - description: Config map subpath for mounting, defaults to configmap root.
-        displayName: Sub Path
-        path: extraConfigmapsMounts[0].subPath
       - description: ExtraMounts containing conf files, credentials and storage volumes
         displayName: Extra Mounts
         path: extraMounts
@@ -744,21 +684,6 @@ spec:
           for tests execution.
         displayName: Container Image
         path: workflow[0].containerImage
-      - description: |-
-          Extra configmaps for mounting inside the pod
-          WARNING: This parameter will be deprecated!
-          Please use ExtraMounts parameter instead!
-        displayName: Extra Configmaps Mounts
-        path: workflow[0].extraConfigmapsMounts
-      - description: Path within the container at which the volume should be mounted.
-        displayName: Mount Path
-        path: workflow[0].extraConfigmapsMounts.mountPath
-      - description: The name of an existing config map for mounting.
-        displayName: Name
-        path: workflow[0].extraConfigmapsMounts.name
-      - description: Config map subpath for mounting, defaults to configmap root.
-        displayName: Sub Path
-        path: workflow[0].extraConfigmapsMounts.subPath
       - description: ExtraMounts containing conf files, credentials and storage volumes
         displayName: Extra Mounts
         path: workflow[0].extraMounts
@@ -1061,21 +986,6 @@ spec:
           for tests execution.
         displayName: Container Image
         path: containerImage
-      - description: |-
-          Extra configmaps for mounting inside the pod
-          WARNING: This parameter will be deprecated!
-          Please use ExtraMounts parameter instead!
-        displayName: Extra Configmaps Mounts
-        path: extraConfigmapsMounts
-      - description: Path within the container at which the volume should be mounted.
-        displayName: Mount Path
-        path: extraConfigmapsMounts[0].mountPath
-      - description: The name of an existing config map for mounting.
-        displayName: Name
-        path: extraConfigmapsMounts[0].name
-      - description: Config map subpath for mounting, defaults to configmap root.
-        displayName: Sub Path
-        path: extraConfigmapsMounts[0].subPath
       - description: ExtraMounts containing conf files, credentials and storage volumes
         displayName: Extra Mounts
         path: extraMounts
@@ -1188,21 +1098,6 @@ spec:
           for tests execution.
         displayName: Container Image
         path: workflow[0].containerImage
-      - description: |-
-          Extra configmaps for mounting inside the pod
-          WARNING: This parameter will be deprecated!
-          Please use ExtraMounts parameter instead!
-        displayName: Extra Configmaps Mounts
-        path: workflow[0].extraConfigmapsMounts
-      - description: Path within the container at which the volume should be mounted.
-        displayName: Mount Path
-        path: workflow[0].extraConfigmapsMounts.mountPath
-      - description: The name of an existing config map for mounting.
-        displayName: Name
-        path: workflow[0].extraConfigmapsMounts.name
-      - description: Config map subpath for mounting, defaults to configmap root.
-        displayName: Sub Path
-        path: workflow[0].extraConfigmapsMounts.subPath
       - description: ExtraMounts containing conf files, credentials and storage volumes
         displayName: Extra Mounts
         path: workflow[0].extraMounts

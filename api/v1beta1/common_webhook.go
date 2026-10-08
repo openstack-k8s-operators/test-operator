@@ -131,28 +131,6 @@ func ValidateWorkflowPodNames(allErrs field.ErrorList, name, kind string, workfl
 	return allErrs
 }
 
-// CheckExtraConfigmapsDeprecation returns warning if ExtraConfigmapsMounts is used
-func CheckExtraConfigmapsDeprecation(allWarn admission.Warnings, extraConfigmaps interface{}) admission.Warnings {
-	if v := reflect.ValueOf(extraConfigmaps); v.Len() > 0 {
-		allWarn = append(allWarn, "The ExtraConfigmapsMounts parameter will be"+
-			" deprecated! Please use ExtraMounts parameter instead!")
-	}
-	return allWarn
-}
-
-// CheckWorkflowExtraConfigmapsDeprecation checks for deprecated field in workflow steps
-func CheckWorkflowExtraConfigmapsDeprecation(allWarn admission.Warnings, workflow interface{}) admission.Warnings {
-	v := reflect.ValueOf(workflow)
-
-	for i := 0; i < v.Len(); i++ {
-		if field := v.Index(i).FieldByName("ExtraConfigmapsMounts"); field.IsValid() && !field.IsNil() {
-			allWarn = append(allWarn, "The ExtraConfigmapsMounts parameter will be"+
-				" deprecated! Please use ExtraMounts parameter instead!")
-		}
-	}
-	return allWarn
-}
-
 // CheckPrivilegedWarning returns warning if privileged mode is enabled
 func CheckPrivilegedWarning(allWarn admission.Warnings, privileged bool, kind string) admission.Warnings {
 	if privileged {

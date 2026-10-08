@@ -71,7 +71,6 @@ func GetVolumes(
 	}
 
 	volumes = util.AppendExtraMountsVolumes(volumes, instance.Spec.ExtraMounts, svc)
-	volumes = util.AppendExtraConfigmapsVolumes(volumes, instance.Spec.ExtraConfigmapsMounts, util.PublicInfoMode)
 
 	return volumes
 }
@@ -115,7 +114,6 @@ func GetVolumeMounts(
 	}
 
 	volumeMounts = util.AppendExtraMountsVolumeMounts(volumeMounts, instance.Spec.ExtraMounts, svc)
-	volumeMounts = util.AppendExtraConfigmapsVolumeMounts(volumeMounts, instance.Spec.ExtraConfigmapsMounts)
 
 	return volumeMounts
 }
