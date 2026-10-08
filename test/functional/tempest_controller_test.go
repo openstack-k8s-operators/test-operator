@@ -28,6 +28,7 @@ import (
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Tempest controller", func() {
@@ -164,6 +165,7 @@ var _ = Describe("Tempest controller", func() {
 		It("should add network annotation to pod", func() {
 			pod := GetTestOperatorPod(namespace, tempestName.Name)
 			Expect(pod.Annotations).To(HaveKey("k8s.v1.cni.cncf.io/networks"))
+			Expect(pod.Annotations["k8s.v1.cni.cncf.io/networks"]).To(ContainSubstring(networkAttachmentName))
 		})
 	})
 
@@ -290,6 +292,192 @@ var _ = Describe("Tempest controller", func() {
 				pod := GetTestOperatorPod(namespace, tempestName.Name)
 				ExpectPodNotHasVolume(pod, ExtraConfigVolName)
 				ExpectPodNotHasVolumeMount(pod, ExtraConfigVolName)
+			})
+		})
+	})
+
+	Context("workflow", func() {
+		When("is created", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, GetDefaultTempestWorkflowSpec()))
+			})
+
+			It("creates resources with workflow step name", func() {
+				customDataCM := th.GetConfigMap(types.NamespacedName{
+					Namespace: namespace,
+					Name:      fmt.Sprintf("%s-custom-data-s0", tempestName.Name),
+				})
+				Expect(customDataCM.Data).To(HaveKey("include.txt"))
+
+				envVarsCM := th.GetConfigMap(types.NamespacedName{
+					Namespace: namespace,
+					Name:      fmt.Sprintf("%s-env-vars-s0", tempestName.Name),
+				})
+				Expect(envVarsCM.Data).NotTo(BeEmpty())
+			})
+
+			It("creates PVC with workflow step name", func() {
+				pvc := GetTestOperatorPVC(namespace, tempestName.Name)
+				Expect(pvc.Name).To(ContainSubstring(tempestName.Name + "-0-"))
+			})
+
+			It("creates pod with workflow step name", func() {
+				pod := GetTestOperatorPod(namespace, tempestName.Name)
+				spec := GetDefaultTempestWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				stepName := workflow[0]["stepName"].(string)
+				Expect(pod.Name).To(Equal(tempestName.Name + "-s00-" + stepName))
+			})
+		})
+
+		When("overrides spec defaults", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, GetDefaultTempestWorkflowSpec()))
+			})
+
+			It("workflow tempestRun values take precedence", func() {
+				customDataCM := th.GetConfigMap(types.NamespacedName{
+					Namespace: namespace,
+					Name:      fmt.Sprintf("%s-custom-data-s0", tempestName.Name),
+				})
+				Expect(customDataCM.Data["include.txt"]).To(ContainSubstring("tempest.api.compute.*"))
+				Expect(customDataCM.Data["include.txt"]).NotTo(ContainSubstring("tempest.api.identity.v3.*"))
+			})
+
+			It("workflow tempestconfRun values take precedence", func() {
+				envVarsCM := th.GetConfigMap(types.NamespacedName{
+					Namespace: namespace,
+					Name:      fmt.Sprintf("%s-env-vars-s0", tempestName.Name),
+				})
+				Expect(envVarsCM.Data["TEMPESTCONF_NETWORK_ID"]).To(Equal("workflow-network-id"))
+				Expect(envVarsCM.Data["TEMPESTCONF_NETWORK_ID"]).NotTo(Equal("spec-network-id"))
+			})
+		})
+
+		When("inherits from spec defaults", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				spec := GetDefaultTempestWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				delete(workflow[0], "tempestRun")
+				delete(workflow[0], "tempestconfRun")
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("uses spec-level values when workflow step omits them", func() {
+				customDataCM := th.GetConfigMap(types.NamespacedName{
+					Namespace: namespace,
+					Name:      fmt.Sprintf("%s-custom-data-s0", tempestName.Name),
+				})
+				Expect(customDataCM.Data["include.txt"]).To(ContainSubstring("tempest.api.identity.v3.*"))
+
+				envVarsCM := th.GetConfigMap(types.NamespacedName{
+					Namespace: namespace,
+					Name:      fmt.Sprintf("%s-env-vars-s0", tempestName.Name),
+				})
+				Expect(envVarsCM.Data["TEMPESTCONF_NETWORK_ID"]).To(Equal("spec-network-id"))
+			})
+		})
+
+		When("with multiple workflow steps", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, GetDefaultTempestWorkflowSpec()))
+			})
+
+			It("creates second pod after first pod succeeds", func() {
+				firstPod := GetTestOperatorPod(namespace, tempestName.Name)
+				Expect(firstPod.Name).To(Equal(tempestName.Name + "-s00-first-step"))
+
+				firstPod.Status.Phase = corev1.PodSucceeded
+				Expect(k8sClient.Status().Update(ctx, firstPod)).Should(Succeed())
+
+				Eventually(func(g Gomega) {
+					podList := &corev1.PodList{}
+					listOpts := []client.ListOption{
+						client.InNamespace(namespace),
+						client.MatchingLabels{
+							"instanceName": tempestName.Name,
+							"operator":     "test-operator",
+							"workflowStep": "1",
+						},
+					}
+					g.Expect(k8sClient.List(ctx, podList, listOpts...)).Should(Succeed())
+					g.Expect(podList.Items).To(HaveLen(1))
+					g.Expect(podList.Items[0].Name).To(Equal(tempestName.Name + "-s01-second-step"))
+
+					customDataCM := th.GetConfigMap(types.NamespacedName{
+						Namespace: namespace,
+						Name:      fmt.Sprintf("%s-custom-data-s1", tempestName.Name),
+					})
+					g.Expect(customDataCM.Data["include.txt"]).To(ContainSubstring("tempest.api.network.*"))
+
+					envVarsCM := th.GetConfigMap(types.NamespacedName{
+						Namespace: namespace,
+						Name:      fmt.Sprintf("%s-env-vars-s1", tempestName.Name),
+					})
+					g.Expect(envVarsCM.Data["TEMPESTCONF_NETWORK_ID"]).To(Equal("spec-network-id"))
+				}, timeout, interval).Should(Succeed())
+			})
+		})
+
+		When("with networkAttachments", func() {
+			var networkAttachmentName = "ctlplane"
+
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				nad := th.CreateNetworkAttachmentDefinition(types.NamespacedName{
+					Namespace: namespace,
+					Name:      networkAttachmentName,
+				})
+				DeferCleanup(th.DeleteInstance, nad)
+
+				spec := GetDefaultTempestWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				workflow[0]["networkAttachments"] = []string{networkAttachmentName}
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("adds network annotation to workflow pod", func() {
+				pod := GetTestOperatorPod(namespace, tempestName.Name)
+				Expect(pod.Annotations).To(HaveKey("k8s.v1.cni.cncf.io/networks"))
+				Expect(pod.Annotations["k8s.v1.cni.cncf.io/networks"]).To(ContainSubstring(networkAttachmentName))
+			})
+		})
+
+		When("with non-existent networkAttachments", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				spec := GetDefaultTempestWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				workflow[0]["networkAttachments"] = []string{"non-existent-nad"}
+				DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+			})
+
+			It("should set NetworkAttachmentsReady to false", func() {
+				th.ExpectCondition(
+					tempestName,
+					ConditionGetterFunc(TempestConditionGetter),
+					condition.NetworkAttachmentsReadyCondition,
+					corev1.ConditionFalse,
+				)
 			})
 		})
 	})
