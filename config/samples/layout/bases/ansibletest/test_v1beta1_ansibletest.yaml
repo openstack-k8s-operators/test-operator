@@ -1,0 +1,13 @@
+---
+apiVersion: test.openstack.org/v1beta1
+kind: AnsibleTest
+metadata:
+  name: ansibletest-sample
+  namespace: openstack
+spec:
+  containerImage: ""
+  computeSSHKeySecretName: ""
+  ansibleGitRepo: https://github.com/ansible/test-playbooks
+  ansiblePlaybookPath: ./debug.yml
+  ansibleInventory: |
+    localhost ansible_connection=local ansible_python_interpreter=python3
