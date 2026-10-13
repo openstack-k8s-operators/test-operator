@@ -25,6 +25,7 @@ import (
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("AnsibleTest controller", func() {
@@ -228,6 +229,134 @@ var _ = Describe("AnsibleTest controller", func() {
 			})
 		})
 
+	})
+
+	Context("workflow", func() {
+		When("is created", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, GetDefaultAnsibleTestWorkflowSpec()))
+			})
+
+			It("creates PVC with workflow step name", func() {
+				pvc := GetTestOperatorPVC(namespace, ansibleTestName.Name)
+				Expect(pvc.Name).To(ContainSubstring(ansibleTestName.Name + "-0-"))
+			})
+
+			It("creates pod with workflow step name", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				spec := GetDefaultAnsibleTestWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				stepName := workflow[0]["stepName"].(string)
+				Expect(pod.Name).To(Equal(ansibleTestName.Name + "-s00-" + stepName))
+			})
+		})
+
+		When("overrides spec defaults", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, GetDefaultAnsibleTestWorkflowSpec()))
+			})
+
+			It("workflow values take precedence", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				spec := GetDefaultAnsibleTestWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				expectedRepo := workflow[0]["ansibleGitRepo"].(string)
+				expectedPlaybook := workflow[0]["ansiblePlaybookPath"].(string)
+
+				Expect(GetPodEnvVar(pod, "POD_ANSIBLE_GIT_REPO")).To(Equal(expectedRepo))
+				Expect(GetPodEnvVar(pod, "POD_ANSIBLE_GIT_REPO")).NotTo(Equal(spec["ansibleGitRepo"].(string)))
+
+				Expect(GetPodEnvVar(pod, "POD_ANSIBLE_PLAYBOOK")).To(Equal(expectedPlaybook))
+				Expect(GetPodEnvVar(pod, "POD_ANSIBLE_PLAYBOOK")).NotTo(Equal(spec["ansiblePlaybookPath"].(string)))
+			})
+		})
+
+		When("inherits from spec defaults", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				spec := GetDefaultAnsibleTestWorkflowSpec()
+				workflow := spec["workflow"].([]map[string]any)
+				delete(workflow[0], "ansibleGitRepo")
+				delete(workflow[0], "ansiblePlaybookPath")
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+			})
+
+			It("uses spec-level values when workflow step omits them", func() {
+				pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				spec := GetDefaultAnsibleTestWorkflowSpec()
+				expectedRepo := spec["ansibleGitRepo"].(string)
+				expectedPlaybook := spec["ansiblePlaybookPath"].(string)
+
+				Expect(GetPodEnvVar(pod, "POD_ANSIBLE_GIT_REPO")).To(Equal(expectedRepo))
+				Expect(GetPodEnvVar(pod, "POD_ANSIBLE_PLAYBOOK")).To(Equal(expectedPlaybook))
+			})
+		})
+
+		When("with multiple workflow steps", func() {
+			BeforeEach(func() {
+				openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+				Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+				testOperatorConfigMap := CreateTestOperatorConfigMap(namespace)
+				Expect(k8sClient.Create(ctx, testOperatorConfigMap)).Should(Succeed())
+
+				DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, GetDefaultAnsibleTestWorkflowSpec()))
+			})
+
+			It("creates second pod after first pod succeeds", func() {
+				firstPod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+				Expect(firstPod.Name).To(Equal(ansibleTestName.Name + "-s00-first-step"))
+
+				firstPod.Status.Phase = corev1.PodSucceeded
+				Expect(k8sClient.Status().Update(ctx, firstPod)).Should(Succeed())
+
+				Eventually(func(g Gomega) {
+					podList := &corev1.PodList{}
+					listOpts := []client.ListOption{
+						client.InNamespace(namespace),
+						client.MatchingLabels{
+							"instanceName": ansibleTestName.Name,
+							"operator":     "test-operator",
+							"workflowStep": "1",
+						},
+					}
+					g.Expect(k8sClient.List(ctx, podList, listOpts...)).Should(Succeed())
+					g.Expect(podList.Items).To(HaveLen(1))
+					secondPod := podList.Items[0]
+					g.Expect(secondPod.Name).To(Equal(ansibleTestName.Name + "-s01-second-step"))
+
+					spec := GetDefaultAnsibleTestWorkflowSpec()
+					workflow := spec["workflow"].([]map[string]any)
+					expectedRepo := workflow[1]["ansibleGitRepo"].(string)
+					expectedPlaybook := workflow[1]["ansiblePlaybookPath"].(string)
+
+					g.Expect(GetPodEnvVar(&secondPod, "POD_ANSIBLE_GIT_REPO")).To(Equal(expectedRepo))
+					g.Expect(GetPodEnvVar(&secondPod, "POD_ANSIBLE_PLAYBOOK")).To(Equal(expectedPlaybook))
+				}, timeout, interval).Should(Succeed())
+			})
+		})
 	})
 
 })
