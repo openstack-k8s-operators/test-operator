@@ -118,7 +118,6 @@ func (r *AnsibleTestReconciler) buildAnsibleTestPod(
 		logsPVCName,
 		mountCerts,
 		envVars,
-		workflowStepIndex,
 		containerImage,
 	), nil
 }
