@@ -52,7 +52,6 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 	// Common validations
 	allErrs = ValidatePodName(allErrs, r.Name, r.Kind)
 	allWarnings = CheckPrivilegedWarning(allWarnings, r.Spec.Privileged, r.Kind)
-	allWarnings = CheckExtraConfigmapsDeprecation(allWarnings, r.Spec.ExtraConfigmapsMounts)
 
 	// Special warning if privileged mode is off
 	if !r.Spec.Privileged {
@@ -64,7 +63,6 @@ func (r *Tobiko) ValidateCreate() (admission.Warnings, error) {
 		allErrs = ValidateDebugWorkflow(allErrs, r.Spec.Debug, r.Kind)
 		allErrs = ValidateWorkflowPodNames(allErrs, r.Name, r.Kind, r.Spec.Workflow)
 		allWarnings = CheckSELinuxWarning(allWarnings, r.Spec.Privileged, r.Spec.SELinuxLevel, r.Kind)
-		allWarnings = CheckWorkflowExtraConfigmapsDeprecation(allWarnings, r.Spec.Workflow)
 	}
 
 	if err := BuildValidationError(r.Kind, r.GetName(), allErrs); err != nil {

@@ -22,27 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// WARNING: This parameter will be deprecated!
-// Please use ExtraMounts parameter instead!
-type ExtraConfigmapsMounts struct {
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MaxLength:=253
-	// The name of an existing config map for mounting.
-	Name string `json:"name"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Required
-	// Path within the container at which the volume should be mounted.
-	MountPath string `json:"mountPath"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:optional
-	// +kubebuilder:default:=""
-	// Config map subpath for mounting, defaults to configmap root.
-	SubPath string `json:"subPath"`
-}
-
 type CommonOptions struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:optional
@@ -81,13 +60,6 @@ type CommonOptions struct {
 	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// Extra configmaps for mounting inside the pod
-	// WARNING: This parameter will be deprecated!
-	// Please use ExtraMounts parameter instead!
-	ExtraConfigmapsMounts []ExtraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional
@@ -177,13 +149,6 @@ type WorkflowCommonOptions struct {
 	// +kubebuilder:default:=0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:number"}
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +kubebuilder:validation:Optional
-	// Extra configmaps for mounting inside the pod
-	// WARNING: This parameter will be deprecated!
-	// Please use ExtraMounts parameter instead!
-	ExtraConfigmapsMounts *[]ExtraConfigmapsMounts `json:"extraConfigmapsMounts,omitempty"`
 
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +kubebuilder:validation:Optional

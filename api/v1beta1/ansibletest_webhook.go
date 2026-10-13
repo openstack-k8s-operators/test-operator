@@ -51,13 +51,11 @@ func (r *AnsibleTest) ValidateCreate() (admission.Warnings, error) {
 	// Common validations
 	allErrs = ValidatePodName(allErrs, r.Name, r.Kind)
 	allWarnings = CheckPrivilegedWarning(allWarnings, r.Spec.Privileged, r.Kind)
-	allWarnings = CheckExtraConfigmapsDeprecation(allWarnings, r.Spec.ExtraConfigmapsMounts)
 
 	// Workflow-specific validations
 	if len(r.Spec.Workflow) > 0 {
 		allErrs = ValidateWorkflowPodNames(allErrs, r.Name, r.Kind, r.Spec.Workflow)
 		allWarnings = CheckSELinuxWarning(allWarnings, r.Spec.Privileged, r.Spec.SELinuxLevel, r.Kind)
-		allWarnings = CheckWorkflowExtraConfigmapsDeprecation(allWarnings, r.Spec.Workflow)
 	}
 
 	if err := BuildValidationError(r.Kind, r.GetName(), allErrs); err != nil {

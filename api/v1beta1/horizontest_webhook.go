@@ -47,7 +47,6 @@ func (r *HorizonTest) ValidateCreate() (admission.Warnings, error) {
 	var allWarnings admission.Warnings
 
 	allWarnings = CheckPrivilegedWarning(allWarnings, r.Spec.Privileged, r.Kind)
-	allWarnings = CheckExtraConfigmapsDeprecation(allWarnings, r.Spec.ExtraConfigmapsMounts)
 
 	return allWarnings, nil
 }

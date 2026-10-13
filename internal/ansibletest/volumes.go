@@ -40,14 +40,6 @@ func GetVolumes(
 	}
 
 	volumes = util.AppendExtraMountsVolumes(volumes, instance.Spec.ExtraMounts, svc)
-	volumes = util.AppendExtraConfigmapsVolumes(volumes, instance.Spec.ExtraConfigmapsMounts, util.PublicInfoMode)
-
-	if len(instance.Spec.Workflow) > 0 {
-		cmMounts := instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts
-		if cmMounts != nil {
-			volumes = util.AppendExtraConfigmapsVolumes(volumes, *cmMounts, util.PublicInfoMode)
-		}
-	}
 
 	return volumes
 }
@@ -86,14 +78,6 @@ func GetVolumeMounts(
 	}
 
 	volumeMounts = util.AppendExtraMountsVolumeMounts(volumeMounts, instance.Spec.ExtraMounts, svc)
-	volumeMounts = util.AppendExtraConfigmapsVolumeMounts(volumeMounts, instance.Spec.ExtraConfigmapsMounts)
-
-	if len(instance.Spec.Workflow) > 0 {
-		cmMounts := instance.Spec.Workflow[externalWorkflowCounter].ExtraConfigmapsMounts
-		if cmMounts != nil {
-			volumeMounts = util.AppendExtraConfigmapsVolumeMounts(volumeMounts, *cmMounts)
-		}
-	}
 
 	return volumeMounts
 }
