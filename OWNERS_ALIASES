@@ -1,17 +1,26 @@
 # See the OWNERS_ALIASES docs: https://git.k8s.io/community/contributors/guide/owners.md#owners_aliases
 
 aliases:
+  ciops-reviewers:
+  - belolipa
+  - dsariel
+  - hgoelredhat
+  - imatza-rh
+  - jirimacku
+  - pderenda
+  - sauragar
+  - srac0
+  - tkorol
   openstack-approvers:
   - abays
   - dprince
   - stuggi
   test-approvers:
-  - lpiwowar
   - adrianfusco
   - arxcruz
   - kstrenkova
   test-reviewers:
   - evallesp
+  - lpiwowar
   - rebtoor
   - Valkyrie00
-  - imatza-rh
