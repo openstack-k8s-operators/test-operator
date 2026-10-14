@@ -18,7 +18,6 @@ func GetVolumes(
 	logsPVCName string,
 	mountCerts bool,
 	svc []storage.PropagationType,
-	externalWorkflowCounter int,
 ) []corev1.Volume {
 
 	volumes := []corev1.Volume{
@@ -49,7 +48,6 @@ func GetVolumeMounts(
 	instance *testv1beta1.AnsibleTest,
 	mountCerts bool,
 	svc []storage.PropagationType,
-	externalWorkflowCounter int,
 ) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/ansible", false),

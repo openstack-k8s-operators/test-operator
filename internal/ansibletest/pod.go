@@ -17,7 +17,6 @@ func Pod(
 	logsPVCName string,
 	mountCerts bool,
 	envVars map[string]env.Setter,
-	externalWorkflowCounter int,
 	containerImage string,
 ) *corev1.Pod {
 	return util.BuildTestPod(
@@ -37,7 +36,7 @@ func Pod(
 		PodRunAsUser,
 		instance.Spec.SELinuxLevel,
 		instance.Spec.Tolerations,
-		GetVolumeMounts(instance, mountCerts, AnsibleTestPropagation, externalWorkflowCounter),
-		GetVolumes(instance, logsPVCName, mountCerts, AnsibleTestPropagation, externalWorkflowCounter),
+		GetVolumeMounts(instance, mountCerts, AnsibleTestPropagation),
+		GetVolumes(instance, logsPVCName, mountCerts, AnsibleTestPropagation),
 	)
 }
