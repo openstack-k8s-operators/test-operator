@@ -1,9 +1,10 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 approvers:
-  - test-approvers
   - openstack-approvers
+  - test-approvers
 
 reviewers:
+  - ciops-reviewers
+  - openstack-approvers
   - test-approvers
   - test-reviewers
-  - openstack-approvers
