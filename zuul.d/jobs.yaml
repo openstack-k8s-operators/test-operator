@@ -30,6 +30,7 @@
 
       # Test operator
       cifmw_test_operator_timeout: 7200
+      cifmw_test_operator_privileged: true
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
@@ -263,6 +264,7 @@
       OpenStackVersion fields).
     vars:
       cifmw_test_operator_timeout: 7200
+      cifmw_test_operator_privileged: true
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
