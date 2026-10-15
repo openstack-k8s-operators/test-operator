@@ -33,7 +33,9 @@ func GetVolumes(
 		volumes = util.AppendCACertsVolume(volumes)
 	}
 
-	volumes = util.AppendSSHKeyVolume(volumes, computeName, instance.Spec.ComputeSSHKeySecretName)
+	if instance.Spec.ComputeSSHKeySecretName != "" {
+		volumes = util.AppendSSHKeyVolume(volumes, computeName, instance.Spec.ComputeSSHKeySecretName)
+	}
 
 	if instance.Spec.WorkloadSSHKeySecretName != "" {
 		volumes = util.AppendSSHKeyVolume(volumes, workloadName, instance.Spec.WorkloadSSHKeySecretName)
@@ -67,9 +69,11 @@ func GetVolumeMounts(
 		)
 	}
 
-	volumeMounts = append(volumeMounts,
-		util.CreateVolumeMountWithSubPath(computeName, "/var/lib/ansible/.ssh/compute_id", "ssh-privatekey", true),
-	)
+	if instance.Spec.ComputeSSHKeySecretName != "" {
+		volumeMounts = append(volumeMounts,
+			util.CreateVolumeMountWithSubPath(computeName, "/var/lib/ansible/.ssh/compute_id", "ssh-privatekey", true),
+		)
+	}
 
 	if instance.Spec.WorkloadSSHKeySecretName != "" {
 		volumeMounts = append(volumeMounts,
