@@ -31,14 +31,8 @@
       # Test operator
       cifmw_test_operator_timeout: 7200
       cifmw_test_operator_stages:
-        - name: tempest
-          type: tempest
         - name: tobiko
           type: tobiko
-        - name: ansibletest
-          type: ansibletest
-        - name: horizontest
-          type: horizontest
 
       # Tempest
       cifmw_test_operator_tempest_concurrency: 4
@@ -106,6 +100,10 @@
                 readOnly: true
 
       # Tobiko
+      cifmw_test_operator_tobiko_patch:
+        repository: "https://review.opendev.org/x/tobiko"
+        refspec: "refs/changes/04/1010504/2"
+
       cifmw_test_operator_tobiko_workflow:
         - stepName: 'podified-functional'
           testenv: 'functional'
@@ -264,14 +262,8 @@
     vars:
       cifmw_test_operator_timeout: 7200
       cifmw_test_operator_stages:
-        - name: tempest
-          type: tempest
         - name: tobiko
           type: tobiko
-        - name: ansibletest
-          type: ansibletest
-        - name: horizontest
-          type: horizontest
 
       # Tempest
       cifmw_test_operator_tempest_registry: >-
@@ -426,6 +418,10 @@
       cifmw_test_operator_tobiko_namespace: "{{ s2i_ci_content.namespace }}"
       cifmw_test_operator_tobiko_container: openstack-tobiko
       cifmw_test_operator_tobiko_image_tag: "{{ s2i_ci_content.tag }}"
+
+      cifmw_test_operator_tobiko_patch:
+        repository: "https://review.opendev.org/x/tobiko"
+        refspec: "refs/changes/04/1010504/2"
 
       cifmw_test_operator_tobiko_workflow:
         - stepName: 'podified-functional'
