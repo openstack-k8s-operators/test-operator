@@ -1,0 +1,9 @@
+---
+apiVersion: test.openstack.org/v1beta1
+kind: Tobiko
+metadata:
+  name: tobiko-sample
+  namespace: openstack
+spec:
+  containerImage: ""
+  testenv: py3

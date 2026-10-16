@@ -228,10 +228,9 @@
     parent: test-operator-kuttl
     description: |
       KUTTL test using s2i-built test-operator container images.
-      Runs the tempest-s2i and horizontest-s2i suites: pins each CR
-      to its s2i image and asserts the test pod is using that image.
-      Named without a CR-type suffix so Tobiko and AnsibleTest
-      suites can be added later.
+      Runs the tempest-s2i, tobiko-s2i, ansibletest-s2i and
+      horizontest-s2i suites: pins each CR to its s2i image and asserts
+      the test pod is using that image.
 
       The s2i content provider deploys its own plain Docker registry on
       the builder node. CRC is configured to trust it via
@@ -249,6 +248,10 @@
         KUTTL_ARGS: "--test .*-s2i$"
         S2I_TEMPEST_IMAGE: >-
           {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-tempest:{{ s2i_ci_content.tag }}
+        S2I_TOBIKO_IMAGE: >-
+          {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-tobiko:{{ s2i_ci_content.tag }}
+        S2I_ANSIBLETEST_IMAGE: >-
+          {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-ansible-test:{{ s2i_ci_content.tag }}
         S2I_HORIZONTEST_IMAGE: >-
           {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-horizontest:{{ s2i_ci_content.tag }}
 
