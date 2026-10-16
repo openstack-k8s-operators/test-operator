@@ -246,7 +246,7 @@
         - "{{ s2i_content_provider_registry_ip }}:5001"
       cifmw_kuttl_tests_env_vars:
         PV_NUM: 20
-        KUTTL_ARGS: "--test tempest-s2i --test horizontest-s2i"
+        KUTTL_ARGS: "--test .*-s2i$"
         S2I_TEMPEST_IMAGE: >-
           {{ s2i_content_provider_registry_ip }}:5001/{{ s2i_ci_content.namespace }}/openstack-tempest:{{ s2i_ci_content.tag }}
         S2I_HORIZONTEST_IMAGE: >-

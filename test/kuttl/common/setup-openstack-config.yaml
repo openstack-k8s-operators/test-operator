@@ -1,0 +1,27 @@
+# Dummy OpenStack configuration for KUTTL tests.
+# These values satisfy CR validation but are not real credentials.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openstack-config
+  namespace: test-operator-kuttl-tests
+data:
+  clouds.yaml: |
+    clouds:
+      default:
+        auth:
+          auth_url: http://dummy-keystone:5000/v3
+          username: dummy-user
+          project_name: dummy-project
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: openstack-config-secret
+  namespace: test-operator-kuttl-tests
+stringData:
+  secure.yaml: |
+    clouds:
+      default:
+        auth:
+          password: 'dummy-password'
