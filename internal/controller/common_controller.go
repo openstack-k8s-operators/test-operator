@@ -25,7 +25,10 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
+	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
+
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,8 +39,10 @@ import (
 type TestResource interface {
 	client.Object
 	GetConditions() *condition.Conditions
+	IsPrivileged() bool
 	GetStorageClass() string
 	SetObservedGeneration()
+	common_rbac.Reconciler
 }
 
 // TestResourceConfig defines resource-specific configuration and behavior
@@ -127,10 +132,20 @@ func CommonReconcile[T TestResource](
 			Log.Info(fmt.Sprintf("panic during reconcile %v\n", r))
 			panic(r)
 		}
-		condition.RestoreLastTransitionTimes(conditions, savedConditions)
-		if conditions.IsUnknown(condition.ReadyCondition) {
-			conditions.Set(conditions.Mirror(condition.ReadyCondition))
+		// update the Ready condition based on the sub conditions
+		if instance.GetConditions().AllSubConditionIsTrue() {
+			instance.GetConditions().MarkTrue(
+				condition.ReadyCondition, condition.ReadyMessage)
+		} else {
+			// something is not ready so reset the Ready condition
+			instance.GetConditions().MarkUnknown(
+				condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage)
+			// and recalculate it based on the state of the rest of the conditions
+			instance.GetConditions().Set(
+				instance.GetConditions().Mirror(condition.ReadyCondition))
 		}
+		condition.RestoreLastTransitionTimes(instance.GetConditions(), savedConditions)
+
 		err := helper.PatchInstance(ctx, instance)
 		if err != nil {
 			_err = err
@@ -201,10 +216,58 @@ func CommonReconcile[T TestResource](
 		parallel = config.GetParallel(instance)
 	}
 
+	//
+	// Service account, role, binding
+	//
+	sccResourceName := "nonroot-v2"
+	if instance.IsPrivileged() && nextAction != EndTesting {
+		sccResourceName = "privileged"
+	}
+	// Privileged SCC use stays with the operator; other pods can select this ServiceAccount.
+	rbacRules := []rbacv1.PolicyRule{
+		{
+			APIGroups:     []string{"security.openshift.io"},
+			ResourceNames: []string{"nonroot-v2"},
+			Resources:     []string{"securitycontextconstraints"},
+			Verbs:         []string{"use"},
+		},
+	}
+	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
+	if err != nil {
+		return rbacResult, err
+	} else if (rbacResult != ctrl.Result{}) {
+		return rbacResult, nil
+	}
+
 	pvcIndex := 0
 	// Create multiple PVCs for parallel execution
 	if parallel && config.SupportsWorkflow && workflowStepIndex < workflowLength {
 		pvcIndex = workflowStepIndex
+	}
+
+	if nextAction == EndTesting {
+		// Revalidate completed tests so InputReady can recover when inputs return.
+		// Release the lock and mark DeploymentReady first because validation can
+		// return early; another test may already own the lock on a later reconcile.
+		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased && err != nil {
+			Log.Info(fmt.Sprintf(InfoCanNotReleaseLock, testOperatorLockName))
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+		}
+		conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
+	}
+
+	// Validate inputs on each reconcile, including after testing completes
+	if config.ValidateInputs != nil {
+		if err := config.ValidateInputs(ctx, instance); err != nil {
+			conditions.Set(condition.FalseCondition(
+				condition.InputReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityError,
+				condition.InputReadyErrorMessage,
+				err.Error()))
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+		}
+		conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 	}
 
 	switch nextAction {
@@ -217,15 +280,6 @@ func CommonReconcile[T TestResource](
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
 	case EndTesting:
-		// All pods created by the instance were completed. Release the lock
-		// so that other instances can spawn their pods.
-		if lockReleased, err := r.ReleaseLock(ctx, instance); !lockReleased {
-			Log.Info(fmt.Sprintf(InfoCanNotReleaseLock, testOperatorLockName))
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-		}
-
-		conditions.MarkTrue(condition.DeploymentReadyCondition, condition.DeploymentReadyMessage)
-
 		if conditions.AllSubConditionIsTrue() {
 			conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
 		}
@@ -265,20 +319,6 @@ func CommonReconcile[T TestResource](
 		operatorNameLabel:  "test-operator",
 	}
 
-	// Validate inputs
-	if config.ValidateInputs != nil {
-		if err := config.ValidateInputs(ctx, instance); err != nil {
-			conditions.Set(condition.FalseCondition(
-				condition.InputReadyCondition,
-				condition.ErrorReason,
-				condition.SeverityError,
-				condition.InputReadyErrorMessage,
-				err.Error()))
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-		}
-		conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
-	}
-
 	// Create PersistentVolumeClaim
 	ctrlResult, err = r.EnsureLogsPVCExists(
 		ctx,
@@ -295,6 +335,7 @@ func CommonReconcile[T TestResource](
 	}
 
 	serviceAnnotations := make(map[string]string)
+	serviceAnnotations["openshift.io/required-scc"] = sccResourceName
 	serviceAnnotations["test.openstack.org/config-hash"] = configHash
 
 	// Generate ConfigMaps containing test configuration

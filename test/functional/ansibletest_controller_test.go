@@ -24,6 +24,8 @@ import (
 	//revive:disable-next-line:dot-imports
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -71,7 +73,7 @@ var _ = Describe("AnsibleTest controller", func() {
 		It("initializes the status fields", func() {
 			Eventually(func(g Gomega) {
 				ansibleTest := GetAnsibleTest(ansibleTestName)
-				g.Expect(ansibleTest.Status.Conditions).To(HaveLen(3))
+				g.Expect(ansibleTest.Status.Conditions).To(HaveLen(6))
 				g.Expect(ansibleTest.Status.Hash).To(BeEmpty())
 			}, timeout*2, interval).Should(Succeed())
 		})
@@ -118,11 +120,231 @@ var _ = Describe("AnsibleTest controller", func() {
 			Expect(pvc.Spec.AccessModes).To(ContainElement(corev1.ReadWriteOnce))
 		})
 
+		It("should create RBAC resources for AnsibleTest", func() {
+			saName := types.NamespacedName{
+				Name:      "ansibletest-" + ansibleTestName.Name,
+				Namespace: namespace,
+			}
+
+			serviceAccount := th.GetServiceAccount(saName)
+			Expect(serviceAccount.Name).To(Equal(saName.Name))
+
+			roleName := types.NamespacedName{
+				Name:      saName.Name + "-role",
+				Namespace: namespace,
+			}
+			role := th.GetRole(roleName)
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+
+			binding := th.GetRoleBinding(types.NamespacedName{
+				Name:      saName.Name + "-rolebinding",
+				Namespace: namespace,
+			})
+			Expect(binding.RoleRef).To(Equal(rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     roleName.Name,
+			}))
+			Expect(binding.Subjects).To(Equal([]rbacv1.Subject{{
+				Kind:      "ServiceAccount",
+				Name:      saName.Name,
+				Namespace: namespace,
+			}}))
+			ownerUID := GetAnsibleTest(ansibleTestName).UID
+			for _, resource := range []client.Object{serviceAccount, role, binding} {
+				Expect(resource.GetOwnerReferences()).To(HaveLen(1))
+				Expect(resource.GetOwnerReferences()[0].UID).To(Equal(ownerUID))
+			}
+
+			pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+			Expect(pod.Spec.ServiceAccountName).To(Equal(saName.Name))
+
+			for _, conditionType := range []condition.Type{
+				condition.ServiceAccountReadyCondition,
+				condition.RoleReadyCondition,
+				condition.RoleBindingReadyCondition,
+			} {
+				th.ExpectCondition(
+					ansibleTestName,
+					ConditionGetterFunc(AnsibleTestConditionGetter),
+					conditionType,
+					corev1.ConditionTrue,
+				)
+			}
+		})
+
 		It("should create a pod", func() {
 			pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
 			Expect(pod.Name).ToNot(BeEmpty())
 		})
+
+		It("recovers InputReady and Ready after inputs return following pod completion", func() {
+			pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+			configMap := &corev1.ConfigMap{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: OpenStackConfigMapName, Namespace: namespace}, configMap)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, configMap)).To(Succeed())
+
+			pod.Status.Phase = corev1.PodRunning
+			Expect(k8sClient.Status().Update(ctx, pod)).To(Succeed())
+			Eventually(func(g Gomega) {
+				conditions := GetAnsibleTest(ansibleTestName).Status.Conditions
+				g.Expect(conditions.IsFalse(condition.InputReadyCondition)).To(BeTrue())
+				g.Expect(conditions.IsFalse(condition.ReadyCondition)).To(BeTrue())
+			}, timeout*10, interval).Should(Succeed())
+
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), pod)).To(Succeed())
+			pod.Status.Phase = corev1.PodSucceeded
+			Expect(k8sClient.Status().Update(ctx, pod)).To(Succeed())
+			Eventually(func(g Gomega) {
+				conditions := GetAnsibleTest(ansibleTestName).Status.Conditions
+				g.Expect(conditions.IsTrue(condition.DeploymentReadyCondition)).To(BeTrue())
+				g.Expect(conditions.IsFalse(condition.InputReadyCondition)).To(BeTrue())
+				g.Expect(conditions.IsFalse(condition.ReadyCondition)).To(BeTrue())
+			}, timeout*10, interval).Should(Succeed())
+
+			Expect(k8sClient.Create(ctx, &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-operator-lock", Namespace: namespace},
+				Data:       map[string]string{"owner": "another-test"},
+			})).To(Succeed())
+			configMap, _ = CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, configMap)).To(Succeed())
+			instance := GetAnsibleTest(ansibleTestName)
+			before := instance.DeepCopy()
+			instance.Annotations = map[string]string{"test.openstack.org/input-test": "recovered"}
+			Expect(k8sClient.Patch(ctx, instance, client.MergeFrom(before))).To(Succeed())
+			Eventually(func(g Gomega) {
+				conditions := GetAnsibleTest(ansibleTestName).Status.Conditions
+				g.Expect(conditions.IsTrue(condition.InputReadyCondition)).To(BeTrue())
+				g.Expect(conditions.IsTrue(condition.ReadyCondition)).To(BeTrue())
+			}, timeout*10, interval).Should(Succeed())
+		})
+
+		// AnsibleTest has no network attachment condition, so this test can focus on RBAC and Ready.
+		It("recovers Ready after a Role ownership error", func() {
+			pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+			pod.Status.Phase = corev1.PodSucceeded
+			Expect(k8sClient.Status().Update(ctx, pod)).Should(Succeed())
+			Eventually(func() bool {
+				return GetAnsibleTest(ansibleTestName).Status.Conditions.IsTrue(condition.ReadyCondition)
+			}, timeout*10, interval).Should(BeTrue())
+
+			roleName := types.NamespacedName{Name: "ansibletest-" + ansibleTestName.Name + "-role", Namespace: namespace}
+			role := th.GetRole(roleName)
+			owner := role.OwnerReferences[0]
+			configMap := CreateTestOperatorConfigMap(namespace)
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)).Should(Succeed())
+			role.OwnerReferences[0].APIVersion = "v1"
+			role.OwnerReferences[0].Kind = "ConfigMap"
+			role.OwnerReferences[0].Name = configMap.Name
+			role.OwnerReferences[0].UID = configMap.UID
+			Expect(k8sClient.Update(ctx, role)).Should(Succeed())
+			instance := GetAnsibleTest(ansibleTestName)
+			before := instance.DeepCopy()
+			instance.Annotations = map[string]string{"test.openstack.org/rbac-test": "failure"}
+			Expect(k8sClient.Patch(ctx, instance, client.MergeFrom(before))).Should(Succeed())
+			Eventually(func(g Gomega) {
+				conditions := GetAnsibleTest(ansibleTestName).Status.Conditions
+				g.Expect(conditions.IsFalse(condition.RoleReadyCondition)).To(BeTrue(), "conditions: %v", conditions)
+				g.Expect(conditions.IsFalse(condition.ReadyCondition)).To(BeTrue(), "conditions: %v", conditions)
+			}, timeout*10, interval).Should(Succeed())
+
+			role = th.GetRole(roleName)
+			role.OwnerReferences[0] = owner
+			Expect(k8sClient.Update(ctx, role)).Should(Succeed())
+			instance = GetAnsibleTest(ansibleTestName)
+			before = instance.DeepCopy()
+			instance.Annotations["test.openstack.org/rbac-test"] = "recovery"
+			Expect(k8sClient.Patch(ctx, instance, client.MergeFrom(before))).Should(Succeed())
+			Eventually(func(g Gomega) {
+				conditions := GetAnsibleTest(ansibleTestName).Status.Conditions
+				g.Expect(conditions.IsTrue(condition.RoleReadyCondition)).To(BeTrue(), "conditions: %v", conditions)
+				g.Expect(conditions.IsTrue(condition.ReadyCondition)).To(BeTrue(), "conditions: %v", conditions)
+			}, timeout*10, interval).Should(Succeed())
+		})
 	})
+
+	DescribeTable("Pod SCC request leaves its service account on nonroot-v2",
+		func(privileged bool, expectedSCC string, finalPhase corev1.PodPhase) {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, CreateTestOperatorConfigMap(namespace))).Should(Succeed())
+
+			spec := GetDefaultAnsibleTestSpec()
+			spec["privileged"] = privileged
+			DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+
+			roleName := types.NamespacedName{
+				Name:      "ansibletest-" + ansibleTestName.Name + "-role",
+				Namespace: namespace,
+			}
+			role := th.GetRole(roleName)
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+
+			pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+			Expect(pod.Spec.ServiceAccountName).To(Equal("ansibletest-" + ansibleTestName.Name))
+			Expect(pod.Annotations).To(HaveKeyWithValue("openshift.io/required-scc", expectedSCC))
+
+			if finalPhase != "" {
+				pod.Status.Phase = finalPhase
+				Expect(k8sClient.Status().Update(ctx, pod)).Should(Succeed())
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, roleName, role)).Should(Succeed())
+					g.Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+						APIGroups:     []string{"security.openshift.io"},
+						ResourceNames: []string{"nonroot-v2"},
+						Resources:     []string{"securitycontextconstraints"},
+						Verbs:         []string{"use"},
+					}}))
+				}, timeout*10, interval).Should(Succeed())
+				th.GetServiceAccount(types.NamespacedName{Name: pod.Spec.ServiceAccountName, Namespace: namespace})
+				th.GetRoleBinding(types.NamespacedName{Name: pod.Spec.ServiceAccountName + "-rolebinding", Namespace: namespace})
+				Eventually(func() bool {
+					return GetAnsibleTest(ansibleTestName).Status.Conditions.IsTrue(condition.DeploymentReadyCondition)
+				}, timeout*10, interval).Should(BeTrue())
+			}
+		},
+		Entry("without privileged access", false, "nonroot-v2", corev1.PodPhase("")),
+		Entry("after a successful privileged Pod", true, "privileged", corev1.PodSucceeded),
+		Entry("after a failed privileged Pod", true, "privileged", corev1.PodFailed),
+	)
+
+	DescribeTable("workflow privileged setting selects the SCC",
+		func(basePrivileged, stepPrivileged bool, expectedSCC string) {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, CreateTestOperatorConfigMap(namespace))).Should(Succeed())
+
+			spec := GetDefaultAnsibleTestWorkflowSpec()
+			spec["privileged"] = basePrivileged
+			spec["workflow"].([]map[string]any)[0]["privileged"] = stepPrivileged
+			DeferCleanup(th.DeleteInstance, CreateAnsibleTest(ansibleTestName, spec))
+
+			role := th.GetRole(types.NamespacedName{Name: "ansibletest-" + ansibleTestName.Name + "-role", Namespace: namespace})
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+			pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+			Expect(pod.Annotations).To(HaveKeyWithValue("openshift.io/required-scc", expectedSCC))
+			Expect(*pod.Spec.Containers[0].SecurityContext.AllowPrivilegeEscalation).To(Equal(stepPrivileged))
+		},
+		Entry("enables privileged access", false, true, "privileged"),
+		Entry("disables privileged access", true, false, "nonroot-v2"),
+	)
 
 	Context("extraMounts", func() {
 		BeforeEach(func() {
