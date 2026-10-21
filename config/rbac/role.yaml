@@ -10,6 +10,7 @@ rules:
   - configmaps
   - persistentvolumeclaims
   - pods
+  - serviceaccounts
   verbs:
   - create
   - delete
@@ -33,6 +34,18 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - security.openshift.io

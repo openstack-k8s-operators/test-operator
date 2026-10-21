@@ -251,6 +251,11 @@ func (instance *Tobiko) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
 }
 
+// IsPrivileged - return if the Privileged mode is enabled
+func (instance *Tobiko) IsPrivileged() bool {
+	return instance.Spec.Privileged
+}
+
 // GetStorageClass - return the storage class name
 func (instance *Tobiko) GetStorageClass() string {
 	return instance.Spec.StorageClass
@@ -259,4 +264,19 @@ func (instance *Tobiko) GetStorageClass() string {
 // SetObservedGeneration - set the observed generation to the current generation
 func (instance *Tobiko) SetObservedGeneration() {
 	instance.Status.ObservedGeneration = instance.Generation
+}
+
+// RbacConditionsSet - set the conditions for the rbac object
+func (instance *Tobiko) RbacConditionsSet(c *condition.Condition) {
+	instance.Status.Conditions.Set(c)
+}
+
+// RbacNamespace - return the namespace
+func (instance *Tobiko) RbacNamespace() string {
+	return instance.Namespace
+}
+
+// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
+func (instance *Tobiko) RbacResourceName() string {
+	return "tobiko-" + instance.Name
 }

@@ -40,6 +40,8 @@
         - name: horizontest
           type: horizontest
 
+      cifmw_test_operator_selinux_level: ""
+
       # Tempest
       cifmw_test_operator_tempest_concurrency: 4
       cifmw_test_operator_tempest_cleanup: true
@@ -114,6 +116,7 @@
         - stepName: 'sanity'
           testenv: 'sanity'
           privileged: true
+          SELinuxLevel: "s0:c478,c978"
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
@@ -272,6 +275,8 @@
           type: ansibletest
         - name: horizontest
           type: horizontest
+
+      cifmw_test_operator_selinux_level: ""
 
       # Tempest
       cifmw_test_operator_tempest_registry: >-
@@ -435,6 +440,7 @@
         - stepName: 'sanity'
           testenv: 'sanity'
           privileged: true
+          SELinuxLevel: "s0:c478,c978"
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
