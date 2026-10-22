@@ -81,6 +81,7 @@ func BuildTestPod(
 	namespace string,
 	nodeSelector map[string]string,
 	podName string,
+	serviceAccountName string,
 	privileged bool,
 	resources corev1.ResourceRequirements,
 	runAsGroup int64,
@@ -100,6 +101,7 @@ func BuildTestPod(
 			Annotations: annotations,
 		},
 		Spec: corev1.PodSpec{
+			ServiceAccountName:           serviceAccountName,
 			AutomountServiceAccountToken: ptr.To(false),
 			RestartPolicy:                corev1.RestartPolicyNever,
 			Tolerations:                  tolerations,

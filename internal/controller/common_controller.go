@@ -25,7 +25,10 @@ import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
+	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
+
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,8 +39,10 @@ import (
 type TestResource interface {
 	client.Object
 	GetConditions() *condition.Conditions
+	IsPrivileged() bool
 	GetStorageClass() string
 	SetObservedGeneration()
+	common_rbac.Reconciler
 }
 
 // TestResourceConfig defines resource-specific configuration and behavior
@@ -201,6 +206,22 @@ func CommonReconcile[T TestResource](
 		parallel = config.GetParallel(instance)
 	}
 
+	// Privileged SCC use stays with the operator; other pods can select this ServiceAccount.
+	rbacRules := []rbacv1.PolicyRule{
+		{
+			APIGroups:     []string{"security.openshift.io"},
+			ResourceNames: []string{"nonroot-v2"},
+			Resources:     []string{"securitycontextconstraints"},
+			Verbs:         []string{"use"},
+		},
+	}
+	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
+	if err != nil {
+		return rbacResult, err
+	} else if (rbacResult != ctrl.Result{}) {
+		return rbacResult, nil
+	}
+
 	pvcIndex := 0
 	// Create multiple PVCs for parallel execution
 	if parallel && config.SupportsWorkflow && workflowStepIndex < workflowLength {
@@ -295,6 +316,11 @@ func CommonReconcile[T TestResource](
 	}
 
 	serviceAnnotations := make(map[string]string)
+	sccResourceName := "nonroot-v2"
+	if instance.IsPrivileged() {
+		sccResourceName = "privileged"
+	}
+	serviceAnnotations["openshift.io/required-scc"] = sccResourceName
 	serviceAnnotations["test.openstack.org/config-hash"] = configHash
 
 	// Generate ConfigMaps containing test configuration
