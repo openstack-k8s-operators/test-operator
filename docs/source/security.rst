@@ -26,6 +26,20 @@ Every test pod runs with the following restrictions:
 * **SELinux level**: Not set by default. Only needed for privileged
   workflows that write to shared PVCs.
 
+Service Account and SCC
+=======================
+
+Each test CR has its own ServiceAccount, Role, and RoleBinding. New test pods
+use that ServiceAccount, not the operator's, and disable automatic API token
+mounting. Its Role grants only use of the :code:`nonroot-v2` SCC.
+
+The operator requests :code:`nonroot-v2` by default and :code:`privileged` with
+:code:`privileged: true`. Workflow steps can override this setting. For
+privileged pods, OpenShift uses the operator's SCC permission at admission;
+the operator's API credentials are not mounted into the pod. Deleting the CR
+removes its owned RBAC resources. Pods that already exist when the operator is
+upgraded keep their original ServiceAccount until they finish or are recreated.
+
 When to Use Privileged Mode
 ===========================
 
