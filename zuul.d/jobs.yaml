@@ -114,6 +114,7 @@
         - stepName: 'sanity'
           testenv: 'sanity'
           privileged: true
+          SELinuxLevel: ''
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
@@ -435,6 +436,7 @@
         - stepName: 'sanity'
           testenv: 'sanity'
           privileged: true
+          SELinuxLevel: ''
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
