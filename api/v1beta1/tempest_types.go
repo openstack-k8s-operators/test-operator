@@ -513,6 +513,11 @@ func (instance *Tempest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
 }
 
+// IsPrivileged - return if the Privileged mode is enabled
+func (instance *Tempest) IsPrivileged() bool {
+	return instance.Spec.Privileged
+}
+
 // GetStorageClass - return the storage class name
 func (instance *Tempest) GetStorageClass() string {
 	return instance.Spec.StorageClass
@@ -521,4 +526,19 @@ func (instance *Tempest) GetStorageClass() string {
 // SetObservedGeneration - set the observed generation to the current generation
 func (instance *Tempest) SetObservedGeneration() {
 	instance.Status.ObservedGeneration = instance.Generation
+}
+
+// RbacConditionsSet - set the conditions for the rbac object
+func (instance *Tempest) RbacConditionsSet(c *condition.Condition) {
+	instance.Status.Conditions.Set(c)
+}
+
+// RbacNamespace - return the namespace
+func (instance *Tempest) RbacNamespace() string {
+	return instance.Namespace
+}
+
+// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
+func (instance *Tempest) RbacResourceName() string {
+	return "tempest-" + instance.Name
 }

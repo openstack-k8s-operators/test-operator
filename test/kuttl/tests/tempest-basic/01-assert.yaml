@@ -14,3 +14,9 @@ status:
     status: "True"
   - type: ServiceConfigReady
     status: "True"
+  - type: ServiceAccountReady
+    status: "True"
+  - type: RoleReady
+    status: "True"
+  - type: RoleBindingReady
+    status: "True"
