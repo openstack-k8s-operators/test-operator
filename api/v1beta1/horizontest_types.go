@@ -148,6 +148,11 @@ func (instance *HorizonTest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
 }
 
+// IsPrivileged - return if the Privileged mode is enabled
+func (instance *HorizonTest) IsPrivileged() bool {
+	return instance.Spec.Privileged
+}
+
 // GetStorageClass - return the storage class name
 func (instance *HorizonTest) GetStorageClass() string {
 	return instance.Spec.StorageClass
@@ -156,4 +161,19 @@ func (instance *HorizonTest) GetStorageClass() string {
 // SetObservedGeneration - set the observed generation to the current generation
 func (instance *HorizonTest) SetObservedGeneration() {
 	instance.Status.ObservedGeneration = instance.Generation
+}
+
+// RbacConditionsSet - set the conditions for the rbac object
+func (instance *HorizonTest) RbacConditionsSet(c *condition.Condition) {
+	instance.Status.Conditions.Set(c)
+}
+
+// RbacNamespace - return the namespace
+func (instance *HorizonTest) RbacNamespace() string {
+	return instance.Namespace
+}
+
+// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
+func (instance *HorizonTest) RbacResourceName() string {
+	return "horizontest-" + instance.Name
 }

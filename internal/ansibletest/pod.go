@@ -30,6 +30,7 @@ func Pod(
 		instance.Namespace,
 		instance.Spec.NodeSelector,
 		podName,
+		instance.RbacResourceName(),
 		instance.Spec.Privileged,
 		instance.Spec.Resources,
 		PodRunAsGroup,

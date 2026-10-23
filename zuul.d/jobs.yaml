@@ -30,6 +30,7 @@
 
       # Test operator
       cifmw_test_operator_timeout: 7200
+      cifmw_test_operator_privileged: true
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
@@ -114,6 +115,7 @@
         - stepName: 'sanity'
           testenv: 'sanity'
           privileged: true
+          SELinuxLevel: ''
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
@@ -266,6 +268,7 @@
       OpenStackVersion fields).
     vars:
       cifmw_test_operator_timeout: 7200
+      cifmw_test_operator_privileged: true
       cifmw_test_operator_stages:
         - name: tempest
           type: tempest
@@ -438,6 +441,7 @@
         - stepName: 'sanity'
           testenv: 'sanity'
           privileged: true
+          SELinuxLevel: ''
       cifmw_test_operator_tobiko_network_attachments:
         - ctlplane
       cifmw_test_operator_tobiko_extra_mounts:
