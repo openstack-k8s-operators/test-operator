@@ -228,6 +228,20 @@ func CommonReconcile[T TestResource](
 		pvcIndex = workflowStepIndex
 	}
 
+	// Keep input status current even when an existing pod is pending or running.
+	if nextAction != EndTesting && config.ValidateInputs != nil {
+		if err := config.ValidateInputs(ctx, instance); err != nil {
+			conditions.Set(condition.FalseCondition(
+				condition.InputReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityError,
+				condition.InputReadyErrorMessage,
+				err.Error()))
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+		}
+		conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
+	}
+
 	switch nextAction {
 	case CheckPending:
 		Log.Info(InfoPendingPod)
@@ -284,20 +298,6 @@ func CommonReconcile[T TestResource](
 		workflowStepLabel:  strconv.Itoa(workflowStepIndex),
 		instanceNameLabel:  instance.GetName(),
 		operatorNameLabel:  "test-operator",
-	}
-
-	// Validate inputs
-	if config.ValidateInputs != nil {
-		if err := config.ValidateInputs(ctx, instance); err != nil {
-			conditions.Set(condition.FalseCondition(
-				condition.InputReadyCondition,
-				condition.ErrorReason,
-				condition.SeverityError,
-				condition.InputReadyErrorMessage,
-				err.Error()))
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-		}
-		conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
 	}
 
 	// Create PersistentVolumeClaim
