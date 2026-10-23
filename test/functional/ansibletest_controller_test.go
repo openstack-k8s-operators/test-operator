@@ -112,6 +112,21 @@ var _ = Describe("AnsibleTest controller", func() {
 			)
 		})
 
+		It("restores InputReady while its pod is pending", func() {
+			pod := GetTestOperatorPod(namespace, ansibleTestName.Name)
+			pod.Status.Phase = corev1.PodPending
+			Expect(k8sClient.Status().Update(ctx, pod)).To(Succeed())
+
+			instance := GetAnsibleTest(ansibleTestName)
+			// Simulate a stale status update after the pod was created.
+			instance.Status.Conditions.MarkUnknown(condition.InputReadyCondition, condition.InitReason, condition.InputReadyInitMessage)
+			Expect(k8sClient.Status().Update(ctx, instance)).To(Succeed())
+
+			Eventually(func() bool {
+				return GetAnsibleTest(ansibleTestName).Status.Conditions.IsTrue(condition.InputReadyCondition)
+			}, timeout*2, interval).Should(BeTrue())
+		})
+
 		It("should create a PVC for logs", func() {
 			pvc := GetTestOperatorPVC(namespace, ansibleTestName.Name)
 			Expect(pvc.Name).ToNot(BeEmpty())
