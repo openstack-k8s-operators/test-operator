@@ -385,6 +385,20 @@ func CreateTempest(name types.NamespacedName, spec map[string]any) client.Object
 	return CreateUnstructured(raw)
 }
 
+func BuildTempest(name types.NamespacedName) *testv1.Tempest {
+	return &testv1.Tempest{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Spec: testv1.TempestSpec{
+			TempestRun: testv1.TempestRunSpec{
+				IncludeList: "tempest.api.identity.v3",
+			},
+		},
+	}
+}
+
 func GetTempest(name types.NamespacedName) *testv1.Tempest {
 	instance := &testv1.Tempest{}
 	Eventually(func(g Gomega) {
