@@ -54,7 +54,7 @@ func (spec *TempestSpec) Default() {
 }
 
 func (r *Tempest) PrivilegedRequired() bool {
-	return len(r.Spec.TempestRun.ExtraImages) > 0
+	return len(r.Spec.TempestRun.ExtraRPMs) > 0
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
