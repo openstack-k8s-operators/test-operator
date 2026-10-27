@@ -47,8 +47,10 @@ func SetupWebhookClient(client goClient.Client) {
 
 const (
 	// ErrPrivilegedModeRequired
-	ErrPrivilegedModeRequired = "%s.Spec.Privileged is required in order to successfully " +
-		"execute tests with the provided configuration."
+	ErrPrivilegedModeRequired = "%s.Spec.Privileged is required in order to " +
+		"successfully execute tests with the provided configuration: " +
+		"extraRPMs need to be installed with dnf, which requires a " +
+		"writable root filesystem only available in privileged mode."
 
 	// ErrDebug
 	ErrDebug = "%s.Spec.Workflow parameter must be empty to run debug mode"
