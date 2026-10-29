@@ -12,5 +12,11 @@ status:
     status: "True"
   - type: NetworkAttachmentsReady
     status: "True"
+  - type: RoleBindingReady
+    status: "True"
+  - type: RoleReady
+    status: "True"
+  - type: ServiceAccountReady
+    status: "True"
   - type: ServiceConfigReady
     status: "True"

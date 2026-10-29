@@ -2,4 +2,7 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
   - script: |
+      set -e
+      oc -n test-operator-kuttl-tests wait keystoneapi/keystone \
+        --for=condition=Ready --timeout=600s
       oc kustomize ../../../../config/samples/layout/tempest | oc apply -f -

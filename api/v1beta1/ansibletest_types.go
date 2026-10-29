@@ -211,6 +211,11 @@ func (instance *AnsibleTest) GetConditions() *condition.Conditions {
 	return &instance.Status.Conditions
 }
 
+// IsPrivileged - return if the Privileged mode is enabled
+func (instance *AnsibleTest) IsPrivileged() bool {
+	return instance.Spec.Privileged
+}
+
 // GetStorageClass - return the storage class name
 func (instance *AnsibleTest) GetStorageClass() string {
 	return instance.Spec.StorageClass
@@ -219,4 +224,19 @@ func (instance *AnsibleTest) GetStorageClass() string {
 // SetObservedGeneration - set the observed generation to the current generation
 func (instance *AnsibleTest) SetObservedGeneration() {
 	instance.Status.ObservedGeneration = instance.Generation
+}
+
+// RbacConditionsSet - set the conditions for the rbac object
+func (instance *AnsibleTest) RbacConditionsSet(c *condition.Condition) {
+	instance.Status.Conditions.Set(c)
+}
+
+// RbacNamespace - return the namespace
+func (instance *AnsibleTest) RbacNamespace() string {
+	return instance.Namespace
+}
+
+// RbacResourceName - return the name to be used for rbac objects (serviceaccount, role, rolebinding)
+func (instance *AnsibleTest) RbacResourceName() string {
+	return "ansibletest-" + instance.Name
 }

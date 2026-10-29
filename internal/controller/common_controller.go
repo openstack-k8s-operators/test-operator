@@ -19,13 +19,17 @@ package controller
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 
 	"github.com/go-logr/logr"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
+	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
+
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,8 +40,10 @@ import (
 type TestResource interface {
 	client.Object
 	GetConditions() *condition.Conditions
+	IsPrivileged() bool
 	GetStorageClass() string
 	SetObservedGeneration()
+	common_rbac.Reconciler
 }
 
 // TestResourceConfig defines resource-specific configuration and behavior
@@ -119,6 +125,10 @@ func CommonReconcile[T TestResource](
 	// when a condition's state doesn't change.
 	savedConditions := conditions.DeepCopy()
 
+	// Wait-only reconciles that changed no condition skip the deferred
+	// status patch, so a stale view cannot revert an earlier write.
+	skipStatusUpdate := false
+
 	// Always patch the instance status when exiting this function so we
 	// can persist any changes.
 	defer func() {
@@ -128,6 +138,9 @@ func CommonReconcile[T TestResource](
 			panic(r)
 		}
 		condition.RestoreLastTransitionTimes(conditions, savedConditions)
+		if skipStatusUpdate && reflect.DeepEqual(*conditions, savedConditions) {
+			return
+		}
 		if conditions.IsUnknown(condition.ReadyCondition) {
 			conditions.Set(conditions.Mirror(condition.ReadyCondition))
 		}
@@ -201,18 +214,50 @@ func CommonReconcile[T TestResource](
 		parallel = config.GetParallel(instance)
 	}
 
+	// Privileged SCC use stays with the operator; other pods can select this ServiceAccount.
+	rbacRules := []rbacv1.PolicyRule{
+		{
+			APIGroups:     []string{"security.openshift.io"},
+			ResourceNames: []string{"nonroot-v2"},
+			Resources:     []string{"securitycontextconstraints"},
+			Verbs:         []string{"use"},
+		},
+	}
+	rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, rbacRules)
+	if err != nil {
+		return rbacResult, err
+	} else if (rbacResult != ctrl.Result{}) {
+		return rbacResult, nil
+	}
+
 	pvcIndex := 0
 	// Create multiple PVCs for parallel execution
 	if parallel && config.SupportsWorkflow && workflowStepIndex < workflowLength {
 		pvcIndex = workflowStepIndex
 	}
 
+	// Keep input status current even when an existing pod is pending or running.
+	if nextAction != EndTesting && config.ValidateInputs != nil {
+		if err := config.ValidateInputs(ctx, instance); err != nil {
+			conditions.Set(condition.FalseCondition(
+				condition.InputReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityError,
+				condition.InputReadyErrorMessage,
+				err.Error()))
+			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
+		}
+		conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
+	}
+
 	switch nextAction {
 	case CheckPending:
+		skipStatusUpdate = true
 		Log.Info(InfoPendingPod)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
 	case Wait:
+		skipStatusUpdate = true
 		Log.Info(InfoWaitingOnPod)
 		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
@@ -228,10 +273,14 @@ func CommonReconcile[T TestResource](
 
 		if conditions.AllSubConditionIsTrue() {
 			conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+
+			Log.Info(InfoTestingCompleted)
+			return ctrl.Result{}, nil
 		}
 
-		Log.Info(InfoTestingCompleted)
-		return ctrl.Result{}, nil
+		// A sub-condition can still be stale. Requeue to re-evaluate the
+		// Ready condition once the cache catches up.
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
 	case CreateFirstPod:
 		lockAcquired, err := r.AcquireLock(ctx, instance, helper, parallel)
@@ -265,20 +314,6 @@ func CommonReconcile[T TestResource](
 		operatorNameLabel:  "test-operator",
 	}
 
-	// Validate inputs
-	if config.ValidateInputs != nil {
-		if err := config.ValidateInputs(ctx, instance); err != nil {
-			conditions.Set(condition.FalseCondition(
-				condition.InputReadyCondition,
-				condition.ErrorReason,
-				condition.SeverityError,
-				condition.InputReadyErrorMessage,
-				err.Error()))
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, err
-		}
-		conditions.MarkTrue(condition.InputReadyCondition, condition.InputReadyMessage)
-	}
-
 	// Create PersistentVolumeClaim
 	ctrlResult, err = r.EnsureLogsPVCExists(
 		ctx,
@@ -295,6 +330,11 @@ func CommonReconcile[T TestResource](
 	}
 
 	serviceAnnotations := make(map[string]string)
+	sccResourceName := "nonroot-v2"
+	if instance.IsPrivileged() {
+		sccResourceName = "privileged"
+	}
+	serviceAnnotations["openshift.io/required-scc"] = sccResourceName
 	serviceAnnotations["test.openstack.org/config-hash"] = configHash
 
 	// Generate ConfigMaps containing test configuration

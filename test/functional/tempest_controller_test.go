@@ -27,6 +27,7 @@ import (
 	//revive:disable-next-line:dot-imports
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,7 +75,7 @@ var _ = Describe("Tempest controller", func() {
 		It("initializes the status fields", func() {
 			Eventually(func(g Gomega) {
 				tempest := GetTempest(tempestName)
-				g.Expect(tempest.Status.Conditions).To(HaveLen(5))
+				g.Expect(tempest.Status.Conditions).To(HaveLen(8))
 				g.Expect(tempest.Status.Hash).To(BeEmpty())
 				g.Expect(tempest.Status.NetworkAttachments).To(BeEmpty())
 			}, timeout*2, interval).Should(Succeed())
@@ -137,11 +138,164 @@ var _ = Describe("Tempest controller", func() {
 			Expect(envVarsCM.Data).NotTo(BeEmpty())
 		})
 
+		It("should create RBAC resources for Tempest", func() {
+			saName := types.NamespacedName{
+				Name:      "tempest-" + tempestName.Name,
+				Namespace: namespace,
+			}
+
+			serviceAccount := th.GetServiceAccount(saName)
+			Expect(serviceAccount.Name).To(Equal(saName.Name))
+
+			roleName := types.NamespacedName{
+				Name:      saName.Name + "-role",
+				Namespace: namespace,
+			}
+			role := th.GetRole(roleName)
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+
+			binding := th.GetRoleBinding(types.NamespacedName{
+				Name:      saName.Name + "-rolebinding",
+				Namespace: namespace,
+			})
+			Expect(binding.RoleRef).To(Equal(rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     roleName.Name,
+			}))
+			Expect(binding.Subjects).To(Equal([]rbacv1.Subject{{
+				Kind:      "ServiceAccount",
+				Name:      saName.Name,
+				Namespace: namespace,
+			}}))
+			ownerUID := GetTempest(tempestName).UID
+			for _, resource := range []client.Object{serviceAccount, role, binding} {
+				Expect(resource.GetOwnerReferences()).To(HaveLen(1))
+				Expect(resource.GetOwnerReferences()[0].UID).To(Equal(ownerUID))
+			}
+
+			pod := GetTestOperatorPod(namespace, tempestName.Name)
+			Expect(pod.Spec.ServiceAccountName).To(Equal(saName.Name))
+
+			for _, conditionType := range []condition.Type{
+				condition.ServiceAccountReadyCondition,
+				condition.RoleReadyCondition,
+				condition.RoleBindingReadyCondition,
+			} {
+				th.ExpectCondition(
+					tempestName,
+					ConditionGetterFunc(TempestConditionGetter),
+					conditionType,
+					corev1.ConditionTrue,
+				)
+			}
+		})
+
 		It("should create a pod", func() {
 			pod := GetTestOperatorPod(namespace, tempestName.Name)
 			Expect(pod.Name).ToNot(BeEmpty())
 		})
+
+		It("marks the deployment Ready when its pod succeeds", func() {
+			pod := GetTestOperatorPod(namespace, tempestName.Name)
+			pod.Status.Phase = corev1.PodSucceeded
+			Expect(k8sClient.Status().Update(ctx, pod)).To(Succeed())
+
+			th.ExpectCondition(
+				tempestName,
+				ConditionGetterFunc(TempestConditionGetter),
+				condition.DeploymentReadyCondition,
+				corev1.ConditionTrue,
+			)
+			th.ExpectCondition(
+				tempestName,
+				ConditionGetterFunc(TempestConditionGetter),
+				condition.ReadyCondition,
+				corev1.ConditionTrue,
+			)
+		})
 	})
+
+	DescribeTable("Pod SCC request leaves its service account on nonroot-v2",
+		func(privileged bool, expectedSCC string, finalPhase corev1.PodPhase) {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			spec := GetDefaultTempestSpec()
+			spec["privileged"] = privileged
+			DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+
+			roleName := types.NamespacedName{
+				Name:      "tempest-" + tempestName.Name + "-role",
+				Namespace: namespace,
+			}
+			role := th.GetRole(roleName)
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+
+			pod := GetTestOperatorPod(namespace, tempestName.Name)
+			Expect(pod.Spec.ServiceAccountName).To(Equal("tempest-" + tempestName.Name))
+			Expect(pod.Annotations).To(HaveKeyWithValue("openshift.io/required-scc", expectedSCC))
+
+			if finalPhase != "" {
+				pod.Status.Phase = finalPhase
+				Expect(k8sClient.Status().Update(ctx, pod)).Should(Succeed())
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, roleName, role)).Should(Succeed())
+					g.Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+						APIGroups:     []string{"security.openshift.io"},
+						ResourceNames: []string{"nonroot-v2"},
+						Resources:     []string{"securitycontextconstraints"},
+						Verbs:         []string{"use"},
+					}}))
+				}, timeout*10, interval).Should(Succeed())
+				th.GetServiceAccount(types.NamespacedName{Name: pod.Spec.ServiceAccountName, Namespace: namespace})
+				th.GetRoleBinding(types.NamespacedName{Name: pod.Spec.ServiceAccountName + "-rolebinding", Namespace: namespace})
+				Eventually(func() bool {
+					return GetTempest(tempestName).Status.Conditions.IsTrue(condition.DeploymentReadyCondition)
+				}, timeout*10, interval).Should(BeTrue())
+			}
+		},
+		Entry("without privileged access", false, "nonroot-v2", corev1.PodPhase("")),
+		Entry("after a successful privileged Pod", true, "privileged", corev1.PodSucceeded),
+		Entry("after a failed privileged Pod", true, "privileged", corev1.PodFailed),
+	)
+
+	DescribeTable("workflow privileged setting selects the SCC",
+		func(basePrivileged, stepPrivileged bool, expectedSCC string) {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+
+			spec := GetDefaultTempestWorkflowSpec()
+			spec["privileged"] = basePrivileged
+			spec["workflow"].([]map[string]any)[0]["privileged"] = stepPrivileged
+			DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+
+			role := th.GetRole(types.NamespacedName{Name: "tempest-" + tempestName.Name + "-role", Namespace: namespace})
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+			pod := GetTestOperatorPod(namespace, tempestName.Name)
+			Expect(pod.Annotations).To(HaveKeyWithValue("openshift.io/required-scc", expectedSCC))
+			Expect(*pod.Spec.Containers[0].SecurityContext.AllowPrivilegeEscalation).To(Equal(stepPrivileged))
+		},
+		Entry("enables privileged access", false, true, "privileged"),
+		Entry("disables privileged access", true, false, "nonroot-v2"),
+	)
 
 	When("Tempest is created with network attachments", func() {
 		var networkAttachmentName = "ctlplane"

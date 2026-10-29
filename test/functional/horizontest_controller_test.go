@@ -24,7 +24,9 @@ import (
 	//revive:disable-next-line:dot-imports
 	. "github.com/openstack-k8s-operators/lib-common/modules/common/test/helpers"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("HorizonTest controller", func() {
@@ -70,7 +72,7 @@ var _ = Describe("HorizonTest controller", func() {
 		It("initializes the status fields", func() {
 			Eventually(func(g Gomega) {
 				horizonTest := GetHorizonTest(horizonTestName)
-				g.Expect(horizonTest.Status.Conditions).To(HaveLen(3))
+				g.Expect(horizonTest.Status.Conditions).To(HaveLen(6))
 				g.Expect(horizonTest.Status.Hash).To(BeEmpty())
 			}, timeout*2, interval).Should(Succeed())
 		})
@@ -119,11 +121,120 @@ var _ = Describe("HorizonTest controller", func() {
 			Expect(pvc.Spec.AccessModes).To(ContainElement(corev1.ReadWriteOnce))
 		})
 
+		It("should create RBAC resources for HorizonTest", func() {
+			saName := types.NamespacedName{
+				Name:      "horizontest-" + horizonTestName.Name,
+				Namespace: namespace,
+			}
+
+			serviceAccount := th.GetServiceAccount(saName)
+			Expect(serviceAccount.Name).To(Equal(saName.Name))
+
+			roleName := types.NamespacedName{
+				Name:      saName.Name + "-role",
+				Namespace: namespace,
+			}
+			role := th.GetRole(roleName)
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+
+			binding := th.GetRoleBinding(types.NamespacedName{
+				Name:      saName.Name + "-rolebinding",
+				Namespace: namespace,
+			})
+			Expect(binding.RoleRef).To(Equal(rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     roleName.Name,
+			}))
+			Expect(binding.Subjects).To(Equal([]rbacv1.Subject{{
+				Kind:      "ServiceAccount",
+				Name:      saName.Name,
+				Namespace: namespace,
+			}}))
+			ownerUID := GetHorizonTest(horizonTestName).UID
+			for _, resource := range []client.Object{serviceAccount, role, binding} {
+				Expect(resource.GetOwnerReferences()).To(HaveLen(1))
+				Expect(resource.GetOwnerReferences()[0].UID).To(Equal(ownerUID))
+			}
+
+			pod := GetTestOperatorPod(namespace, horizonTestName.Name)
+			Expect(pod.Spec.ServiceAccountName).To(Equal(saName.Name))
+
+			for _, conditionType := range []condition.Type{
+				condition.ServiceAccountReadyCondition,
+				condition.RoleReadyCondition,
+				condition.RoleBindingReadyCondition,
+			} {
+				th.ExpectCondition(
+					horizonTestName,
+					ConditionGetterFunc(HorizonTestConditionGetter),
+					conditionType,
+					corev1.ConditionTrue,
+				)
+			}
+		})
+
 		It("should create a pod", func() {
 			pod := GetTestOperatorPod(namespace, horizonTestName.Name)
 			Expect(pod.Name).ToNot(BeEmpty())
 		})
 	})
+
+	DescribeTable("Pod SCC request leaves its service account on nonroot-v2",
+		func(privileged bool, expectedSCC string, finalPhase corev1.PodPhase) {
+			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
+			Expect(k8sClient.Create(ctx, openstackConfigMap)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, openstackSecret)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, CreateTestOperatorConfigMap(namespace))).Should(Succeed())
+
+			spec := GetDefaultHorizonTestSpec()
+			spec["privileged"] = privileged
+			DeferCleanup(th.DeleteInstance, CreateHorizonTest(horizonTestName, spec))
+
+			roleName := types.NamespacedName{
+				Name:      "horizontest-" + horizonTestName.Name + "-role",
+				Namespace: namespace,
+			}
+			role := th.GetRole(roleName)
+			Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+				APIGroups:     []string{"security.openshift.io"},
+				ResourceNames: []string{"nonroot-v2"},
+				Resources:     []string{"securitycontextconstraints"},
+				Verbs:         []string{"use"},
+			}}))
+
+			pod := GetTestOperatorPod(namespace, horizonTestName.Name)
+			Expect(pod.Spec.ServiceAccountName).To(Equal("horizontest-" + horizonTestName.Name))
+			Expect(pod.Annotations).To(HaveKeyWithValue("openshift.io/required-scc", expectedSCC))
+
+			if finalPhase != "" {
+				pod.Status.Phase = finalPhase
+				Expect(k8sClient.Status().Update(ctx, pod)).Should(Succeed())
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, roleName, role)).Should(Succeed())
+					g.Expect(role.Rules).To(Equal([]rbacv1.PolicyRule{{
+						APIGroups:     []string{"security.openshift.io"},
+						ResourceNames: []string{"nonroot-v2"},
+						Resources:     []string{"securitycontextconstraints"},
+						Verbs:         []string{"use"},
+					}}))
+				}, timeout*10, interval).Should(Succeed())
+				th.GetServiceAccount(types.NamespacedName{Name: pod.Spec.ServiceAccountName, Namespace: namespace})
+				th.GetRoleBinding(types.NamespacedName{Name: pod.Spec.ServiceAccountName + "-rolebinding", Namespace: namespace})
+				Eventually(func() bool {
+					return GetHorizonTest(horizonTestName).Status.Conditions.IsTrue(condition.DeploymentReadyCondition)
+				}, timeout*10, interval).Should(BeTrue())
+			}
+		},
+		Entry("without privileged access", false, "nonroot-v2", corev1.PodPhase("")),
+		Entry("after a successful privileged Pod", true, "privileged", corev1.PodSucceeded),
+		Entry("after a failed privileged Pod", true, "privileged", corev1.PodFailed),
+	)
 
 	Context("extraMounts", func() {
 		BeforeEach(func() {
