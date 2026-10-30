@@ -190,6 +190,31 @@ var _ = Describe("Tempest controller", func() {
 		})
 	})
 
+	When("A Tempest instance is created with extraRPMs", func() {
+		It("rejects the CR when privileged mode is disabled", func() {
+			tempest := BuildTempest(tempestName)
+			tempest.Spec.TempestRun.ExtraRPMs = []string{
+				"https://example.com/test.rpm",
+			}
+			err := k8sClient.Create(ctx, tempest)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Privileged"))
+		})
+
+		It("accepts the CR when privileged mode is enabled", func() {
+			spec := GetDefaultTempestSpec()
+			spec["tempestRun"].(map[string]any)["extraRPMs"] = []string{
+				"https://example.com/test.rpm",
+			}
+			spec["privileged"] = true
+			DeferCleanup(th.DeleteInstance, CreateTempest(tempestName, spec))
+
+			tempest := GetTempest(tempestName)
+			Expect(tempest.Spec.Privileged).To(BeTrue())
+			Expect(tempest.Spec.TempestRun.ExtraRPMs).To(HaveLen(1))
+		})
+	})
+
 	Context("extraMounts", func() {
 		BeforeEach(func() {
 			openstackConfigMap, openstackSecret := CreateCommonOpenstackResources(namespace)
