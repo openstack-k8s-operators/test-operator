@@ -732,8 +732,8 @@ func (r *Reconciler) VerifyNetworkAttachments(
 
 		// maxWaitTime to wait for NAD that should escalate to a hard error
 		const maxWaitTime = 5 * time.Minute
-		elaspedTime := time.Since(pod.GetCreationTimestamp().Time)
-		if elaspedTime > maxWaitTime {
+		elapsedTime := time.Since(pod.GetCreationTimestamp().Time)
+		if elapsedTime > maxWaitTime && (pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodPending) {
 			conditions.Set(condition.FalseCondition(
 				condition.NetworkAttachmentsReadyCondition,
 				condition.ErrorReason,
@@ -752,7 +752,7 @@ func (r *Reconciler) VerifyNetworkAttachments(
 			err.Error()))
 
 		Log.Info("Waiting for network attachments to become  ready",
-			"elaspedTime", elaspedTime,
+			"elapsedTime", elapsedTime,
 			"maxWaitTime", maxWaitTime)
 
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
