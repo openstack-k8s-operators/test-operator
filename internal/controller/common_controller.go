@@ -132,10 +132,14 @@ func CommonReconcile[T TestResource](
 			Log.Info(fmt.Sprintf("panic during reconcile %v\n", r))
 			panic(r)
 		}
-		condition.RestoreLastTransitionTimes(conditions, savedConditions)
-		if conditions.IsUnknown(condition.ReadyCondition) {
+		// update ReadyCondition
+		if conditions.AllSubConditionIsTrue() {
+			conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+		} else {
+			conditions.MarkUnknown(condition.ReadyCondition, condition.InitReason, condition.ReadyInitMessage)
 			conditions.Set(conditions.Mirror(condition.ReadyCondition))
 		}
+		condition.RestoreLastTransitionTimes(conditions, savedConditions)
 		err := helper.PatchInstance(ctx, instance)
 		if err != nil {
 			_err = err
@@ -245,11 +249,9 @@ func CommonReconcile[T TestResource](
 	switch nextAction {
 	case CheckPending:
 		Log.Info(InfoPendingPod)
-		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
 	case Wait:
 		Log.Info(InfoWaitingOnPod)
-		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 
 	case EndTesting:
 		// All pods created by the instance were completed. Release the lock
@@ -301,18 +303,20 @@ func CommonReconcile[T TestResource](
 	}
 
 	// Create PersistentVolumeClaim
-	ctrlResult, err = r.EnsureLogsPVCExists(
-		ctx,
-		instance,
-		helper,
-		serviceLabels,
-		instance.GetStorageClass(),
-		pvcIndex,
-	)
-	if err != nil {
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		return ctrlResult, nil
+	if nextAction == CreateFirstPod || nextAction == CreateNextPod {
+		ctrlResult, err = r.EnsureLogsPVCExists(
+			ctx,
+			instance,
+			helper,
+			serviceLabels,
+			instance.GetStorageClass(),
+			pvcIndex,
+		)
+		if err != nil {
+			return ctrlResult, err
+		} else if (ctrlResult != ctrl.Result{}) {
+			return ctrlResult, nil
+		}
 	}
 
 	serviceAnnotations := make(map[string]string)
@@ -356,40 +360,41 @@ func CommonReconcile[T TestResource](
 	}
 
 	// Build pod
-	podDef, err := config.BuildPod(
-		ctx,
-		instance,
-		serviceLabels,
-		serviceAnnotations,
-		workflowStepIndex,
-		pvcIndex,
-	)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// Create a new pod
-	ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
-	if err != nil {
-		// Release the lock and allow other controllers to spawn
-		// a pod.
-		if lockReleased, lockErr := r.ReleaseLock(ctx, instance); !lockReleased {
-			return ctrl.Result{RequeueAfter: RequeueAfterValue}, lockErr
+	if nextAction == CreateFirstPod || nextAction == CreateNextPod {
+		podDef, err := config.BuildPod(
+			ctx,
+			instance,
+			serviceLabels,
+			serviceAnnotations,
+			workflowStepIndex,
+			pvcIndex,
+		)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
-		conditions.Set(condition.FalseCondition(
-			condition.DeploymentReadyCondition,
-			condition.ErrorReason,
-			condition.SeverityWarning,
-			condition.DeploymentReadyErrorMessage,
-			err.Error()))
-		return ctrlResult, err
-	} else if (ctrlResult != ctrl.Result{}) {
-		conditions.Set(condition.FalseCondition(
-			condition.DeploymentReadyCondition,
-			condition.RequestedReason,
-			condition.SeverityInfo,
-			condition.DeploymentReadyRunningMessage))
-		return ctrlResult, nil
+
+		// Create a new pod
+		ctrlResult, err = r.CreatePod(ctx, *helper, podDef)
+		if err != nil {
+			// Release the lock and allow other controllers to spawn a pod
+			if lockReleased, lockErr := r.ReleaseLock(ctx, instance); !lockReleased {
+				return ctrl.Result{RequeueAfter: RequeueAfterValue}, lockErr
+			}
+			conditions.Set(condition.FalseCondition(
+				condition.DeploymentReadyCondition,
+				condition.ErrorReason,
+				condition.SeverityWarning,
+				condition.DeploymentReadyErrorMessage,
+				err.Error()))
+			return ctrlResult, err
+		} else if (ctrlResult != ctrl.Result{}) {
+			conditions.Set(condition.FalseCondition(
+				condition.DeploymentReadyCondition,
+				condition.RequestedReason,
+				condition.SeverityInfo,
+				condition.DeploymentReadyRunningMessage))
+			return ctrlResult, nil
+		}
 	}
 
 	if config.NeedsNetworkAttachments {
@@ -408,9 +413,8 @@ func CommonReconcile[T TestResource](
 		}
 	}
 
-	// Mark ready if all conditions are true
-	if conditions.AllSubConditionIsTrue() {
-		conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+	if nextAction == CheckPending || nextAction == Wait {
+		return ctrl.Result{RequeueAfter: RequeueAfterValue}, nil
 	}
 
 	Log.Info("Reconciled Service successfully")
