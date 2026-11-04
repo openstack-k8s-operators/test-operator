@@ -51,7 +51,6 @@ func GetVolumeMounts(
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameWorkdir, "/var/lib/horizontest", false),
 		util.CreateVolumeMount(util.TestOperatorEphemeralVolumeNameTmp, "/tmp", false),
 		util.CreateVolumeMount(util.TestOperatorLogsVolumeName, "/var/lib/horizontest/external_files", false),
-		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/var/lib/horizontest/.config/openstack/clouds.yaml"),
 		util.CreateOpenstackConfigVolumeMount(instance.Spec.OpenStackConfigMap, "/etc/openstack/clouds.yaml"),
 		util.CreateOpenstackConfigSecretVolumeMount(instance.Spec.OpenStackConfigSecret, "/etc/openstack/secure.yaml"),
 	}
