@@ -4,15 +4,12 @@
     name: test-operator-s2i-testing
     github-check:
       jobs:
-        - test-operator-s2i-content-provider:
-            voting: false
+        - test-operator-s2i-content-provider
         - test-operator-kuttl-s2i:
-            voting: false
             dependencies:
               - openstack-k8s-operators-content-provider
               - test-operator-s2i-content-provider
         - test-operator-s2i-test:
-            voting: false
             dependencies:
               - openstack-k8s-operators-content-provider
               - test-operator-s2i-content-provider
