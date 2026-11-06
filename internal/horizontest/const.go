@@ -25,5 +25,5 @@ var (
 	HorizonTestPropagation = []storage.PropagationType{HorizonTest}
 
 	// PodCapabilities defines the Linux capabilities for HorizonTest pods
-	PodCapabilities = []corev1.Capability{"NET_ADMIN", "NET_RAW"}
+	PodCapabilities = []corev1.Capability{}
 )

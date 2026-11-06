@@ -47,14 +47,16 @@ When to Use Privileged Mode
    Leave :code:`privileged: false` unless your tests specifically require it.
 
 Set :code:`privileged: true` on the CR spec when your tests need capabilities
-that the default profile blocks. The two capabilities added in privileged mode
-are:
+that the default profile blocks. Privileged Tobiko pods also request:
 
 * :code:`NET_ADMIN` allows modifying network configuration such as routing
   tables, interfaces, and firewall rules.
 
 * :code:`NET_RAW` allows raw socket access for tools like :code:`ping` and
   :code:`tcpdump`.
+
+AnsibleTest, HorizonTest, and Tempest pods do not request additional
+capabilities in privileged mode.
 
 Privileged mode is also required when Tempest installs additional RPMs at
 runtime via :code:`extraRPMs`, since that needs a writable root filesystem.
