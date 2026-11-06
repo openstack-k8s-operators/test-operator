@@ -200,6 +200,82 @@ var _ = Describe("Tempest controller", func() {
 			pod := GetTestOperatorPod(namespace, tempestName.Name)
 			Expect(pod.Name).ToNot(BeEmpty())
 		})
+
+		It("marks Ready false when an input becomes invalid while a pod is running", func() {
+			completedPod := GetTestOperatorPod(namespace, tempestName.Name)
+			completedPod.Status.Phase = corev1.PodSucceeded
+			Expect(k8sClient.Status().Update(ctx, completedPod)).To(Succeed())
+			Eventually(func() bool {
+				return GetTempest(tempestName).Status.Conditions.IsTrue(condition.ReadyCondition)
+			}, timeout*10, interval).Should(BeTrue())
+
+			tempest := GetTempest(tempestName)
+			tempest.Spec.TempestRun.IncludeList += ".changed"
+			Expect(k8sClient.Update(ctx, tempest)).To(Succeed())
+
+			var runningPod corev1.Pod
+			Eventually(func(g Gomega) {
+				podList := &corev1.PodList{}
+				g.Expect(k8sClient.List(ctx, podList, client.InNamespace(namespace), client.MatchingLabels{
+					"instanceName": tempestName.Name,
+					"operator":     "test-operator",
+				})).To(Succeed())
+				g.Expect(podList.Items).To(HaveLen(1))
+				runningPod = podList.Items[0]
+				g.Expect(runningPod.UID).NotTo(Equal(completedPod.UID))
+			}, timeout*10, interval).Should(Succeed())
+
+			runningPod.Status.Phase = corev1.PodRunning
+			Expect(k8sClient.Status().Update(ctx, &runningPod)).To(Succeed())
+			Eventually(func() bool {
+				return GetTempest(tempestName).Status.Conditions.IsTrue(condition.ReadyCondition)
+			}, timeout*10, interval).Should(BeTrue())
+
+			secret := &corev1.Secret{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: namespace,
+				Name:      OpenStackConfigSecretName,
+			}, secret)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, secret)).To(Succeed())
+
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: namespace,
+				Name:      runningPod.Name,
+			}, &runningPod)).To(Succeed())
+			runningPod.Annotations["test.openstack.org/reconcile-trigger"] = "input-removed"
+			Expect(k8sClient.Update(ctx, &runningPod)).To(Succeed())
+
+			Eventually(func() bool {
+				conditions := GetTempest(tempestName).Status.Conditions
+				return conditions.IsFalse(condition.InputReadyCondition) && conditions.IsFalse(condition.ReadyCondition)
+			}, timeout*10, interval).Should(BeTrue())
+			Expect(GetTestOperatorPod(namespace, tempestName.Name).Status.Phase).To(Equal(corev1.PodRunning))
+		})
+
+		It("restores config and network conditions while its pod is pending", func() {
+			pod := GetTestOperatorPod(namespace, tempestName.Name)
+			Eventually(func() bool {
+				conditions := GetTempest(tempestName).Status.Conditions
+				return conditions.IsTrue(condition.ServiceConfigReadyCondition) &&
+					conditions.IsTrue(condition.NetworkAttachmentsReadyCondition)
+			}, timeout*2, interval).Should(BeTrue())
+			pod.Status.Phase = corev1.PodPending
+			Expect(k8sClient.Status().Update(ctx, pod)).To(Succeed())
+			// Retry on conflict: the controller patches the status on every reconcile.
+			Eventually(func(g Gomega) {
+				instance := GetTempest(tempestName)
+				instance.Status.Conditions.MarkUnknown(condition.ServiceConfigReadyCondition, condition.InitReason, condition.ServiceConfigReadyInitMessage)
+				instance.Status.Conditions.MarkUnknown(condition.NetworkAttachmentsReadyCondition, condition.InitReason, condition.NetworkAttachmentsReadyInitMessage)
+				g.Expect(k8sClient.Status().Update(ctx, instance)).To(Succeed())
+			}, timeout*2, interval).Should(Succeed())
+			Eventually(func() []corev1.ConditionStatus {
+				conditions := GetTempest(tempestName).Status.Conditions
+				return []corev1.ConditionStatus{
+					conditions.Get(condition.ServiceConfigReadyCondition).Status,
+					conditions.Get(condition.NetworkAttachmentsReadyCondition).Status,
+				}
+			}, timeout*2, interval).Should(Equal([]corev1.ConditionStatus{corev1.ConditionTrue, corev1.ConditionTrue}))
+		})
 	})
 
 	DescribeTable("Pod SCC request leaves its service account on nonroot-v2",
