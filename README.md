@@ -24,6 +24,8 @@ to get you started. It will get you through the installation of such environment
 Then proceed to our [documentation](https://openstack-k8s-operators.github.io/test-operator/).
 
 ## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and DCO information.
 Please, make sure that pre-commit checks pass prior to proposing a PR.
 
 1. Install pre-commit tool
